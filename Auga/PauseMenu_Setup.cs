@@ -151,7 +151,7 @@ namespace Auga
                             buttonList.Add(instance.m_skipButton);
 
                         //Save
-                        if (instance.m_saveButton.interactable)
+                        if (instance.m_saveButton != null && instance.m_saveButton.interactable)
                             buttonList.Add(instance.m_saveButton);
 
                         if (instance.m_playerListButton != null && instance.m_playerListButton.gameObject.activeSelf)
@@ -317,8 +317,56 @@ namespace Auga
 
                 menu.m_feedbackPrefab = vanilla.m_feedbackPrefab;
                 // SceneReference is not serialized in the Auga prefab; Logout loads it.
-                var startScene = AccessTools.Field(typeof(Menu), "m_startScene");
-                startScene.SetValue(menu, startScene.GetValue(vanilla));
+                menu.m_startScene = vanilla.m_startScene;
+                SetupHelper.LogDeadRefsNextFrame(menu.m_gamepadMapController);
+
+                // Save button: Update() and UpdateNavigation deref it every frame.
+                if (menu.m_saveButton == null && vanilla.m_saveButton != null)
+                {
+                    Debug.LogWarning("[Auga] AugaMenu: no Save button, adopting vanilla");
+                    menu.m_saveButton = vanilla.m_saveButton;
+                    menu.m_saveButton.transform.SetParent(entries, false);
+                    Rewire(menu.m_saveButton, menu.OnManualSave);
+                }
+                if (menu.m_saveButton == null)
+                    Debug.LogError("[Auga] AugaMenu: m_saveButton unset; Menu.Update will NRE");
+
+                // 1.0.7 fields (SetButtonsEnabled/Update deref both); Auga prefab predates them.
+                menu.menuEntriesParent = (RectTransform)entries;
+                if (menu.lastSaveText == null && vanilla.lastSaveText != null)
+                {
+                    menu.lastSaveText = vanilla.lastSaveText;
+                    menu.lastSaveText.transform.SetParent(entries, false);
+                    if (menu.m_saveButton != null)
+                        menu.lastSaveText.transform.SetSiblingIndex(menu.m_saveButton.transform.GetSiblingIndex() + 1);
+                }
+                if (menu.lastSaveText == null)
+                    Debug.LogError("[Auga] AugaMenu: lastSaveText unset; Menu.Show will NRE");
+
+                // Show() hides both dialogs; fall back to vanilla's if the prefab lost them.
+                menu.m_quitDialog = menu.m_quitDialog ? menu.m_quitDialog : AdoptDialog(vanilla.m_quitDialog, menu, "m_quitDialog");
+                menu.m_logoutDialog = menu.m_logoutDialog ? menu.m_logoutDialog : AdoptDialog(vanilla.m_logoutDialog, menu, "m_logoutDialog");
+            }
+
+            private static Transform AdoptDialog(Transform dialog, Menu menu, string field)
+            {
+                if (dialog == null)
+                {
+                    Debug.LogError($"[Auga] AugaMenu: {field} missing in Auga and vanilla; Menu.Show will NRE");
+                    return null;
+                }
+                Debug.LogWarning($"[Auga] AugaMenu: {field} not serialized, adopting vanilla");
+                Adopt(dialog.gameObject, menu.m_root);
+                dialog.gameObject.SetActive(false);
+                // Vanilla buttons target the destroyed Menu; re-point each by its persistent method name.
+                foreach (var b in dialog.GetComponentsInChildren<Button>(true))
+                {
+                    if (b.onClick.GetPersistentEventCount() == 0) continue;
+                    var method = AccessTools.Method(typeof(Menu), b.onClick.GetPersistentMethodName(0));
+                    if (method != null)
+                        Rewire(b, () => method.Invoke(menu, null));
+                }
+                return dialog;
             }
 
             private static GameObject Adopt(GameObject go, Transform parent)
