@@ -202,14 +202,6 @@
     Переименуем наш файл в ILRepack.targets чтобы пакет его подхватил автоматически.
   -->
 
-  <!-- Копирование мода в папку плагинов Valheim -->
-  <Target Name="CopyToValheim" AfterTargets="Build" Condition="'$(Configuration)' != 'API'">
-    <Exec Command="xcopy &quot;$(TargetDir)$(TargetFileName)&quot; &quot;$(ValheimPluginsDir)\$(ProjectName)\&quot; /q /y /i"
-          Condition="'$(ValheimPluginsDir)' != ''" />
-    <Exec Command="xcopy &quot;$(ProjectDir)translations.json&quot; &quot;$(ValheimPluginsDir)\$(ProjectName)\&quot; /q /y /i"
-          Condition="'$(ValheimPluginsDir)' != '' And Exists('$(ProjectDir)translations.json')" />
-  </Target>
-
   <!-- Для API-сборки: копируем в Libs\AugaAPI\ -->
   <Target Name="CopyAPIToLibs" AfterTargets="Build" Condition="'$(Configuration)' == 'API'">
     <Exec Command="xcopy &quot;$(TargetDir)$(TargetFileName)&quot; &quot;$(SolutionDir)Libs\AugaAPI\&quot; /q /y /i" />
