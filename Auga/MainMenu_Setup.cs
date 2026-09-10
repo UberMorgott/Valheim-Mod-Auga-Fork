@@ -33,20 +33,20 @@ namespace Auga
         // Null-safe Find + GetComponent. Logs warning if path or component missing.
         private static T FC<T>(Transform root, string path) where T : Component
         {
-            if (root == null) { Auga.LogWarning($"FC<{typeof(T).Name}>: root is null (path={path})"); return null; }
+            if (root == null) { Debug.LogWarning($"[Auga] MainMenu: root is null (path={path})"); return null; }
             var t = root.Find(path);
-            if (t == null) { Auga.LogWarning($"FC<{typeof(T).Name}>: path not found: {path}"); return null; }
+            if (t == null) { Debug.LogWarning($"[Auga] MainMenu: missing prefab child {root.name}/{path}"); return null; }
             var c = t.GetComponent<T>();
-            if (c == null) Auga.LogWarning($"FC<{typeof(T).Name}>: no component on: {path}");
+            if (c == null) Debug.LogWarning($"[Auga] MainMenu: no {typeof(T).Name} on {root.name}/{path}");
             return c;
         }
 
         // Null-safe Find -> GameObject.
         private static GameObject FO(Transform root, string path)
         {
-            if (root == null) { Auga.LogWarning($"FO: root is null (path={path})"); return null; }
+            if (root == null) { Debug.LogWarning($"[Auga] MainMenu: root is null (path={path})"); return null; }
             var t = root.Find(path);
-            if (t == null) { Auga.LogWarning($"FO: path not found: {path}"); return null; }
+            if (t == null) { Debug.LogWarning($"[Auga] MainMenu: missing prefab child {root.name}/{path}"); return null; }
             return t.gameObject;
         }
 
@@ -61,16 +61,29 @@ namespace Auga
 
             // Заменяем все префабы — должно произойти ДО ванильного Awake(),
             // чтобы ванильный код нашёл нужные объекты по именам.
-            var mainMenu = __instance.Replace("Menu", Auga.Assets.MainMenuPrefab);
-            if (mainMenu == null) { Auga.LogError("Failed to replace Menu"); return; }
+            // Replace() uses deferred Object.Destroy, so the detached vanilla originals stay
+            // alive through vanilla Awake and our Postfix; PassThroughVanillaFields rescues
+            // the vanilla elements Auga has no equivalent for before the destroy lands.
+            _replaced.Clear();
+            Transform Swap(string path)
+            {
+                var original = __instance.transform.Find(path);
+                var replacement = __instance.Replace(path, Auga.Assets.MainMenuPrefab);
+                if (original != null && replacement != null)
+                    _replaced.Add((original, replacement));
+                return replacement;
+            }
+
+            var mainMenu = Swap("Menu");
+            if (mainMenu == null) { Debug.LogError("[Auga] MainMenu: failed to replace Menu"); return; }
             if (originalLogo != null)
                 originalLogo.SetParent(mainMenu, true);
 
-            __instance.Replace("ConnectionFailed", Auga.Assets.MainMenuPrefab);
-            __instance.Replace("Credits", Auga.Assets.MainMenuPrefab);
-            __instance.Replace("BLACK", Auga.Assets.MainMenuPrefab);
-            __instance.Replace("Loading", Auga.Assets.MainMenuPrefab);
-            __instance.Replace("CharacterSelection/SelectCharacter", Auga.Assets.MainMenuPrefab);
+            Swap("ConnectionFailed");
+            Swap("Credits");
+            Swap("BLACK");
+            Swap("Loading");
+            Swap("CharacterSelection/SelectCharacter");
 
             // Сохраняем hair/beard из ванильного NewCharacterPanel ДО его замены
             var oldCustomizaton = __instance.m_newCharacterPanel != null
@@ -78,16 +91,79 @@ namespace Auga
                 : null;
             _originalNoHair = oldCustomizaton?.m_noHair;
             _originalNoBeard = oldCustomizaton?.m_noBeard;
+            _originalSelectedHair = oldCustomizaton?.m_selectedHair;
+            _originalSelectedBeard = oldCustomizaton?.m_selectedBeard;
 
-            __instance.Replace("CharacterSelection/NewCharacterPanel", Auga.Assets.MainMenuPrefab);
-            __instance.Replace("StartGame", Auga.Assets.MainMenuPrefab);
+            Swap("CharacterSelection/NewCharacterPanel");
+            Swap("StartGame");
+        }
 
-            // КРИТИЧНО: Replace() уничтожает оригинальные GO, превращая инспекторные
-            // ссылки в "dead" объекты. Ванильный Awake() обращается к некоторым из
-            // них (m_crossplayServerToggle, m_serverOptions, m_menuList и др.) ДО
-            // нашего Postfix. В Unity 6 доступ к .gameObject на destroyed-компоненте
-            // бросает NPE. Создаём stubs прямо здесь, чтобы ванильный код не упал.
-            FixDeadFields(__instance);
+        // (vanilla original, Auga replacement) pairs from Prefix.
+        private static readonly System.Collections.Generic.List<(Transform original, Transform replacement)> _replaced =
+            new System.Collections.Generic.List<(Transform, Transform)>();
+        private static TMP_Text _originalSelectedHair;
+        private static TMP_Text _originalSelectedBeard;
+
+        // Vanilla writes these texts; the SetupGui/ShowConnectError postfixes mirror them into
+        // Auga's legacy Text, so passing the vanilla TMP through would show the text twice.
+        private static readonly System.Collections.Generic.HashSet<string> _mirroredFields =
+            new System.Collections.Generic.HashSet<string> { "m_versionLabel", "m_connectionFailedError" };
+
+        private static System.Reflection.FieldInfo[] UiFields() =>
+            Array.FindAll(typeof(FejdStartup).GetFields(System.Reflection.BindingFlags.Instance
+                    | System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Public),
+                f => f.FieldType == typeof(GameObject) || typeof(Component).IsAssignableFrom(f.FieldType));
+
+        // Pass-through: every field our Postfix left null keeps its vanilla object, and every
+        // vanilla object still living under a replaced original is moved into the Auga
+        // replacement (same parent path when Auga has it, else the replacement root), so
+        // crossplay toggles, server options, cloud-storage warning, EULA/changelog etc. keep working.
+        private static void PassThroughVanillaFields(FejdStartup instance, System.Collections.Generic.Dictionary<System.Reflection.FieldInfo, UnityEngine.Object> vanilla)
+        {
+            foreach (var kv in vanilla)
+            {
+                if (_mirroredFields.Contains(kv.Key.Name))
+                {
+                    kv.Key.SetValue(instance, null); // FixDeadFields gives it a hidden text holder
+                    continue;
+                }
+                var current = kv.Key.GetValue(instance) as UnityEngine.Object;
+                if (!current && kv.Value)
+                    kv.Key.SetValue(instance, kv.Value);
+            }
+
+            var toMove = new System.Collections.Generic.List<(string field, Transform t)>();
+            foreach (var field in UiFields())
+            {
+                var obj = field.GetValue(instance) as UnityEngine.Object;
+                var t = obj is GameObject go ? go.transform : (obj as Component)?.transform;
+                if (t != null) toMove.Add((field.Name, t));
+            }
+            // Ancestors first, so children travel with an already-rescued parent.
+            toMove.Sort((a, b) => Depth(a.t).CompareTo(Depth(b.t)));
+
+            foreach (var (fieldName, t) in toMove)
+            {
+                foreach (var (original, replacement) in _replaced)
+                {
+                    if (!original || !replacement || t == original || !t.IsChildOf(original)) continue;
+                    var parentPath = RelativePath(original, t.parent);
+                    var target = parentPath.Length == 0 ? replacement : replacement.Find(parentPath) ?? replacement;
+                    t.SetParent(target, false);
+                    Debug.Log($"[Auga] MainMenu: kept vanilla {fieldName} ('{t.name}') -> {replacement.name}/{RelativePath(replacement, target)}");
+                    break;
+                }
+            }
+        }
+
+        private static int Depth(Transform t) { var d = 0; for (; t != null; t = t.parent) d++; return d; }
+
+        private static string RelativePath(Transform root, Transform t)
+        {
+            var path = "";
+            for (; t != null && t != root; t = t.parent)
+                path = path.Length == 0 ? t.name : t.name + "/" + path;
+            return path;
         }
 
         public static void Postfix(FejdStartup __instance)
@@ -96,12 +172,21 @@ namespace Auga
             // который перезаписывал наши значения нулями (т.к. ванильные пути
             // не совпадают со структурой Auga-префабов).
 
+            // Vanilla values after vanilla Awake, restored by PassThroughVanillaFields
+            // for any field the Auga lookups below leave null.
+            var vanilla = new System.Collections.Generic.Dictionary<System.Reflection.FieldInfo, UnityEngine.Object>();
+            foreach (var f in UiFields())
+                vanilla[f] = f.GetValue(__instance) as UnityEngine.Object;
+
             // ---- Menu ----
             var mainMenu = __instance.transform.Find("Menu");
             if (mainMenu != null)
             {
                 __instance.m_mainMenu = mainMenu.gameObject;
                 __instance.m_menuList = FO(mainMenu, "MenuList");
+                // Vanilla Awake cached the vanilla menu's buttons (gamepad navigation); re-cache Auga's.
+                if (__instance.m_menuList)
+                    __instance.m_menuButtons = __instance.m_menuList.GetComponentsInChildren<Button>();
                 __instance.m_menuSelectedButton = FC<Button>(mainMenu, "MenuList/StartGame");
                 // m_versionLabel: Menu/Version использует legacy Text (не TMP_Text) — поле остаётся null
                 __instance.m_betaText = FO(mainMenu, "DummyObjects/Dummy");
@@ -255,19 +340,15 @@ namespace Auga
                         ? beardTabT.GetComponent<RectTransform>()
                         : null; // PlayerCustomizaton_OnEnable_Patch финализер подавит NPE
 
-                    // m_selectedHair / m_selectedBeard — в Auga нет видимых текстовых полей для имён.
-                    // НО: PlayerCustomizaton.Update() на строке 73974 пишет m_selectedHair.text =
-                    // ПЕРЕД применением цвета кожи/волос. Если null → NPE → Finalizer глушит →
-                    // цвет кожи никогда не применяется. Создаём скрытые заглушки.
-                    var hairStubGO = new GameObject("_AugaStub_SelectedHair");
-                    hairStubGO.SetActive(false);
-                    hairStubGO.transform.SetParent(newCharacter, false);
-                    newPlayerCustomization.m_selectedHair = hairStubGO.AddComponent<TMPro.TextMeshProUGUI>();
-
-                    var beardStubGO = new GameObject("_AugaStub_SelectedBeard");
-                    beardStubGO.SetActive(false);
-                    beardStubGO.transform.SetParent(newCharacter, false);
-                    newPlayerCustomization.m_selectedBeard = beardStubGO.AddComponent<TMPro.TextMeshProUGUI>();
+                    // m_selectedHair / m_selectedBeard — Auga has no hair/beard name labels, but
+                    // PlayerCustomizaton.Update() writes them every frame before applying colours.
+                    // Pass the vanilla labels through (moved out of the replaced vanilla panel).
+                    foreach (var label in new[] { _originalSelectedHair, _originalSelectedBeard })
+                        if (label) label.transform.SetParent(newCharacter.Find("Panel/Content") ?? newCharacter, false);
+                    if (_originalSelectedHair) newPlayerCustomization.m_selectedHair = _originalSelectedHair;
+                    if (_originalSelectedBeard) newPlayerCustomization.m_selectedBeard = _originalSelectedBeard;
+                    if (!_originalSelectedHair || !_originalSelectedBeard)
+                        Debug.LogWarning("[Auga] MainMenu: vanilla hair/beard name labels missing; skin/hair colour preview may not update");
 
                     // m_maleToggle / m_femaleToggle — под Panel/Content/ToggleGroup/
                     var toggleFemaleField = FC<Toggle>(newCharacter, "Panel/Content/ToggleGroup/Toggle_Female");
@@ -400,25 +481,8 @@ namespace Auga
                         __instance.m_tooltipSecondaryAnchor = worldPanelRT;
                     }
                 }
-
-                // m_worldSourceInfo / m_worldSourceInfoPanel — новые поля для уведомлений
-                // об облачных сохранениях и legacy-мирах. В Auga-префабе StartGame их нет.
-                // Создаём невидимые стабы вручную, чтобы FixDeadFields не пропустил их
-                // и UpdateWorldList не падал на SetActive()/text= без null-check.
-                if (__instance.m_worldSourceInfo == null || !__instance.m_worldSourceInfo)
-                {
-                    var wsInfoGO = new GameObject("_AugaStub_worldSourceInfo");
-                    wsInfoGO.SetActive(false);
-                    wsInfoGO.transform.SetParent(__instance.transform, false);
-                    __instance.m_worldSourceInfo = wsInfoGO.AddComponent<TMPro.TextMeshProUGUI>();
-                }
-                if (__instance.m_worldSourceInfoPanel == null || !__instance.m_worldSourceInfoPanel)
-                {
-                    var wsInfoPanelGO = new GameObject("_AugaStub_worldSourceInfoPanel");
-                    wsInfoPanelGO.SetActive(false);
-                    wsInfoPanelGO.transform.SetParent(__instance.transform, false);
-                    __instance.m_worldSourceInfoPanel = wsInfoPanelGO;
-                }
+                // m_worldSourceInfo / m_worldSourceInfoPanel (cloud-save / legacy-world notices)
+                // have no Auga equivalent: PassThroughVanillaFields keeps the vanilla ones.
             }
 
             // ---- Animator ----
@@ -430,11 +494,10 @@ namespace Auga
 
             Localization.instance.Localize(__instance.transform);
 
-            // ---- Stub-компоненты для DEAD-полей ----
-            // Поля m_patchLogScroll, m_serverOptionsButton, m_crossplayServerToggle и др. —
-            // это новые поля Valheim которых нет в Auga. После Replace() старые Unity-объекты
-            // уничтожены, но C#-ссылки остались ("dead"). В Unity 6 обращение .gameObject на
-            // destroyed-компонент бросает NPE. Создаём живые stub-компоненты на скрытом GO.
+            // ---- Vanilla elements without an Auga equivalent ----
+            // m_patchLogScroll, m_serverOptionsButton, m_crossplayServerToggle etc. are moved
+            // into the Auga menu before the deferred destroy of the vanilla originals lands.
+            PassThroughVanillaFields(__instance, vanilla);
             FixDeadFields(__instance);
 
             // ---- PhotoBooth ----
@@ -489,37 +552,20 @@ namespace Auga
             }
         }
 
-        // Универсальный авто-фиксер мёртвых и null-полей.
-        //
-        // Проблема: Auga.Replace() уничтожает оригинальные Unity-объекты, но у FejdStartup
-        // есть поля, которые на них ссылались. В Unity 6 доступ к .gameObject на destroyed-
-        // компоненте бросает NPE. При обновлении Valheim появляются новые такие поля.
-        //
-        // Решение: рефлексией перебираем все поля FejdStartup. Если поле:
-        //   - имеет тип Component (или его наследник)  → stub GO + AddComponent нужного типа
-        //   - имеет тип GameObject                     → пустой stub GO
-        //   - содержит dead ИЛИ null ссылку            → обрабатываем; живые пропускаем
-        //
-        // Вызывается ДВАЖДЫ:
-        //   1. В конце Prefix — ДО ванильного Awake, чтобы m_crossplayServerToggle,
-        //      m_serverOptions, m_menuList, m_characterSelectScreen и др. были живыми
-        //      когда ванильный код к ним обращается.
-        //   2. В конце Postfix — после наших назначений, чтобы добить оставшиеся null/dead.
-        //
-        // Каждое поле получает свой GO → решает "один Selectable на объект" для Button/Toggle.
+        // Last-resort dummies, run after PassThroughVanillaFields. By then every field that
+        // vanilla's own scene populated holds a live Auga or vanilla object, so a dummy is only
+        // created for:
+        //   - m_versionLabel, m_connectionFailedError: vanilla writes the text, Auga shows it via
+        //     the SetupGui / ShowConnectError postfixes (see _mirroredFields);
+        //   - fields vanilla's scene itself leaves unset (vanilla would NRE on them too, so no
+        //     vanilla feature is lost; dummy only keeps Auga's reordered setup from crashing).
+        // Each one is logged, always, so an unexpected dummy is visible in LogOutput.log.
         private static void FixDeadFields(FejdStartup instance)
         {
-            var bindFlags = System.Reflection.BindingFlags.Instance
-                          | System.Reflection.BindingFlags.NonPublic
-                          | System.Reflection.BindingFlags.Public;
-
-            foreach (var field in typeof(FejdStartup).GetFields(bindFlags))
+            foreach (var field in UiFields())
             {
                 var fieldType = field.FieldType;
-                bool isComponent = typeof(Component).IsAssignableFrom(fieldType);
                 bool isGameObject = fieldType == typeof(GameObject);
-
-                if (!isComponent && !isGameObject) continue;
 
                 var val = field.GetValue(instance) as UnityEngine.Object;
 
@@ -534,7 +580,7 @@ namespace Auga
                 if (isGameObject)
                 {
                     field.SetValue(instance, stub);
-                    Auga.LogWarning($"FixDeadFields: dummy GO for {field.Name}");
+                    Debug.LogWarning($"[Auga] FixDeadFields: dummy GO for {field.Name}");
                 }
                 else
                 {
@@ -549,14 +595,14 @@ namespace Auga
 
                         var comp = stub.AddComponent(addType);
                         field.SetValue(instance, comp);
-                        Auga.LogWarning($"FixDeadFields: stubbed {field.Name} ({fieldType.Name} → {addType.Name})");
+                        Debug.LogWarning($"[Auga] FixDeadFields: dummy {field.Name} ({fieldType.Name} -> {addType.Name})");
                     }
                     catch (Exception ex)
                     {
                         // AddComponent не поддерживает специальные требования → уничтожаем stub.
                         // Код использующий это поле защищён SafeHide/null-check.
                         UnityEngine.Object.Destroy(stub);
-                        Auga.LogWarning($"FixDeadFields: cannot stub {field.Name} ({fieldType.Name}): {ex.Message}");
+                        Debug.LogWarning($"[Auga] FixDeadFields: {field.Name} ({fieldType.Name}) left null: {ex.Message}");
                     }
                 }
             }
@@ -565,9 +611,9 @@ namespace Auga
         private static void SetButtonListener(Transform root, string childName, UnityAction listener)
         {
             var t = root.Find(childName);
-            if (t == null) { Auga.LogWarning($"SetButtonListener: path not found: {childName}"); return; }
+            if (t == null) { Debug.LogWarning($"[Auga] MainMenu: missing prefab child {root.name}/{childName} (button)"); return; }
             var button = t.GetComponent<Button>();
-            if (button == null) { Auga.LogWarning($"SetButtonListener: no Button on: {childName}"); return; }
+            if (button == null) { Debug.LogWarning($"[Auga] MainMenu: no Button on {root.name}/{childName}"); return; }
             button.onClick = new Button.ButtonClickedEvent();
             button.onClick.AddListener(listener);
         }
@@ -577,9 +623,9 @@ namespace Auga
         private static void SetMenuButtonText(Transform root, string path, string locKey)
         {
             var t = root.Find(path);
-            if (t == null) { Auga.LogWarning($"SetMenuButtonText: path not found: {path}"); return; }
+            if (t == null) { Debug.LogWarning($"[Auga] MainMenu: missing prefab child {root.name}/{path} (label)"); return; }
             var tmp = t.GetComponentInChildren<TMP_Text>(true);
-            if (tmp == null) { Auga.LogWarning($"SetMenuButtonText: no TMP_Text in: {path}"); return; }
+            if (tmp == null) { Debug.LogWarning($"[Auga] MainMenu: no TMP_Text in {root.name}/{path}"); return; }
             tmp.text = locKey;
         }
 
