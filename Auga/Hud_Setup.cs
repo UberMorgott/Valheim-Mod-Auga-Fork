@@ -612,17 +612,21 @@ namespace Auga
         [UsedImplicitly]
         private static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions)
         {
+            // 1.0.7: Hud.UpdateBuild IL_00c1 ldstr "{0} [<color=yellow>{1}</color>]"
+            const string anchor = "{0} [<color=yellow>{1}</color>]";
+            var hits = 0;
             foreach (var instruction in instructions)
             {
-                if (instruction.opcode == OpCodes.Ldstr && instruction.OperandIs(" [<color=yellow>"))
+                if (instruction.opcode == OpCodes.Ldstr && (instruction.operand as string) == anchor)
                 {
-                    yield return new CodeInstruction(OpCodes.Ldstr, $" [<color={Auga.Colors.BrightestGold}>");
+                    // Mutate operand in place so labels/blocks on the instruction survive.
+                    instruction.operand = anchor.Replace("<color=yellow>", $"<color={Auga.Colors.BrightestGold}>");
+                    hits++;
                 }
-                else
-                {
-                    yield return instruction;
-                }
+                yield return instruction;
             }
+            if (hits != 1)
+                Auga.LogError($"UpdateBuild transpiler: expected 1 anchor hit, got {hits}");
         }
     }
 
