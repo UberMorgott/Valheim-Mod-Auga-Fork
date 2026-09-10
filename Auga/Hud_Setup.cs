@@ -203,7 +203,8 @@ namespace Auga
             var pieceRoot = __instance.m_pieceSelectionWindow.transform.Find("PieceList/Root").gameObject;
             pieceRoot.RectTransform().localPosition = new Vector3(pieceRoot.RectTransform().localPosition.x+3, pieceRoot.RectTransform().localPosition.y-3, pieceRoot.RectTransform().localPosition.z);
             __instance.m_pieceListRoot = pieceRoot.RectTransform();
-            
+            } // end if (Auga.BuildMenuShow.Value && !Auga.HasSearsCatalog)
+
             var keyHints = __instance.transform.Replace("hudroot/KeyHints", Auga.Assets.Hud);
             keyHints.gameObject.AddComponent<MovableHudElement>().Init(TextAnchor.LowerRight, -34, 62);
 
@@ -231,7 +232,6 @@ namespace Auga
             Auga.UpdateStatBars();
 
             Localization.instance.Localize(__instance.transform);
-        } // end if (Auga.BuildMenuShow.Value && !Auga.HasSearsCatalog)
             SetupHelper.LogDeadRefsNextFrame(__instance);
         } // end Hud_Awake_Postfix
 
