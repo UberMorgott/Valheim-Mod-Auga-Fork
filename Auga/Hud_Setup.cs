@@ -641,7 +641,7 @@ namespace Auga
                 yield return instruction;
             }
             if (hits != 1)
-                Auga.LogError($"UpdateBuild transpiler: expected 1 anchor hit, got {hits}");
+                Debug.LogError($"[Auga] UpdateBuild transpiler: expected 1 anchor hit, got {hits}");
         }
     }
 

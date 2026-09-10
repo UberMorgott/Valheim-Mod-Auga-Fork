@@ -458,7 +458,7 @@ namespace Auga
             foreach (var name in new[] { "fastJSON", "Unity.Auga" })
             {
                 if (LoadEmbedded(name) == null)
-                    LogError($"Could not load embedded assembly ({name}.dll)!");
+                    Debug.LogError($"[Auga] Could not load embedded assembly ({name}.dll)!");
             }
         }
 

@@ -79,7 +79,7 @@ namespace Auga
 
             if (!prefab)
             {
-                Auga.LogWarning($"Prefab for {originalName} converting to {newPrimaryName} for {secondaryName} not found.");
+                Debug.LogWarning($"[Auga] Prefab for {originalName} converting to {newPrimaryName} for {secondaryName} not found.");
                 return false;
             }
 
