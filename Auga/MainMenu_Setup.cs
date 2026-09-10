@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using AugaUnity;
 using HarmonyLib;
+using Splatform;
 using TMPro;
 using UnityEngine;
 using UnityEngine.Events;
@@ -146,7 +147,19 @@ namespace Auga
             {
                 foreach (var (original, replacement) in _replaced)
                 {
-                    if (!original || !replacement || t == original || !t.IsChildOf(original)) continue;
+                    if (!original || !replacement) continue;
+                    if (t == original)
+                    {
+                        // Field still on a replaced root (Postfix reassigns all 7 known ones today):
+                        // point it at the replacement's equivalent so it survives the deferred destroy.
+                        var f = typeof(FejdStartup).GetField(fieldName, System.Reflection.BindingFlags.Instance
+                            | System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Public);
+                        var eq = f.FieldType == typeof(GameObject) ? (UnityEngine.Object)replacement.gameObject : replacement.GetComponent(f.FieldType);
+                        f.SetValue(instance, eq ? eq : null);
+                        Debug.LogWarning($"[Auga] MainMenu: {fieldName} pointed at replaced '{original.name}' -> {(eq ? "replacement" : "null")}");
+                        break;
+                    }
+                    if (!t.IsChildOf(original)) continue;
                     var parentPath = RelativePath(original, t.parent);
                     var target = parentPath.Length == 0 ? replacement : replacement.Find(parentPath) ?? replacement;
                     t.SetParent(target, false);
@@ -185,6 +198,10 @@ namespace Auga
                 __instance.m_mainMenu = mainMenu.gameObject;
                 __instance.m_menuList = FO(mainMenu, "MenuList");
                 // Vanilla Awake cached the vanilla menu's buttons (gamepad navigation); re-cache Auga's.
+                // Vanilla Awake also hides Exit on console hardware and drops it from the list.
+                var hw = PlatformManager.DistributionPlatform?.HardwareInfoProvider;
+                if (hw != null && hw.HardwareInfo.m_category == HardwareCategory.Console)
+                    FO(mainMenu, "MenuList/Exit")?.SetActive(false);
                 if (__instance.m_menuList)
                     __instance.m_menuButtons = __instance.m_menuList.GetComponentsInChildren<Button>();
                 __instance.m_menuSelectedButton = FC<Button>(mainMenu, "MenuList/StartGame");
@@ -343,8 +360,9 @@ namespace Auga
                     // m_selectedHair / m_selectedBeard — Auga has no hair/beard name labels, but
                     // PlayerCustomizaton.Update() writes them every frame before applying colours.
                     // Pass the vanilla labels through (moved out of the replaced vanilla panel).
+                    // Kept inactive: Update() only writes .text, which works on inactive TMP.
                     foreach (var label in new[] { _originalSelectedHair, _originalSelectedBeard })
-                        if (label) label.transform.SetParent(newCharacter.Find("Panel/Content") ?? newCharacter, false);
+                        if (label) { label.transform.SetParent(newCharacter, false); label.gameObject.SetActive(false); }
                     if (_originalSelectedHair) newPlayerCustomization.m_selectedHair = _originalSelectedHair;
                     if (_originalSelectedBeard) newPlayerCustomization.m_selectedBeard = _originalSelectedBeard;
                     if (!_originalSelectedHair || !_originalSelectedBeard)

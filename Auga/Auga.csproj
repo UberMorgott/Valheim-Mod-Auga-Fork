@@ -86,6 +86,10 @@
       <Publicize>true</Publicize>
       <Private>false</Private>
     </Reference>
+    <Reference Include="Splatform">
+      <HintPath>$(ValheimManagedDir)\Splatform.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
     <Reference Include="SoftReferenceableAssets">
       <HintPath>$(ValheimManagedDir)\SoftReferenceableAssets.dll</HintPath>
       <Private>false</Private>
