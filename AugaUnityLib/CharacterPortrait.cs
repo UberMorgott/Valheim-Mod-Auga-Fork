@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using JetBrains.Annotations;
 using UnityEngine;
 using UnityEngine.Experimental.Rendering;
 using UnityEngine.PostProcessing;
@@ -33,7 +32,6 @@ namespace AugaUnity
         private readonly List<CharacterPortrait> _characterPortraits = new List<CharacterPortrait>();
         private readonly Renderer[] _noRenderers = Array.Empty<Renderer>();
 
-        [UsedImplicitly]
         public void Awake()
         {
             _playerCustomizaton = FejdStartup.instance.m_newCharacterPanel.GetComponent<PlayerCustomizaton>();
@@ -59,14 +57,16 @@ namespace AugaUnity
             var camera = Instantiate(FejdStartup.instance.m_mainCamera.GetComponent<Camera>());
             camera.fieldOfView = FOV;
             camera.targetTexture = renderTexture;
-            camera.GetComponent<DepthOfField>().enabled = false;
             camera.enabled = false;
+
+            var depthOfField = camera.GetComponent<DepthOfField>();
+            if (depthOfField != null) depthOfField.enabled = false;
 
             camera.transform.position = FejdStartup.instance.m_cameraMarkerCharacter.position;
             camera.transform.rotation = FejdStartup.instance.m_cameraMarkerCharacter.rotation;
 
             var postProcessing = camera.GetComponent<PostProcessingBehaviour>();
-            postProcessing.profile = profile;
+            if (postProcessing != null) postProcessing.profile = profile;
 
             return camera;
         }
@@ -194,7 +194,6 @@ namespace AugaUnity
             Graphics.ConvertTexture(renderTexture, _texture);
         }
 
-        [UsedImplicitly]
         public void OnDestroy()
         {
             _renderers.Clear();
