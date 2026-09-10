@@ -159,9 +159,10 @@ namespace Auga
             if (stream == null) return null;
             using (stream)
             {
-                var data = new byte[stream.Length];
-                stream.Read(data, 0, data.Length);
-                return Assembly.Load(data);
+                // Stream.Read may return fewer bytes than asked; CopyTo reads to the end.
+                var ms = new MemoryStream();
+                stream.CopyTo(ms);
+                return Assembly.Load(ms.ToArray());
             }
         }
 
