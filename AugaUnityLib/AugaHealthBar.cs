@@ -47,6 +47,9 @@ namespace AugaUnity
         public virtual void Start()
         {
             TickPrefab.gameObject.SetActive(false);
+            // GuiBar re-arms m_changeDelay on every SetValue that increases the value, so a heal paid
+            // out every frame (SmoothRegen, regen effects) keeps the smooth-fill bar frozen forever.
+            if (FastBar) FastBar.m_changeDelay = 0f;
             LateUpdate();
         }
 
