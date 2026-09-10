@@ -42,7 +42,7 @@
   <ItemGroup>
     <PackageReference Include="BepInEx.AssemblyPublicizer.MSBuild" Version="0.4.2" />
     <!-- ILRepack.Lib.MSBuild.Task несовместим с .NET 10 SDK и избыточен:
-         APIManager.dll уже встроен как EmbeddedResource и грузится через AppDomain.AssemblyResolve -->
+         APIManager is vendored as source (APIManagerPatcher.cs), nothing to merge -->
   </ItemGroup>
 
   <!-- Ссылки на BepInEx -->
@@ -56,10 +56,14 @@
       <Private>false</Private>
     </Reference>
 
-    <!-- APIManager — stub или настоящая DLL в Libs\ -->
-    <Reference Include="APIManager">
-      <HintPath>..\Libs\APIManager.dll</HintPath>
-      <Private>true</Private>
+    <!-- APIManager.Patcher is vendored as source (APIManagerPatcher.cs); it needs Cecil + Preloader from BepInEx core -->
+    <Reference Include="Mono.Cecil">
+      <HintPath>$(BepInExCoreDir)\Mono.Cecil.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="BepInEx.Preloader">
+      <HintPath>$(BepInExCoreDir)\BepInEx.Preloader.dll</HintPath>
+      <Private>false</Private>
     </Reference>
 
     <!-- Valheim assemblies — публикуются через BepInEx.AssemblyPublicizer.MSBuild -->
@@ -185,9 +189,6 @@
     </EmbeddedResource>
     <EmbeddedResource Include="..\Libs\fastJSON.dll">
       <Link>fastJSON.dll</Link>
-    </EmbeddedResource>
-    <EmbeddedResource Include="..\Libs\APIManager.dll">
-      <Link>APIManager.dll</Link>
     </EmbeddedResource>
   </ItemGroup>
 
