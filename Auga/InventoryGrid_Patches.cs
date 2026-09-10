@@ -12,6 +12,10 @@ public static class InventoryGrid_Patches
   [HarmonyPatch(typeof(InventoryGrid), nameof(InventoryGrid.UpdateGui))]
   public static class UpdateGuiPatch
   {
+    private static readonly string[] RequiredChildren =
+      { "icon", "amount", "quality", "equiped", "queued", "noteleport", "foodicon", "selected", "durability" };
+    private static bool _warned;
+
     public static void Prefix(InventoryGrid __instance)
     {
       var prefab = __instance.m_elementPrefab;
@@ -19,6 +23,18 @@ public static class InventoryGrid_Patches
         return;
 
       var t = prefab.transform;
+      foreach (var child in RequiredChildren)
+      {
+        if (t.Find(child) != null)
+          continue;
+        if (!_warned)
+        {
+          _warned = true;
+          Debug.LogWarning($"[Auga] Slot prefab '{prefab.name}' has no child '{child}'; skipping InventoryElement setup.");
+        }
+        return;
+      }
+
       // Vanilla dereferences UIDragHandler unchecked (InventoryGrid.cs:283).
       if (prefab.GetComponentInChildren<UIDragHandler>(true) == null)
         prefab.AddComponent<UIDragHandler>();

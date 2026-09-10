@@ -144,9 +144,18 @@ namespace Auga
 
         private static Assembly ResolveEmbeddedAssembly(object sender, ResolveEventArgs args)
         {
-            var shortName = new AssemblyName(args.Name).Name + ".dll";
-            var resourceName = $"Auga.{shortName}";
-            var stream = Assembly.GetExecutingAssembly().GetManifestResourceStream(resourceName);
+            return LoadEmbedded(new AssemblyName(args.Name).Name);
+        }
+
+        // Returns the already-loaded copy if present, so each embedded assembly loads once.
+        private static Assembly LoadEmbedded(string name)
+        {
+            foreach (var loaded in AppDomain.CurrentDomain.GetAssemblies())
+            {
+                if (loaded.GetName().Name == name) return loaded;
+            }
+
+            var stream = Assembly.GetExecutingAssembly().GetManifestResourceStream($"Auga.{name}.dll");
             if (stream == null) return null;
             using (stream)
             {
@@ -446,25 +455,10 @@ namespace Auga
 
         private void LoadDependencies()
         {
-            var assembly = Assembly.GetCallingAssembly();
-            LoadEmbeddedAssembly(assembly, "fastJSON.dll");
-            LoadEmbeddedAssembly(assembly, "Unity.Auga.dll");
-        }
-
-        private static void LoadEmbeddedAssembly(Assembly assembly, string assemblyName)
-        {
-            var stream = Assembly.GetExecutingAssembly().GetManifestResourceStream($"{assembly.GetName().Name}.{assemblyName}");
-            if (stream == null)
+            foreach (var name in new[] { "fastJSON", "Unity.Auga" })
             {
-                LogError($"Could not load embedded assembly ({assemblyName})!");
-                return;
-            }
-
-            using (stream)
-            {
-                var data = new byte[stream.Length];
-                stream.Read(data, 0, data.Length);
-                Assembly.Load(data);
+                if (LoadEmbedded(name) == null)
+                    LogError($"Could not load embedded assembly ({name}.dll)!");
             }
         }
 
