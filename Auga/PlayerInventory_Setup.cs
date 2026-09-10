@@ -141,16 +141,23 @@ namespace Auga
                 sd.m_panelTouchPosition = sd.m_panel;
                 __instance.m_splitDialog = sd;
 
-                var groups = new System.Collections.Generic.List<UIGroupHandler> {
+                // 1.0.7 indexes m_uiGroups by position: [2] = Info (OnOpenSkills/Texts/Trophies, OnPvpChanged),
+                // [3] = crafting (OnSelectedRecipe, OnCraftPressed, tabs; UpdateGamepad runs recipe input at 3).
+                // Always length 4: a dummy stands in for a missing Info so [3] stays the crafting panel.
+                var infoGroup = vanillaInfo ? vanillaInfo.GetComponent<UIGroupHandler>() : null;
+                if (!infoGroup)
+                {
+                    Debug.LogWarning("[Auga] InventoryGui: no Info UIGroupHandler; using a dummy group at index 2");
+                    var dummy = new GameObject("AugaInfoGroupDummy");
+                    dummy.transform.SetParent(__instance.transform, false);
+                    infoGroup = dummy.AddComponent<UIGroupHandler>();
+                }
+                __instance.m_uiGroups = new[] {
                     containerInventory.GetComponent<UIGroupHandler>(),
                     playerInventory.GetComponent<UIGroupHandler>(),
+                    infoGroup,
                     rightPanel.GetComponent<UIGroupHandler>()
                 };
-                // Vanilla Info must stay in the group cycle, else UIGroupHandler priority can leave it non-interactable.
-                // Appended last: vanilla code indexes m_uiGroups[2] for the right panel.
-                var infoGroup = vanillaInfo ? vanillaInfo.GetComponent<UIGroupHandler>() : null;
-                if (infoGroup) groups.Add(infoGroup);
-                __instance.m_uiGroups = groups.ToArray();
 
                 var animator = __instance.GetComponent<Animator>();
                 var newAnimator = Auga.Assets.InventoryScreen.GetComponent<Animator>();
