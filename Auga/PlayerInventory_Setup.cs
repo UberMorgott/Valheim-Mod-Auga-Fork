@@ -109,12 +109,19 @@ namespace Auga
                 __instance.m_minStationLevelIcon = CraftingPanel.DummyMinStationLevelIcon;
                 CraftingPanel.Initialize(__instance);
 
-                Object.Destroy(__instance.transform.Find("root/Info").gameObject);
-                /*var info = Object.Instantiate(Auga.Assets.InventoryScreen.transform.Find("root/Info"), containerInventory.parent, false);
-                info.SetSiblingIndex(3);
-                info.gameObject.name = "Info";
-                info.Find("Texts").GetComponent<Button>().onClick.AddListener(__instance.OnOpenTexts);
-                info.Find("Trophies").GetComponent<Button>().onClick.AddListener(__instance.OnOpenTrophies);*/
+                // 1.0.7: vanilla root/Info holds the only entry points to Texts, Trophies and the new
+                // Achievements panel (persistent listeners on the live vanilla InventoryGui).
+                // Auga has no achievements equivalent, so pass the vanilla Info panel through.
+                var vanillaInfo = __instance.transform.Find("root/Info");
+                if (vanillaInfo == null)
+                    Debug.LogWarning("[Auga] InventoryGui: vanilla root/Info not found; trophies/achievements unreachable");
+                else
+                {
+                    var entries = new System.Collections.Generic.List<string>();
+                    foreach (var b in vanillaInfo.GetComponentsInChildren<Button>(true))
+                        entries.Add(b.onClick.GetPersistentEventCount() > 0 ? $"{b.name}->{b.onClick.GetPersistentMethodName(0)}" : b.name);
+                    Debug.Log($"[Auga] InventoryGui: kept vanilla Info panel, buttons: {string.Join(", ", entries)}");
+                }
 
                 var splitDialog = __instance.Replace("root/SplitDialog", Auga.Assets.InventoryScreen, "root/SplitDialog");
                 // 1.0.7: split UI is a SplitDialog component; it wires its own listeners in OnEnable.
@@ -134,12 +141,16 @@ namespace Auga
                 sd.m_panelTouchPosition = sd.m_panel;
                 __instance.m_splitDialog = sd;
 
-                __instance.m_uiGroups = new [] {
+                var groups = new System.Collections.Generic.List<UIGroupHandler> {
                     containerInventory.GetComponent<UIGroupHandler>(),
                     playerInventory.GetComponent<UIGroupHandler>(),
-                    //info.GetComponent<UIGroupHandler>(),
                     rightPanel.GetComponent<UIGroupHandler>()
                 };
+                // Vanilla Info must stay in the group cycle, else UIGroupHandler priority can leave it non-interactable.
+                // Appended last: vanilla code indexes m_uiGroups[2] for the right panel.
+                var infoGroup = vanillaInfo ? vanillaInfo.GetComponent<UIGroupHandler>() : null;
+                if (infoGroup) groups.Add(infoGroup);
+                __instance.m_uiGroups = groups.ToArray();
 
                 var animator = __instance.GetComponent<Animator>();
                 var newAnimator = Auga.Assets.InventoryScreen.GetComponent<Animator>();
@@ -152,6 +163,7 @@ namespace Auga
                 trashDivider.gameObject.SetActive(Auga.UseAugaTrash.Value);
 
                 Localization.instance.Localize(__instance.transform);
+                SetupHelper.LogDeadRefsNextFrame(__instance);
             }
         }
 

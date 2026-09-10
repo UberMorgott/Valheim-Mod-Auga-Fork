@@ -511,45 +511,67 @@ namespace Auga
         private static void LoadAssets()
         {
             var assetBundle = LoadAssetBundle("augaassets");
-            Assets.AugaLogo = assetBundle.LoadAsset<GameObject>("AugaLogo");
-            Assets.InventoryScreen = assetBundle.LoadAsset<GameObject>("Inventory_screen");
-            Assets.Cursor = assetBundle.LoadAsset<Texture2D>("Cursor2");
-            Assets.MenuPrefab = assetBundle.LoadAsset<GameObject>("AugaMenu");
-            Assets.TextViewerPrefab = assetBundle.LoadAsset<GameObject>("AugaTextViewer");
-            Assets.Hud = assetBundle.LoadAsset<GameObject>("HUD");
-            Assets.MainMenuPrefab = assetBundle.LoadAsset<GameObject>("MainMenu");
-            Assets.BuildHudElement = assetBundle.LoadAsset<GameObject>("BuildHudElement");
-            Assets.MessageHud = assetBundle.LoadAsset<GameObject>("AugaMessageHud");
-            Assets.TextInput = assetBundle.LoadAsset<GameObject>("AugaTextInput");
-            Assets.AugaBarber = assetBundle.LoadAsset<GameObject>("AugaBarber");
-            Assets.AugaChat = assetBundle.LoadAsset<GameObject>("AugaChat");
-            Assets.DamageText = assetBundle.LoadAsset<GameObject>("AugaDamageText");
-            Assets.EnemyHud = assetBundle.LoadAsset<GameObject>("AugaEnemyHud");
-            Assets.StoreGui = assetBundle.LoadAsset<GameObject>("AugaStoreScreen");
-            Assets.WorldListElement = assetBundle.LoadAsset<GameObject>("WorldListElement");
-            Assets.ServerListElement = assetBundle.LoadAsset<GameObject>("ServerListElement");
-            Assets.PasswordDialog = assetBundle.LoadAsset<GameObject>("AugaPassword");
-            Assets.ConnectingDialog = assetBundle.LoadAsset<GameObject>("AugaConnecting");
-            Assets.PanelBase = assetBundle.LoadAsset<GameObject>("AugaPanelBase");
-            Assets.ButtonSmall = assetBundle.LoadAsset<GameObject>("ButtonSmall");
-            Assets.ButtonMedium = assetBundle.LoadAsset<GameObject>("ButtonMedium");
-            Assets.ButtonFancy = assetBundle.LoadAsset<GameObject>("ButtonFancy");
-            Assets.ButtonToggle = assetBundle.LoadAsset<GameObject>("ButtonToggle");
-            Assets.ButtonSettings = assetBundle.LoadAsset<GameObject>("ButtonSettings");
-            Assets.DiamondButton = assetBundle.LoadAsset<GameObject>("DiamondButton");
-            Assets.SourceSansProBold = assetBundle.LoadAsset<Font>("SourceSansPro-Bold");
-            Assets.SourceSansProSemiBold = assetBundle.LoadAsset<Font>("SourceSansPro-SemiBold");
-            Assets.SourceSansProRegular = assetBundle.LoadAsset<Font>("SourceSansPro-Regular");
-            Assets.ItemBackgroundSprite = assetBundle.LoadAsset<Sprite>("Container_Square_A");
-            Assets.InventoryTooltip = assetBundle.LoadAsset<GameObject>("InventoryTooltip");
-            Assets.SimpleTooltip = assetBundle.LoadAsset<GameObject>("SimpleTooltip");
-            Assets.DividerSmall = assetBundle.LoadAsset<GameObject>("DividerSmall");
-            Assets.DividerMedium = assetBundle.LoadAsset<GameObject>("DividerMedium");
-            Assets.DividerLarge = assetBundle.LoadAsset<GameObject>("DividerLarge");
-            Assets.ConfirmDialog = assetBundle.LoadAsset<GameObject>("ConfirmDialog");
-            Assets.RecyclingPanelIcon = assetBundle.LoadAsset<Sprite>("RecyclingPanel");
-            Assets.LeftWristMountUI = assetBundle.LoadAsset<GameObject>("LeftWristMountUI");
-            Assets.BuildHud = assetBundle.LoadAsset<GameObject>("BuildHud");
+            if (assetBundle == null)
+            {
+                Debug.LogError("[Auga] Asset bundle 'augaassets' FAILED to load (embedded resource missing or Unity version incompatible). Auga UI will not work.");
+                return;
+            }
+
+            var missing = new List<string>();
+            var total = 0;
+            T Load<T>(string name) where T : UnityEngine.Object
+            {
+                total++;
+                var asset = assetBundle.LoadAsset<T>(name);
+                if (asset == null)
+                    missing.Add($"{typeof(T).Name} '{name}'");
+                return asset;
+            }
+
+            Assets.AugaLogo = Load<GameObject>("AugaLogo");
+            Assets.InventoryScreen = Load<GameObject>("Inventory_screen");
+            Assets.Cursor = Load<Texture2D>("Cursor2");
+            Assets.MenuPrefab = Load<GameObject>("AugaMenu");
+            Assets.TextViewerPrefab = Load<GameObject>("AugaTextViewer");
+            Assets.Hud = Load<GameObject>("HUD");
+            Assets.MainMenuPrefab = Load<GameObject>("MainMenu");
+            Assets.BuildHudElement = Load<GameObject>("BuildHudElement");
+            Assets.MessageHud = Load<GameObject>("AugaMessageHud");
+            Assets.TextInput = Load<GameObject>("AugaTextInput");
+            Assets.AugaBarber = Load<GameObject>("AugaBarber");
+            Assets.AugaChat = Load<GameObject>("AugaChat");
+            Assets.DamageText = Load<GameObject>("AugaDamageText");
+            Assets.EnemyHud = Load<GameObject>("AugaEnemyHud");
+            Assets.StoreGui = Load<GameObject>("AugaStoreScreen");
+            Assets.WorldListElement = Load<GameObject>("WorldListElement");
+            Assets.ServerListElement = Load<GameObject>("ServerListElement");
+            Assets.PasswordDialog = Load<GameObject>("AugaPassword");
+            Assets.ConnectingDialog = Load<GameObject>("AugaConnecting");
+            Assets.PanelBase = Load<GameObject>("AugaPanelBase");
+            Assets.ButtonSmall = Load<GameObject>("ButtonSmall");
+            Assets.ButtonMedium = Load<GameObject>("ButtonMedium");
+            Assets.ButtonFancy = Load<GameObject>("ButtonFancy");
+            Assets.ButtonToggle = Load<GameObject>("ButtonToggle");
+            Assets.ButtonSettings = Load<GameObject>("ButtonSettings");
+            Assets.DiamondButton = Load<GameObject>("DiamondButton");
+            Assets.SourceSansProBold = Load<Font>("SourceSansPro-Bold");
+            Assets.SourceSansProSemiBold = Load<Font>("SourceSansPro-SemiBold");
+            Assets.SourceSansProRegular = Load<Font>("SourceSansPro-Regular");
+            Assets.ItemBackgroundSprite = Load<Sprite>("Container_Square_A");
+            Assets.InventoryTooltip = Load<GameObject>("InventoryTooltip");
+            Assets.SimpleTooltip = Load<GameObject>("SimpleTooltip");
+            Assets.DividerSmall = Load<GameObject>("DividerSmall");
+            Assets.DividerMedium = Load<GameObject>("DividerMedium");
+            Assets.DividerLarge = Load<GameObject>("DividerLarge");
+            Assets.ConfirmDialog = Load<GameObject>("ConfirmDialog");
+            Assets.RecyclingPanelIcon = Load<Sprite>("RecyclingPanel");
+            Assets.LeftWristMountUI = Load<GameObject>("LeftWristMountUI");
+            Assets.BuildHud = Load<GameObject>("BuildHud");
+
+            if (missing.Count == 0)
+                Debug.Log($"[Auga] Asset bundle 'augaassets' loaded: all {total} assets found");
+            else
+                Debug.LogError($"[Auga] Asset bundle 'augaassets' loaded, {missing.Count}/{total} assets MISSING: {string.Join(", ", missing)}");
         }
 
         private static void ApplyCursor()

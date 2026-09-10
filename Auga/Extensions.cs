@@ -64,6 +64,7 @@ namespace Auga
             var foundOriginal = c.Find(findPath);
             if (foundOriginal == null)
             {
+                Debug.LogWarning($"[Auga] Replace: vanilla '{c.name}/{findPath}' not found; vanilla element left as is");
                 return null;
             }
 
@@ -71,6 +72,7 @@ namespace Auga
             var foundOther = other.Find(otherFindPath);
             if (foundOther == null)
             {
+                Debug.LogError($"[Auga] Replace: bundle prefab '{other.name}/{otherFindPath}' missing; cannot replace '{findPath}'");
                 return null;
             }
 
@@ -123,6 +125,7 @@ namespace Auga
             var foundOther = other.transform.Find(findPath);
             if (foundOther == null)
             {
+                Debug.LogError($"[Auga] CopyOver: bundle prefab '{other.name}/{findPath}' missing");
                 return null;
             }
 

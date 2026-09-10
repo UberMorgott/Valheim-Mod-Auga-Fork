@@ -86,7 +86,22 @@ namespace Auga
             __instance.m_gpCooldown = __instance.m_gpRoot.Find("GPTimeText").GetComponent<TMP_Text>();
             
             __instance.m_gpRoot.gameObject.AddComponent<MovableHudElement>().Init(TextAnchor.LowerLeft, 60, 70);
-            
+
+            var hudroot = __instance.transform.Find("hudroot");
+
+            // 1.0.7 mount panel and adrenaline bar have no Auga equivalent: pass them through.
+            // Vanilla UpdateMount/UpdateAdrenaline write to them every frame, so they must not be
+            // destroyed with the vanilla health/stamina/eitr panels below.
+            foreach (var keep in new[] { __instance.m_mountPanel ? __instance.m_mountPanel.transform : null, __instance.m_adrenalineBarRoot })
+            {
+                if (keep == null || keep == __instance.m_healthPanel) continue;
+                if (keep.IsChildOf(__instance.m_healthPanel) || keep.IsChildOf(__instance.m_staminaBar2Root) || keep.IsChildOf(__instance.m_eitrBarRoot))
+                {
+                    keep.SetParent(hudroot, true);
+                    Debug.Log($"[Auga] Hud: kept vanilla '{keep.name}' (moved out of a destroyed vanilla bar)");
+                }
+            }
+
             foreach (Transform child in __instance.m_healthPanel)
             {
                 Object.Destroy(child.gameObject);
@@ -94,7 +109,6 @@ namespace Auga
             Object.Destroy(__instance.m_staminaBar2Root.gameObject);
             Object.Destroy(__instance.m_eitrBarRoot.gameObject);
 
-            var hudroot = __instance.transform.Find("hudroot");
             var foodPanel0 = hudroot.gameObject.CopyOver("hudroot/FoodPanel0", Auga.Assets.Hud, 5);
             var foodPanel1 = hudroot.gameObject.CopyOver("hudroot/FoodPanel1", Auga.Assets.Hud, 6);
             var foodPanel2 = hudroot.gameObject.CopyOver("hudroot/FoodPanel2", Auga.Assets.Hud, 7);
@@ -218,6 +232,7 @@ namespace Auga
 
             Localization.instance.Localize(__instance.transform);
         } // end if (Auga.BuildMenuShow.Value && !Auga.HasSearsCatalog)
+            SetupHelper.LogDeadRefsNextFrame(__instance);
         } // end Hud_Awake_Postfix
 
         [HarmonyPatch(nameof(Hud.UpdateStatusEffects))]

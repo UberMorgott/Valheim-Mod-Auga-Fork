@@ -147,9 +147,18 @@ namespace Auga
                         //Compendium
                         buttonList.Add(component5);
 
+                        if (instance.m_skipButton != null && instance.m_skipButton.gameObject.activeSelf)
+                            buttonList.Add(instance.m_skipButton);
+
                         //Save
                         if (instance.m_saveButton.interactable)
                             buttonList.Add(instance.m_saveButton);
+
+                        if (instance.m_playerListButton != null && instance.m_playerListButton.gameObject.activeSelf)
+                            buttonList.Add(instance.m_playerListButton);
+
+                        if (instance.m_inviteButton != null && instance.m_inviteButton.gameObject.activeSelf)
+                            buttonList.Add(instance.m_inviteButton);
 
                         //Logout
                         buttonList.Add(component1);
@@ -251,7 +260,80 @@ namespace Auga
                 newMenu.CurrentPlayersPrefab = playerPrefab;
                 // Vanilla 1.0.7 Settings window: Menu.OnSettings instantiates m_settingsPrefab
                 newMenu.m_settingsPrefab = __instance.m_settingsPrefab;
+                WireMenu(newMenu, __instance);
                 Object.Destroy(__instance.gameObject);
+                SetupHelper.LogDeadRefsNextFrame(newMenu);
+            }
+
+            // The AugaMenu prefab was serialized against the pre-1.0.7 Menu (saveButton, menuCurrentPlayersListButton),
+            // so every 1.0.7 button field is null and Menu.Show()/SetButtonsEnabled() would NRE. Wire them by path
+            // (paths verified in the augaassets bundle) and pass through vanilla parts Auga has no equivalent for.
+            private static void WireMenu(Menu menu, Menu vanilla)
+            {
+                var entries = menu.m_menuDialog.Find("MenuEntries");
+                Button Find(string path)
+                {
+                    var button = entries.Find(path)?.GetComponent<Button>();
+                    if (button == null)
+                        Debug.LogError($"[Auga] AugaMenu: MenuEntries/{path} missing");
+                    return button;
+                }
+
+                menu.m_continueButton = Find("DividerMedium/CloseButton");
+                menu.m_saveButton = Find("Save");
+                menu.m_playerListButton = Find("CurrentPlayerList");
+                menu.m_settingsButton = Find("Settings");
+                menu.m_logoutButton = Find("Logout");
+                menu.m_quitButton = Find("Exit");
+                menu.m_skipButton = Find("SkipIntro");
+                // Prefab wires SkipIntro to OnManualSave; vanilla skip is OnSkip.
+                Rewire(menu.m_skipButton, menu.OnSkip);
+
+                // Invite (host + platform invite support): no Auga button, keep the vanilla one.
+                menu.m_inviteButton = vanilla.m_inviteButton;
+                if (menu.m_inviteButton != null)
+                {
+                    menu.m_inviteButton.transform.SetParent(entries, false);
+                    if (menu.m_playerListButton != null)
+                        menu.m_inviteButton.transform.SetSiblingIndex(menu.m_playerListButton.transform.GetSiblingIndex() + 1);
+                    Rewire(menu.m_inviteButton, menu.InviteFriends);
+                }
+
+                // Gamepad map (Show() -> HandleInputLayoutChanged derefs both).
+                menu.m_gamepadRoot = Adopt(vanilla.m_gamepadRoot, menu.m_root);
+                menu.m_gamepadMapController = vanilla.m_gamepadMapController;
+                if (menu.m_gamepadMapController != null && menu.m_gamepadRoot != null
+                    && !menu.m_gamepadMapController.transform.IsChildOf(menu.m_gamepadRoot.transform))
+                    Adopt(menu.m_gamepadMapController.gameObject, menu.m_root);
+
+                // Cloud storage warnings: vanilla dialogs, buttons rewired to the new Menu.
+                // ponytail: every button in the dialog maps to its OK handler; split if a dialog gains a second action.
+                menu.m_cloudStorageWarning = Adopt(vanilla.m_cloudStorageWarning, menu.m_root);
+                foreach (var b in menu.m_cloudStorageWarning ? menu.m_cloudStorageWarning.GetComponentsInChildren<Button>(true) : new Button[0])
+                    Rewire(b, menu.OnCloudStorageFullWarningOk);
+                menu.m_cloudStorageWarningNextSave = Adopt(vanilla.m_cloudStorageWarningNextSave, menu.m_root);
+                foreach (var b in menu.m_cloudStorageWarningNextSave ? menu.m_cloudStorageWarningNextSave.GetComponentsInChildren<Button>(true) : new Button[0])
+                    Rewire(b, menu.OnCloudStorageLowNextSaveWarningOk);
+
+                menu.m_feedbackPrefab = vanilla.m_feedbackPrefab;
+                // SceneReference is not serialized in the Auga prefab; Logout loads it.
+                var startScene = AccessTools.Field(typeof(Menu), "m_startScene");
+                startScene.SetValue(menu, startScene.GetValue(vanilla));
+            }
+
+            private static GameObject Adopt(GameObject go, Transform parent)
+            {
+                if (go == null) return null;
+                go.transform.SetParent(parent, false);
+                go.transform.SetAsLastSibling();
+                return go;
+            }
+
+            private static void Rewire(Button button, UnityEngine.Events.UnityAction action)
+            {
+                if (button == null) return;
+                button.onClick = new Button.ButtonClickedEvent();
+                button.onClick.AddListener(action);
             }
         }
 
