@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection.Emit;
@@ -148,8 +148,8 @@ namespace Auga
                         buttonList.Add(component5);
 
                         //Save
-                        if (instance.saveButton.interactable)
-                            buttonList.Add(instance.saveButton);
+                        if (instance.m_saveButton.interactable)
+                            buttonList.Add(instance.m_saveButton);
 
                         //Logout
                         buttonList.Add(component1);
@@ -172,11 +172,11 @@ namespace Auga
                         
                         buttonList.Add(component3);
                         
-                        if (instance.saveButton.interactable)
-                            buttonList.Add(instance.saveButton);
+                        if (instance.m_saveButton.interactable)
+                            buttonList.Add(instance.m_saveButton);
 
-                        if (instance.menuCurrentPlayersListButton.gameObject.activeSelf)
-                            buttonList.Add(instance.menuCurrentPlayersListButton);
+                        if (instance.m_playerListButton.gameObject.activeSelf)
+                            buttonList.Add(instance.m_playerListButton);
                         
                         buttonList.Add(component4);
 

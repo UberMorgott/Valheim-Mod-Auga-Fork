@@ -1,4 +1,4 @@
-﻿using System.Linq;
+using System.Linq;
 using System.Text;
 using JetBrains.Annotations;
 using UnityEngine;
@@ -30,7 +30,7 @@ namespace AugaUnity
             _sb.Clear();
 
             _sb.AppendLine($"{profile.m_playerName}:");
-            _sb.AppendLine($"   Deaths: {profile.m_playerStats.m_stats[PlayerStatType.Deaths]}, Builds: {profile.m_playerStats.m_stats[PlayerStatType.Builds]}, Crafts: {profile.m_playerStats.m_stats[PlayerStatType.Crafts]}");
+            _sb.AppendLine($"   Deaths: {profile.m_playerStats[0].m_stats[PlayerStatType.Deaths]}, Builds: {profile.m_playerStats[0].m_stats[PlayerStatType.Builds]}, Crafts: {profile.m_playerStats[0].m_stats[PlayerStatType.Crafts]}");
 
             var worldNames = SaveSystem.GetWorldList().Where(x => profile.m_worldData.ContainsKey(x.m_uid)).Select(x => x.m_name);
             _sb.AppendLine($"   Local Worlds: {string.Join(", ", worldNames)}");

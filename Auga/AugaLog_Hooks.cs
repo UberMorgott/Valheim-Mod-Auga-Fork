@@ -130,11 +130,11 @@ namespace Auga
     [HarmonyPatch(typeof(Player), nameof(Player.AddKnownBiome))]
     public static class Player_AddKnownBiome_Patch
     {
-        public static bool Prefix(Player __instance, Heightmap.Biome biome)
+        public static bool Prefix(Player __instance, BiomeSector biome)
         {
-            if (!__instance.m_knownBiome.Contains(biome))
+            if (!__instance.m_knownBiome.Contains(biome.GetName()))
             {
-                AugaMessageLog.instance.AddNewBiomeLog(biome);
+                AugaMessageLog.instance.AddNewBiomeLog(biome.Biome);
             }
 
             return true;
@@ -147,7 +147,7 @@ namespace Auga
     {
         public static void Postfix(TeleportWorld __instance, Player player)
         {
-            if (!__instance.TargetFound() || !player.IsTeleportable())
+            if (!__instance.TargetFound() || !player.IsTeleportable(__instance.m_allowAllItems))
             {
                 return;
             }

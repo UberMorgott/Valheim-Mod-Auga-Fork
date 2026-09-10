@@ -1,4 +1,4 @@
-﻿using System.Globalization;
+using System.Globalization;
 using AugaUnity;
 using HarmonyLib;
 using TMPro;
@@ -117,17 +117,22 @@ namespace Auga
                 info.Find("Trophies").GetComponent<Button>().onClick.AddListener(__instance.OnOpenTrophies);*/
 
                 var splitDialog = __instance.Replace("root/SplitDialog", Auga.Assets.InventoryScreen, "root/SplitDialog");
-                __instance.m_splitPanel = splitDialog;
-                __instance.m_splitSlider = splitDialog.Find("Dialog/Slider").GetComponent<Slider>();
-                __instance.m_splitAmount = splitDialog.Find("Dialog/InventoryElement/amount").GetComponent<TMP_Text>();
-                __instance.m_splitCancelButton = splitDialog.Find("Dialog/ButtonCancel").GetComponent<Button>();
-                __instance.m_splitOkButton = splitDialog.Find("Dialog/ButtonOk").GetComponent<Button>();
-                __instance.m_splitIcon = splitDialog.Find("Dialog/InventoryElement/icon").GetComponent<Image>();
-                __instance.m_splitIconName = splitDialog.Find("Dialog/InventoryElement/DummyText").GetComponent<TMP_Text>();
-
-                __instance.m_splitSlider.onValueChanged.AddListener(__instance.OnSplitSliderChanged);
-                __instance.m_splitCancelButton.onClick.AddListener(__instance.OnSplitCancel);
-                __instance.m_splitOkButton.onClick.AddListener(__instance.OnSplitOk);
+                // 1.0.7: split UI is a SplitDialog component; it wires its own listeners in OnEnable.
+                // Deactivate before AddComponent so OnEnable does not run with unset fields.
+                splitDialog.gameObject.SetActive(false);
+                var sd = splitDialog.GetComponent<SplitDialog>();
+                if (!sd) sd = splitDialog.gameObject.AddComponent<SplitDialog>();
+                sd.m_splitSlider = splitDialog.Find("Dialog/Slider").GetComponent<Slider>();
+                sd.m_splitAmount = splitDialog.Find("Dialog/InventoryElement/amount").GetComponent<TMP_Text>();
+                sd.m_splitCancelButton = splitDialog.Find("Dialog/ButtonCancel").GetComponent<Button>();
+                sd.m_splitOkButton = splitDialog.Find("Dialog/ButtonOk").GetComponent<Button>();
+                sd.m_splitIcon = splitDialog.Find("Dialog/InventoryElement/icon").GetComponent<Image>();
+                sd.m_splitIconName = splitDialog.Find("Dialog/InventoryElement/DummyText").GetComponent<TMP_Text>();
+                sd.m_panel = splitDialog.Find("Dialog") as RectTransform;
+                // OnEnable reads these for normal/touch placement; keep Auga's layout for both.
+                sd.m_panelNormalPosition = sd.m_panel;
+                sd.m_panelTouchPosition = sd.m_panel;
+                __instance.m_splitDialog = sd;
 
                 __instance.m_uiGroups = new [] {
                     containerInventory.GetComponent<UIGroupHandler>(),
@@ -167,9 +172,9 @@ namespace Auga
                 //Vector2 startPos = new Vector2(__instance.RectTransform().rect.width / 2f, 0.0f) - new Vector2(__instance.GetWidgetSize().x, 0.0f) * 0.5f;
                 foreach (var element in __instance.m_elements)
                 {
-                    var itemTooltip = element.m_go.GetComponent<ItemTooltip>();
+                    var itemTooltip = element.gameObject.GetComponent<ItemTooltip>();
                     
-                    var item = __instance.m_inventory.GetItemAt(element.m_pos.x, element.m_pos.y);
+                    var item = __instance.m_inventory.GetItemAt(element.Position.x, element.Position.y);
                     
                     if (itemTooltip != null && !element.m_used)
                     {
@@ -183,15 +188,15 @@ namespace Auga
 
                     if (__instance.name == "PlayerGrid")
                     {
-                        if (element.m_pos.y == 0)
+                        if (element.Position.y == 0)
                         {
-                            element.m_go.transform.SetParent(TopRowInventory);
+                            element.gameObject.transform.SetParent(TopRowInventory);
                         }
                         else
                         {
-                            element.m_go.transform.SetParent(MainRowsInventory);
-                            //Vector2 currentPosition = new Vector3(element.m_pos.x * (__instance.m_elementSpace), (element.m_pos.y * -__instance.m_elementSpace) - 26);
-                            //element.m_go.RectTransform().anchoredPosition = startPos + currentPosition;
+                            element.gameObject.transform.SetParent(MainRowsInventory);
+                            //Vector2 currentPosition = new Vector3(element.Position.x * (__instance.m_elementSpace), (element.Position.y * -__instance.m_elementSpace) - 26);
+                            //element.gameObject.RectTransform().anchoredPosition = startPos + currentPosition;
                         }
                     }
                 }

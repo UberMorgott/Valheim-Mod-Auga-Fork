@@ -364,7 +364,7 @@ namespace Auga
                     if (snappingIconForPiece != null)
                     {
                         instance.m_snappingIcon.sprite = snappingIconForPiece;
-                        instance.m_snappingIcon.enabled = snappingIconForPiece != null && (piece.m_category == (Piece.PieceCategory)2 || piece.m_groundPiece || piece.m_waterPiece);
+                        instance.m_snappingIcon.enabled = snappingIconForPiece != null && (piece.m_category == Piece.PieceCategory.BuildingWorkbench || piece.m_category == Piece.PieceCategory.BuildingStonecutter || piece.m_groundPiece || piece.m_waterPiece);
                     }
                     for (int index = 0; index < instance.m_requirementItems.Length; ++index)
                     {

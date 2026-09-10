@@ -1,4 +1,4 @@
-﻿using System.Collections;
+using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Reflection;
@@ -104,7 +104,7 @@ namespace AugaUnity
         public static string GetOutputFilePathForProfile(PlayerProfile profile)
         {
             var outputFileName = profile.m_filename + ".png";
-            var outputFilePath = Utils.GetSaveDataPath(FileHelpers.FileSource.Local) + PlayerProfile.GetCharacterFolder(profile.m_fileSource) + outputFileName;
+            var outputFilePath = SaveSystem.GetCharacterFolderPath(FileHelpers.FileSource.Local) + outputFileName;
             return outputFilePath;
         }
     }
@@ -143,7 +143,7 @@ namespace AugaUnity
                 _portraits.Add(portrait);
             }
 
-            var showSourceInfoPanel = !FileHelpers.CloudStorageEnabled;
+            var showSourceInfoPanel = !FileHelpers.CloudStorageSupportedAndEnabled;
             SourceInfoContent.text = "";
             if (FejdStartup.instance.m_profileIndex >= 0 && FejdStartup.instance.m_profileIndex < FejdStartup.instance.m_profiles.Count)
             {
@@ -154,7 +154,7 @@ namespace AugaUnity
                 }
             }
 
-            if (!FileHelpers.CloudStorageEnabled)
+            if (!FileHelpers.CloudStorageSupportedAndEnabled)
             {
                 SourceInfoContent.text += Localization.instance.Localize("$menu_cloudsavesdisabled");
             }
@@ -210,7 +210,7 @@ namespace AugaUnity
             _index = index;
             CharacterName.text = profile.m_playerName;
             Button.onClick.AddListener(() => FejdStartup.instance.SetSelectedProfile(_profile.m_filename));
-            StatsText.text = $"{profile.m_playerStats.m_stats[PlayerStatType.Deaths]}\n{profile.m_playerStats.m_stats[PlayerStatType.Builds]}\n{profile.m_playerStats.m_stats[PlayerStatType.Crafts]}";
+            StatsText.text = $"{profile.m_playerStats[0].m_stats[PlayerStatType.Deaths]}\n{profile.m_playerStats[0].m_stats[PlayerStatType.Builds]}\n{profile.m_playerStats[0].m_stats[PlayerStatType.Crafts]}";
 
             var outputFilePath = AugaCharacterSelectPhotoBooth.GetOutputFilePathForProfile(profile);
             if (File.Exists(outputFilePath))
