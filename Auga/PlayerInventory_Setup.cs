@@ -158,6 +158,9 @@ namespace Auga
                     infoGroup,
                     rightPanel.GetComponent<UIGroupHandler>()
                 };
+                // Vanilla m_crafting pointed at the destroyed root/Crafting; SetRecipe compares it to
+                // m_uiGroups[ActiveGroup].transform for gamepad rumble.
+                __instance.m_crafting = (RectTransform)rightPanel;
 
                 var animator = __instance.GetComponent<Animator>();
                 var newAnimator = Auga.Assets.InventoryScreen.GetComponent<Animator>();
