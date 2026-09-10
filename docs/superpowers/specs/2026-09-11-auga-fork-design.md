@@ -39,11 +39,11 @@ Rejected: a universal runtime adapter that restyles or re-parents foreign UI. It
 
 | Mod (installed) | Built-in Auga support | Plan |
 |---|---|---|
-| EquipmentAndQuickSlots 3.0.1 | yes (`IsLoaded`, `Panel_Create`, `PlayerPanel_*`, `ComplexTooltip_*`, `Workbench_*`, `Button_*`) | Should work once the API is compatible. Fix the slot display only if needed (local fork of the mod as the last resort). |
-| EpicLoot 0.13.0 | yes (`EpicLootAuga`, `EnchantingTabAuga`, `AugaTooltipPreprocessor`) | Verify tooltips, rarity, enchanting tab. Add missing extension points to Auga. |
+| EquipmentAndQuickSlots 3.1.1 | yes (`IsLoaded`, `Panel_Create`, `PlayerPanel_*`, `ComplexTooltip_*`, `Workbench_*`, `Button_*`) | Should work once the API is compatible. Fix the slot display only if needed (local fork of the mod as the last resort). |
+| EpicLoot 0.14.2 | yes (`EpicLootAuga`, `EnchantingTabAuga`, `AugaTooltipPreprocessor`) | Verify tooltips, rarity, enchanting tab. Add missing extension points to Auga. |
 | Vnei 0.17.6 | yes, minimal (`PlayerPanel_AddTab/GetTabButton/HasTab/IsTabActive`) | Verify the tab. |
 | AAACrafting 2.1.6 | yes (`AugaAPI`, `augaCraftingButton`, `AugaTextInput`) | Re-enable (currently `.dll.disabled`) and verify. UI-position fixes go in `Auga/Compat/`, recipe-logic fixes go in a local fork of the mod. |
-| AdventureBackpacks 1.9.13.3 (our fork `E:\DEV\Valheim\AdventureBackpacks-Morgott`) | no | Write a consumer adapter in the fork using the stub API pattern. |
+| AdventureBackpacks 1.9.13.3 (our fork `E:\DEV\Valheim\AdventureBackpacks-Morgott`) | no | First check whether the backpack works as a plain container under Auga's container panel with no adapter. If something is missing (weight, backpack name), add it in our fork through the stub API pattern. |
 | SmoothRegen (our mod `E:\DEV\Valheim\SmoothRegen`) | n/a | Bug: during regen, Auga's health bar fills with a white "pending" layer while the red fill stays still. Fix: the red fill tracks current HP smoothly. The fix location (Auga `GuiBar`/HUD patch vs. a SmoothRegen hook) is decided after reading the code. |
 
 Built-in Auga compat (`Compat/Chatter.cs`, `Jewelcrafting.cs`, `SearsCatalog.cs`; MultiCraft, BetterTrader, SimpleRecycling in `Auga.cs`) is kept as is. It is ported only if those mods are installed.
