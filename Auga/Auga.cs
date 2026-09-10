@@ -28,7 +28,6 @@ namespace Auga
         public GameObject TextViewerPrefab;
         public GameObject MainMenuPrefab;
         public GameObject BuildHudElement;
-        public GameObject SettingsPrefab;
         public GameObject MessageHud;
         public GameObject TextInput;
         public GameObject AugaBarber;
@@ -527,7 +526,6 @@ namespace Auga
             Assets.Hud = assetBundle.LoadAsset<GameObject>("HUD");
             Assets.MainMenuPrefab = assetBundle.LoadAsset<GameObject>("MainMenu");
             Assets.BuildHudElement = assetBundle.LoadAsset<GameObject>("BuildHudElement");
-            Assets.SettingsPrefab = assetBundle.LoadAsset<GameObject>("AugaSettings");
             Assets.MessageHud = assetBundle.LoadAsset<GameObject>("AugaMessageHud");
             Assets.TextInput = assetBundle.LoadAsset<GameObject>("AugaTextInput");
             Assets.AugaBarber = assetBundle.LoadAsset<GameObject>("AugaBarber");

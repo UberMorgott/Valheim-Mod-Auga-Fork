@@ -54,8 +54,6 @@ namespace Auga
         {
             ZInput.Initialize();
 
-            __instance.m_settingsPrefab = Auga.Assets.SettingsPrefab;
-
             // Сохраняем логотип до замены меню
             var originalLogo = __instance.transform.Find("Menu/Logo");
             if (originalLogo != null)

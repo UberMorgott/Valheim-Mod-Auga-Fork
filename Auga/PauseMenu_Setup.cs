@@ -249,6 +249,8 @@ namespace Auga
                 var playerPrefab = __instance.CurrentPlayersPrefab;
                 var newMenu = Object.Instantiate(Auga.Assets.MenuPrefab, parent, false).GetComponent<Menu>();
                 newMenu.CurrentPlayersPrefab = playerPrefab;
+                // Vanilla 1.0.7 Settings window: Menu.OnSettings instantiates m_settingsPrefab
+                newMenu.m_settingsPrefab = __instance.m_settingsPrefab;
                 Object.Destroy(__instance.gameObject);
             }
         }
