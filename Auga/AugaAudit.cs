@@ -23,7 +23,10 @@ namespace Auga
             "iconhints",   // vanilla large map: mouse-button hints beside the pin icon column
             // vanilla 1.0.12 large map: the centred KeyHints row runs under the Quests/Treasure toggles without Auga
             // too (baseline run with Auga disabled, tools\out\20260911-184749\shots\23-map.png)
-            "AdventureToggleContainer"
+            "AdventureToggleContainer",
+            // vanilla 1.0.12 inventory root/Info: the player-name title panel overlaps the Trophies button; Auga writes
+            // no RectTransform under InventoryGui (PlayerInventory_Setup only restyles), so this is the vanilla layout
+            "TitlePanel"
         };
 
         // Fields the game itself points at objects it destroys, so they are not Auga's doing.
