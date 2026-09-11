@@ -1,7 +1,18 @@
 # Auga fork — handoff (2026-09-11 night session)
 
 Repo: https://github.com/UberMorgott/Valheim-Mod-AugaFork (fork of RandyKnapp/Auga), local `E:\DEV\Valheim\Auga`.
-Target: Valheim 1.0.7 (Unity 6, network 39), BepInEx 5.4.23.5. Personal build.
+Target: Valheim 1.0.12 (Unity 6, network 40), BepInEx 5.4.23.5. Personal build.
+
+## 1.0.12 update (2026-09-11)
+
+- Rebuilt against 1.0.12 with no source changes: 0 errors. Autotest: patches 107/107 resolve, smoke PASS.
+- Decompile refreshed in `E:\DEV\Valheim\ValheimDecompiled`; the 1.0.7 copy is kept as `ValheimDecompiled-1.0.7`.
+- Most of the 1.0.7→1.0.12 source diff is compiler noise (`&&` became `&`, primary constructors). Real UI changes:
+  - `InventoryGui`: new cheat-bypass text `$achievements_permanently_cheated_bypass` on `m_achievementsCheatedText`. Auga passes the vanilla Info panel through, so no Auga change is needed.
+  - `AchievementUnlockPopup`: SFX gate (`TryPlaySfx`, `m_forcePlayUnlockSound`). Auga does not touch it.
+  - `Terminal`/`Chat`: new `yesiuseddevcommandsbutiwantmyachievementsanyway` command, and `HideBehindDevCommands` visibility reworked. No UI impact.
+- `Hud.UpdateBuild` transpiler anchor `IL_00c1 ldstr "{0} [<color=yellow>{1}</color>]"` is unchanged in 1.0.12.
+- Third-party (report only): Jotunn `GameVersions.GetNetworkVersion` reads a missing `Version::m_networkVersion`, and ConfigurationManager's `Start` reads a missing `UnityEngine.Screen::showCursor`.
 
 - Spec: `docs/superpowers/specs/2026-09-11-auga-fork-design.md`
 - Plan: `docs/superpowers/plans/2026-09-11-auga-port.md` (T9 = in-game checklist)
