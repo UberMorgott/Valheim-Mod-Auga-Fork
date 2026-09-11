@@ -3,6 +3,23 @@
 Repo: https://github.com/UberMorgott/Valheim-Mod-AugaFork (fork of RandyKnapp/Auga), local `E:\DEV\Valheim\Auga`.
 Target: Valheim 1.0.12 (Unity 6, network 40), BepInEx 5.4.23.5. Personal build.
 
+## Native rework: Phase 1 fixes and Phase 2 (2026-09-11 night)
+
+- Shared restyle map `Auga/AugaStyle.cs` (`a26fdc0`). `Restyle(root)` maps vanilla sprite names (runtime dump) to Auga art and fonts. It's used by Settings, FejdStartup (plus the world-row template), ServerListGui (server-row template), UnifiedPopup, TextsDialog and the pause menu.
+  - `woodpanel_*` → Auga panel (sprite-less quad + JoshH UIGradient + corner ornaments).
+  - `panel_interior`/`panel_bkg`/`item_background` → TextBackdrop.
+  - `button` → ButtonFancy sprite swap; `button_tab` → ButtonSettings.
+  - `checkbox` → Container_Diamond; also Knob, TextInputBG, knots, the blue row selection.
+  - Fonts: labels/headers → Norsebold SDF, body → SourceSansPro-Regular SDF.
+- A1 (white Settings): Phase 1 copied the null sprite/white colour of AugaPanelBase/Background and the pale MediumButtonUp. The gradient and corners are now copied, and buttons use Fancy/Settings sprite swap.
+- A2 (Compendium raw `$` keys, empty list): the entry now opens the vanilla Texts dialog (`3e44bdd`): Menu.Hide → InventoryGui.Show → OnOpenTexts once the root is active. Crutches 13-14 are deleted.
+- Deployed `Auga.dll` SHA256 `8E560BD4F92D6E9F9A78CEE98EDEB82335C6BB0D3D421EE8DE2DF1ADE4E1DD42`.
+- Autotest `20260911-182509`: build/hash/patches(101)/smoke PASS. World FAIL, later-phase findings only (Hud, Minimap, Chat, InventoryGui). Menu/Settings/MainMenu: 0 findings.
+- Screenshots in `tools\out\<ts>\shots` (driver `-autotestshots`, outer repo `d2b84c2`). The driver also skips the intro cinematic via `CinematicsManager.Stop` (Esc path, `CinematicsManager.cs:123-125`). No launch arg or pref exists: `m_introOnStartup` is checked at `FejdStartup.cs:477`.
+- Remaining errors (EpicLoot, Phase 5): `MagicSearchField..ctor` reads `InventoryGui.m_crafting.Find("RepairButton/Glow")`, which is missing because Auga replaces `root/Crafting`. `MagicPages.Reset` NRE is its follow-on.
+- Missing-script warnings (`Fishlabs.GuiInputField`, ChatInput, 2 unnamed): bundle prefabs, Phase 6.
+- In-game check (user): Settings from the main and pause menus look dark Auga and save. Character select/create, start game (tabs, world list, server options, password), join tab, manage saves and the cloud notice use Auga art. Compendium: localized, list filled, Esc closes.
+
 ## Native rework, Phases 0-1 (2026-09-11 evening)
 
 Spec: `docs/superpowers/specs/2026-09-11-auga-native-rework.md`. §5 now records the user's decisions. **D0: full vanilla skin** (inventory included, Auga layout deleted). **D0a: new GUID and assembly name, no `Auga.API`**, so consumers take their vanilla path (Phase 4b, not started). The EAQS patch is moot.

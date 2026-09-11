@@ -1,6 +1,6 @@
 # Auga native rework: audit and design (2026-09-11)
 
-Status: design/audit only, no code changed. Target: Valheim 1.0.12 (Unity 6000.0.75, network 40), BepInEx 5.4.23.5.
+Status: Phases 0, 1 and 2 done (2026-09-11). Phase 1 was fixed and Phase 2 built on the shared `AugaStyle.Restyle` map. Crutches removed so far: 12, 13, 14, 24, 26, 32, 33, 34. Phases 3-6 are open. See HANDOFF.md. Target: Valheim 1.0.12 (Unity 6000.0.75, network 40), BepInEx 5.4.23.5.
 Evidence: user run log `E:\Temp\claude\E--DEV-Valheim\0fc13589-0331-40cf-93b9-19a3a72bcd1a\scratchpad\user-run3-LogOutput.log`
 (copy of `BepInEx\LogOutput.log`, deployed Auga.dll `082869AD...`), the 1.0.12 decompile in `E:\DEV\Valheim\ValheimDecompiled\assembly_valheim\`,
 UnityPy 1.25 dumps of `AugaUnity\AssetBundles\augaassets` and the 1.0.12 main scene (`valheim_Data\StreamingAssets\SoftRef\Bundles\17245031`),
