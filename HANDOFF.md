@@ -11,7 +11,7 @@ Target: Valheim 1.0.7 (Unity 6, network 39), BepInEx 5.4.23.5. Personal build.
 - Build: `dotnet build Auga\Auga.csproj -c Release -p:ValheimDir=D:\Steam\steamapps\common\Valheim` → 0 errors.
 - Deployed: `D:\Steam\steamapps\common\Valheim\BepInEx\plugins\Auga\Auga.dll` (hash-verified after each change).
 - AugaLite (ZenDragon) deleted from plugins.
-- AAACrafting re-enabled: `plugins\AAACrafting\AzuAntiArthriticCrafting.dll` (was `.dll.disabled`; rename back to undo).
+- AAACrafting disabled again: `plugins\AAACrafting\AzuAntiArthriticCrafting.dll.disabled`. 2.1.6 (latest on Thunderstore as of 2026-09-11) fails on 1.0.7 with Harmony `Undefined target method` - private `Inventory.AddItem` gained `bool skipValidPositionCheck`. Re-enable (rename back) once `update-mods.ps1` pulls a newer version.
 - AdventureBackpacks fork: `2d5688a` skips its 54px durability-bar override under Auga; old DLL kept as `plugins\AdventureBackpacks\AdventureBackpacks.dll.bak`.
 - First in-game run (2026-09-11): bundle loaded (39/39), no Auga exceptions, but the main menu was cluttered. Fixed statically, needs in-game recheck:
   - The vanilla 1.0.7 cinematics list ("BLACK FOREST"/"LOCKED"/"BACK") showed because Auga's `HideAll` replacement lacked `m_cinematicsMenuList`. It is now hidden. Auga has no Cinematics button, so the list is unreachable.
