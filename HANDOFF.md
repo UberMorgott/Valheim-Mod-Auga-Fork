@@ -3,6 +3,32 @@
 Repo: https://github.com/UberMorgott/Valheim-Mod-AugaFork (fork of RandyKnapp/Auga), local `E:\DEV\Valheim\Auga`.
 Target: Valheim 1.0.12 (Unity 6, network 40), BepInEx 5.4.23.5. Personal build.
 
+## User report 2 fixes (2026-09-11 21:15) — BUILT, NOT DEPLOYED (valheim.exe PID 28504 was running)
+
+- Input text over the chevron (`c459d16`): Auga `TextInputBG` has a wider 9-slice border than vanilla `text_field`;
+  `AugaStyle.InsetInputText` grows `TMP_InputField.textViewport` (legacy: text + placeholder) by the border
+  difference (sprite.border / (pixelsPerUnit x multiplier)). Central, every restyled input.
+- Skills button (`bdb0b50`, `b10042f`): old `SkillsDialog_Patch` no-op'd `Setup/Update/OnClose/SkillClicked`, so
+  `InventoryGui.OnOpenSkills` (`InventoryGui.cs:2325-2333`) did nothing. Deleted; row template restyled. List =
+  `player.GetSkills().GetSkillList()` (`SkillsDialog.cs:115`), names via `$skill_<type>` (`:131`), so modded skills show.
+- EAQS labels: EAQS 3.1.1 built-in slot names are English literals (`Slots.cs:973-980`, `() => "Head"`), passed
+  through `Localize` which only replaces `$tokens` — no translation hook for them. Custom slots take a `$token`
+  (AB `$vapok_mod_eqs_slot_backpack`). Not patched (third-party, no intended hook). Label position is EAQS's own
+  `equipmentLabelPosition (32,5)` (`EquipmentPanel.cs:780`, staggered paperdoll offsets); AugaSkin writes no rect there.
+  Baseline shot with AugaSkin disabled still owed (game was running).
+- Backpack slot (AB fork `53ce6fc`): EQS Shoulder accepts any `ItemType.Shoulder`, and `SlotValidation` moves an
+  equipped item from a custom slot to the first free equipment slot, so backpacks always sat in Shoulder. AB
+  postfix on EQS `Slot.ItemFits` refuses backpacks in Shoulder while the Backpack slot is registered. Russian
+  `Рюкзак` added to `Translations\AdventureBackpacks.Russian.json`.
+- Not defects: vanilla `InventoryGui` has no player preview (no field; `PlayerCustomizaton` is char creation) — the
+  model was an Auga-only extra removed in Phase 5. Eitr value is centred on its track like health (old Auga default
+  `StatBarTextPosition.Center`); a long eitr track with low fill puts it right of the fill.
+- Built: `AugaSkin.dll` `807C822DB2422623896E08D484C66F168F31131C1864CFCCB5E2B541ABAFD173`; AB
+  `AdventureBackpacks.dll` `BF089D30128333B28AE9673B3F5D4323366A074660233F81703CB3054B559734` (MSBuild, `HANDOFF.md:226`).
+- TODO when the game is closed: deploy both (+ AB `AdventureBackpacks.Russian.json` to
+  `plugins\AdventureBackpacks\Translations\`), hash-check, autotest; add driver shots (create-world typed, skills
+  dialog, EAQS with backpack); baseline EAQS shot with AugaSkin disabled.
+
 ## Now AugaSkin: rename, vanilla inventory/crafting, text inputs (2026-09-11 late night)
 
 - **Plugin identity (memory-relevant):** GUID `morgott.valheim.augaskin`, name `AugaSkin` 2.0.0, assembly
