@@ -29,6 +29,9 @@ namespace Auga
                 __instance.m_containerGrid.m_onSelected = null;
                 __instance.m_containerGrid.m_onRightClick = null;
 
+                // 1.0.7 nests the container panel under root/Player; lift it to root so replacing
+                // Player does not destroy it and root/Container below still finds it.
+                __instance.m_container.SetParent(__instance.m_player.parent, false);
                 var playerInventory = __instance.Replace("root/Player", Auga.Assets.InventoryScreen, "root/Player");
                 __instance.m_player = playerInventory.RectTransform();
                 __instance.m_playerGrid = playerInventory.Find("PlayerGrid").GetComponent<InventoryGrid>();
