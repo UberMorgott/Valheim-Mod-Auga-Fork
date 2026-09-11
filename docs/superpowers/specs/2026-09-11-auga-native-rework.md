@@ -243,6 +243,7 @@ Every phase ends with the steps below. The phase is not done until all of them p
 **Phase 3: HUD (A).**
 - Revert all Hud replaces. Restyle the vanilla bars, food, status effects, crosshair, ship HUD and KeyHints.
 - Port the `AugaHealthBar` config (text mode and position, ticks, fixed size) as a component added to the vanilla bars.
+  - Done in the follow-up (`AugaStatBars.cs`): the vanilla bars and food icons are re-laid out into Auga's lower-left cluster and skinned with the bundle bar art; length scale, fixed length and ticks restored, text mode/position dropped (vanilla writes the text every frame). Shield (no vanilla bar) and adrenaline (vanilla bar re-parented as a strip) are drawn on the health and stamina bars. See HANDOFF.
 - Delete the 7 skip prefixes and the nulled fields.
 - Minimap: restyle the vanilla small/large frames and delete the ping dummy.
 - Build menu: restyle vanilla; delete `UseAugaBuildMenu` and the dead code.
