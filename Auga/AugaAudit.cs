@@ -16,7 +16,8 @@ namespace Auga
         // Sibling names that layer over others by design (backdrops, scrims, frames).
         private static readonly HashSet<string> OverlapAllow = new HashSet<string>
         {
-            "Blur", "darken", "Darken", "bkg", "Background", "Scrim", "border (1)", "ornament", "GamepadMap"
+            "Blur", "darken", "Darken", "bkg", "Background", "Scrim", "border (1)", "ornament", "GamepadMap",
+            "HeaderLine" // vanilla Settings: thin rule across the top of TabButtons/TabContent
         };
 
         private static readonly HashSet<string> VanillaAssemblies = new HashSet<string>
