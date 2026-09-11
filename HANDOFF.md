@@ -33,6 +33,14 @@ What the user's run log showed: Chat, Hud, and InventoryGui postfixes threw on w
 - Tools: UnityPy dumps of the bundle vs the vanilla scene (`SoftRef/Bundles/17245031` = main.unity) map vanilla field→path. Autotest smoke is menu-only (quality-gate#25).
 - Recheck in world: the log should have no `Chat.HasFocus`/`Hud_Awake_Postfix` errors. Check `[Auga] Hud:`/`InventoryGui:` dead-ref lines, that chat Enter sends exactly once, that the inventory and container open, that the minimap renders, and that the build menu is vanilla.
 
+## Inventory placeholders / 7 rows / empty EAQS panel, fixed 2026-09-11 (084056b)
+
+- Log: 3147x NRE in `InventoryGrid.UpdateGui`. Cause: 1.0.7 `InventoryGui.Awake` wires `CanDropDragOntoItem` (called unchecked, `InventoryGrid.cs:375`), `m_onReleased`, `m_onEnter`, `OnSetTouchSelection`, `OnMoveTo*` on the vanilla grids only; Auga's replaced grids had none. The NRE after the first item left empty slots with bundle placeholder art, skipped all UpdateGui postfixes and the rest of `InventoryGui.Update` (container, drag, stats, weight, recipe).
+- 7 rows = EAQS 3.1.1: `m_inventory.m_height = BaseRows + 3` hidden rows for equipment/quick slots. Its `UpdateGui` postfix moves those cells into its Auga panel (`API.Panel_Create` on `m_player`), which never ran because of the NRE, so the cells stayed in the grid and the EAQS panel was empty.
+- Fix: wire the delegates in the `InventoryGui.Awake` postfix. Auga's `UpdateGui` postfix now reparents only elements still under `m_gridRoot`, so it no longer fights EAQS for its cells.
+- Tab "double click": no double listener found (tab buttons have no persistent onClick; `AugaTabController.Awake` is the only listener; `SelectTab` is idempotent). Suspected side effect of the per-frame NRE. Recheck.
+- Recheck in world: no `UpdateGui` NRE; empty slots blank; 4 rows in the panel; EAQS equipment/quick slots in the middle panel; weight/armor labels in place; tabs switch on one click; drag/drop, split, and container take-all work.
+
 ## Done (main)
 
 - T0 merge mrcook1e-ai/Auga (Unity 6 port) + cleanup.
