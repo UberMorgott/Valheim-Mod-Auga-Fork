@@ -28,9 +28,7 @@ namespace Auga
         public GameObject MainMenuPrefab;
         public GameObject BuildHudElement;
         public GameObject MessageHud;
-        public GameObject TextInput;
         public GameObject AugaBarber;
-        public GameObject AugaChat;
         public GameObject DamageText;
         public GameObject EnemyHud;
         public GameObject StoreGui;
@@ -91,7 +89,6 @@ namespace Auga
         private static ConfigEntry<bool> _loggingEnabled;
         private static ConfigEntry<LogLevel> _logLevel;
         public static ConfigEntry<bool> UseAugaTrash;
-        public static ConfigEntry<bool> AugaChatShow;
 
         public static readonly AugaAssets Assets = new AugaAssets();
         public static readonly AugaColors Colors = new AugaColors();
@@ -438,9 +435,7 @@ namespace Auga
         {
             _loggingEnabled = Config.Bind("Logging", "LoggingEnabled", false, "Enable logging");
             _logLevel = Config.Bind("Logging", "LogLevel", LogLevel.Info, "Only log messages of the selected level or higher");
-            UseAugaTrash = Config.Bind("Options", "UseAugaTrash", false, "Enable Auga's built in trash button. Click on the button while holding an item or part of a stack with the mouse.");
-            AugaChatShow = Config.Bind("AugaChat", "Show Auga Chat. Disable to use other mods. (Requires Restart)", true, "If false, disables the Auga Chat window display");
-        }
+            UseAugaTrash = Config.Bind("Options", "UseAugaTrash", false, "Enable Auga's built in trash button. Click on the button while holding an item or part of a stack with the mouse.");        }
 
         private static void LoadAssets()
         {
@@ -471,9 +466,7 @@ namespace Auga
             Assets.MainMenuPrefab = Load<GameObject>("MainMenu");
             Assets.BuildHudElement = Load<GameObject>("BuildHudElement");
             Assets.MessageHud = Load<GameObject>("AugaMessageHud");
-            Assets.TextInput = Load<GameObject>("AugaTextInput");
             Assets.AugaBarber = Load<GameObject>("AugaBarber");
-            Assets.AugaChat = Load<GameObject>("AugaChat");
             Assets.DamageText = Load<GameObject>("AugaDamageText");
             Assets.EnemyHud = Load<GameObject>("AugaEnemyHud");
             Assets.StoreGui = Load<GameObject>("AugaStoreScreen");
