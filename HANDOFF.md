@@ -41,6 +41,17 @@ What the user's run log showed: Chat, Hud, and InventoryGui postfixes threw on w
 - Tab "double click": no double listener found (tab buttons have no persistent onClick; `AugaTabController.Awake` is the only listener; `SelectTab` is idempotent). Suspected side effect of the per-frame NRE. Recheck.
 - Recheck in world: no `UpdateGui` NRE; empty slots blank; 4 rows in the panel; EAQS equipment/quick slots in the middle panel; weight/armor labels in place; tabs switch on one click; drag/drop, split, and container take-all work.
 
+## In-world retest fixes, 2026-09-11 afternoon (b792ec9..)
+
+Deployed `Auga.dll` SHA256 `5128F5CEE7A747EBA0A0D3ACFCD8FC837CE0774681462C4683A7707CD0AEBBC2`; autotest build/hash/patches(107)/smoke PASS.
+- Esc/pause menu (b792ec9): NOT fixed, no static cause. Checked: AugaMenu `m_root`=MenuRoot (not the Menu GO), all `Menu.Update` open-condition terms (inventory, minimap, TextInput/Barber/Store replacements, ZNet dialogs, chat focus, radial, build UI); none stuck on paper; user log has no exception. Added config `[Logging] TraceInput = true` (`BepInEx\config\randyknapp.mods.auga.cfg`; add the line under `[Logging]` if absent): each Esc logs `[Auga] Esc: ...` with every term; the `true` one is the blocker (or `Menu.instance is null` / `root=True`).
+- Tab double click (ab08cc3): bundle `ButtonSfx` sets `m_selectSfxPrefab` on ~130 buttons (vanilla 2/59). Mouse-down selects (select sfx), mouse-up clicks (click sfx) >2 frames later, past `SfxTimer`. `ButtonSfx.OnSelect` now skips `PointerEventData`. If tabs still act twice (not just sound), trace listeners next.
+- Inventory scroll (6214414): bundle Main viewport = exactly 3 rows (224px, pad 10+10, 64+6). Postfix (now `Priority.Last`, after EAQS) grows `m_player` by any content overflow. One-shot log `[Auga] PlayerGrid: N main cells, content, viewport, grew` shows why it overflowed.
+- EAQS slots (6214414, log only): EAQS 3.1.1 calls only `Panel_Create`/`Divider_CreateSmall`; panel at `m_player` top-left + (752,-166), but `Panel_Create` centres the pivot (upstream since 2021). Cells go under its own `EaqsSlotRoot` at `m_gridRoot`'s anchor point (vanilla `ResetView` flips that pivot). Offsets don't reconcile on paper, so no fix yet; the same one-shot log dumps EAQS panel/slotRoot/cell rects in `m_player` space. Fix from those numbers (likely pin `EaqsSlotRoot` or adjust `Panel_Create` pivot for EAQS).
+- Settings (this commit): `Settings.Awake` postfix hides `Settings/Panel` Image (`woodpanel_settings`) and puts `AugaPanelBase` behind the tabs; `TabContent` inner bkg (`panel_interior_bkg_128`) left as is.
+- Log (user run 16:12): zero exceptions. Auga warnings left: known dead refs (Hud/InventoryGui/Minimap), `Fishlabs.GuiInputField` missing script x2 (bundle ChatInput + one more prefab). Third-party: Epic Loot `missing ItemDrop` (FrozenKing_Summon, PropFeastDeepNorth, SnowRoller; 21x each), Jotunn ambiguous-asset/mock warnings.
+- In-game recheck: set TraceInput, press Esc in world, send `[Auga] Esc:` + `[Auga] PlayerGrid:`/`EAQS` lines; tab click = one sound; inventory no scrollbar; Settings from main + pause menu is Auga-styled and still saves.
+
 ## Done (main)
 
 - T0 merge mrcook1e-ai/Auga (Unity 6 port) + cleanup.
