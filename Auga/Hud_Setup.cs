@@ -23,16 +23,14 @@ namespace Auga
             if (hotkeyBar)
                 AugaStyle.Restyle(hotkeyBar.m_elementPrefab.transform);
 
-            var root = __instance.m_rootObject.transform;
+            // Auga's bar cluster (health, stamina, eitr and the food diamonds) built from the vanilla objects; it lives
+            // in m_healthPanel, so the HealthPanel offset moves the whole cluster.
+            AugaStatBars.Setup(__instance);
+
             Movable(__instance.GetComponentInChildren<HotkeyBar>(true)?.transform, "HotKeyBar");
             Movable(__instance.GetComponentInChildren<KeyHints>(true)?.transform, "KeyHints");
             Movable(__instance.m_statusEffectListRoot, "StatusEffects");
             Movable(__instance.m_healthPanel, "HealthPanel");
-            // Vanilla sets the stamina, adrenaline and eitr bars' anchoredPosition every frame (Hud.cs:1109-1117,
-            // 1149-1157, 1178-1186), so their shared parent is what moves.
-            var bars = __instance.m_staminaBar2Root.parent;
-            if (bars != root && bars != __instance.m_healthPanel)
-                Movable(bars, "StatBars");
             Movable(__instance.m_gpRoot, "GuardianPower");
             Movable(__instance.m_eventBar.transform, "EventBar");
             Movable(__instance.m_actionBarRoot.transform, "ActionProgress");

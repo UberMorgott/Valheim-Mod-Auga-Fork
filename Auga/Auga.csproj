@@ -169,6 +169,7 @@
     <Compile Remove="Extensions.cs" />
     <Compile Remove="GuiBar_Patch.cs" />
     <Compile Remove="Hud_Setup.cs" />
+    <Compile Remove="AugaStatBars.cs" />
     <Compile Remove="LastHitTracker.cs" />
     <Compile Remove="MainMenu_Setup.cs" />
     <Compile Remove="MessageHud_Setup.cs" />
