@@ -48,11 +48,12 @@ namespace Auga
         private static readonly Color TooltipColor = new Color(0.18f, 0.15f, 0.13f);    // MainMenu Tooltip
         private static readonly Color ToggleColor = new Color(0.09f, 0.08f, 0.06f);     // MainMenu toggle Background
         private static readonly Color ToggleMarkColor = new Color(0.73f, 0.54f, 0.07f); // MainMenu toggle Checkmark
-        private static readonly Color SelectedRow = new Color(0.13f, 0.39f, 0.53f);     // WorldListElement/selected
+        private static readonly Color SelectedRow = new Color(0.28f, 0.23f, 0.19f);     // RecipeElement/selected (Auga list rows)
 
         private static readonly HashSet<string> VanillaFonts =
             new HashSet<string> { "Valheim-AveriaSerifLibre", "Valheim-AveriaSansLibre", "Valheim-Norsebold" };
         private const float HeaderSize = 30f;
+        private const float ButtonLabelInset = 28f, TabLabelInset = 14f;
 
         private static bool _loaded;
         private static Image _panel;
@@ -103,7 +104,7 @@ namespace Auga
         public static void Restyle(Transform root)
         {
             Load();
-            var buttons = new HashSet<Selectable>();
+            var buttons = new Dictionary<Selectable, float>(); // button -> label side inset of the Auga art
             foreach (var image in root.GetComponentsInChildren<Image>(true))
             {
                 if (!image.sprite)
@@ -131,7 +132,7 @@ namespace Auga
                         if (owns)
                         {
                             Button(selectable, tab ? _tab : _button);
-                            buttons.Add(selectable);
+                            buttons[selectable] = tab ? TabLabelInset : ButtonLabelInset;
                         }
                         break;
                     case Role.TabSelected: SetSprite(image, "SettignsButtonOver", Color.white, Image.Type.Sliced); break;
@@ -145,14 +146,26 @@ namespace Auga
                 }
             }
 
+            // Build-menu tag rows show the current tag through m_toggledOnObject (BuildUiTagButton.cs:89-92), a blue
+            // sliced image; it takes the Auga list-row selection colour like the "selected" rows above.
+            foreach (var tag in root.GetComponentsInChildren<BuildUiTagButton>(true))
+                if (tag.m_toggledOnObject && tag.m_toggledOnObject.TryGetComponent<Image>(out var toggled))
+                    toggled.color = SelectedRow;
+
             // Button and tab labels and headers: Norsebold (Auga's button/menu font). Everything else: Auga's body font.
             foreach (var text in root.GetComponentsInChildren<TMP_Text>(true))
             {
                 if (!text.font || !VanillaFonts.Contains(text.font.name))
                     continue;
                 var selectable = text.GetComponentInParent<Selectable>(true);
-                var label = selectable && buttons.Contains(selectable) || text.fontSize >= HeaderSize || text.font.name == "Valheim-Norsebold";
+                var inButton = selectable && buttons.ContainsKey(selectable);
+                var label = inButton || text.fontSize >= HeaderSize || text.font.name == "Valheim-Norsebold";
                 SetFont(text, label ? _labelFont : _bodyFont);
+                // Auga's button art has ornamented ends, so its label sits inset (bundle ButtonFancy/Label and
+                // ButtonSettings/Label sizeDelta.x -56/-28). Labels vanilla already auto-sizes get the same inset as a
+                // TMP margin and vanilla's auto-size shrinks them to fit; the RectTransform stays vanilla.
+                if (inButton && text.enableAutoSizing)
+                    text.margin = new Vector4(buttons[selectable], text.margin.y, buttons[selectable], text.margin.w);
             }
         }
 
