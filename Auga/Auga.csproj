@@ -5,7 +5,9 @@
 
   <PropertyGroup>
     <TargetFramework>net472</TargetFramework>
-    <AssemblyName>Auga</AssemblyName>
+    <!-- New assembly name (spec D0a): consumers detect assembly "Auga". RootNamespace stays Auga, so the embedded
+         resources keep their Auga.* names. -->
+    <AssemblyName>AugaSkin</AssemblyName>
     <RootNamespace>Auga</RootNamespace>
     <OutputType>Library</OutputType>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
@@ -15,14 +17,6 @@
     <!-- Отключаем авто-генерацию AssemblyInfo — Properties\AssemblyInfo.cs уже есть -->
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
     <ProjectGuid>{BCC7DD31-D943-4684-800E-176A97DDDB8F}</ProjectGuid>
-  </PropertyGroup>
-
-  <!-- API-конфигурация: только публичный API-слой -->
-  <PropertyGroup Condition="'$(Configuration)' == 'API'">
-    <AssemblyName>AugaAPI</AssemblyName>
-    <DefineConstants>API;TRACE</DefineConstants>
-    <Optimize>false</Optimize>
-    <DebugType>pdbonly</DebugType>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)' == 'Debug'">
@@ -53,16 +47,6 @@
     </Reference>
     <Reference Include="BepInEx">
       <HintPath>$(BepInExCoreDir)\BepInEx.dll</HintPath>
-      <Private>false</Private>
-    </Reference>
-
-    <!-- APIManager.Patcher is vendored as source (APIManagerPatcher.cs); it needs Cecil + Preloader from BepInEx core -->
-    <Reference Include="Mono.Cecil">
-      <HintPath>$(BepInExCoreDir)\Mono.Cecil.dll</HintPath>
-      <Private>false</Private>
-    </Reference>
-    <Reference Include="BepInEx.Preloader">
-      <HintPath>$(BepInExCoreDir)\BepInEx.Preloader.dll</HintPath>
       <Private>false</Private>
     </Reference>
 
@@ -153,47 +137,8 @@
     </Reference>
   </ItemGroup>
 
-  <!-- Исключаем файлы с проблемами компиляции или не входящие в сборку -->
+  <!-- Встроенные ресурсы -->
   <ItemGroup>
-    <Compile Remove="API.External.cs" />
-  </ItemGroup>
-
-  <!-- В API-конфигурации исключаем все файлы, не относящиеся к публичному API -->
-  <ItemGroup Condition="'$(Configuration)' == 'API'">
-    <Compile Remove="Auga.cs" />
-    <Compile Remove="MovableHudElement.cs" />
-    <Compile Remove="AugaLog_Hooks.cs" />
-    <Compile Remove="Chat_Setup.cs" />
-    <Compile Remove="Connection_Setup.cs" />
-    <Compile Remove="DamageText_Setup.cs" />
-    <Compile Remove="Extensions.cs" />
-    <Compile Remove="GuiBar_Patch.cs" />
-    <Compile Remove="Hud_Setup.cs" />
-    <Compile Remove="AugaStatBars.cs" />
-    <Compile Remove="LastHitTracker.cs" />
-    <Compile Remove="MainMenu_Setup.cs" />
-    <Compile Remove="MessageHud_Setup.cs" />
-    <Compile Remove="PauseMenu_Setup.cs" />
-    <Compile Remove="PlayerInventory_Setup.cs" />
-    <Compile Remove="Settings_Setup.cs" />
-    <Compile Remove="SetupHelper.cs" />
-    <Compile Remove="Store_Setup.cs" />
-    <Compile Remove="TextInput_Setup.cs" />
-    <Compile Remove="EnemeyHud_Setup.cs" />
-    <Compile Remove="TextViewer_Setup.cs" />
-    <Compile Remove="Text_Patch.cs" />
-    <Compile Remove="UITooltip_Patch.cs" />
-    <Compile Remove="Minimap_Setup.cs" />
-    <Compile Remove="Barber_Setup.cs" />
-    <Compile Remove="Compat\Chatter.cs" />
-    <Compile Remove="Compat\Jewelcrafting.cs" />
-    <Compile Remove="Compat\SearsCatalog.cs" />
-    <Compile Remove="SkillsDialog_Patch.cs" />
-    <Compile Remove="Utilities\TranspilerHelpers.cs" />
-  </ItemGroup>
-
-  <!-- Встроенные ресурсы (только для не-API сборки) -->
-  <ItemGroup Condition="'$(Configuration)' != 'API'">
     <EmbeddedResource Include="..\AugaUnity\AssetBundles\augaassets">
       <Link>augaassets</Link>
     </EmbeddedResource>
@@ -205,20 +150,8 @@
     </EmbeddedResource>
   </ItemGroup>
 
-  <!-- ProjectReference к AugaUnityLib (только для не-API) -->
-  <ItemGroup Condition="'$(Configuration)' != 'API'">
+  <ItemGroup>
     <ProjectReference Include="..\AugaUnityLib\AugaUnityLib.csproj" />
   </ItemGroup>
-
-  <!--
-    ILRepack.Lib.MSBuild.Task (PackageReference выше) автоматически импортирует ILRepack.targets
-    из директории проекта — явный <Import> не нужен и вызывает MSB4011.
-    Переименуем наш файл в ILRepack.targets чтобы пакет его подхватил автоматически.
-  -->
-
-  <!-- Для API-сборки: копируем в Libs\AugaAPI\ -->
-  <Target Name="CopyAPIToLibs" AfterTargets="Build" Condition="'$(Configuration)' == 'API'">
-    <Exec Command="xcopy &quot;$(TargetDir)$(TargetFileName)&quot; &quot;$(SolutionDir)Libs\AugaAPI\&quot; /q /y /i" />
-  </Target>
 
 </Project>

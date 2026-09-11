@@ -74,37 +74,31 @@ namespace Auga
         public Color TooHard = new Color(0.8f, 0.7f, 0.7f, 1f);
     }
 
-    [BepInPlugin(PluginID, "Project Auga", Version)]
+    // New GUID and assembly name AugaSkin (spec 2026-09-11-auga-native-rework, D0a, Phase 4b). Mods that detect Auga
+    // by GUID randyknapp.mods.auga (VNEI Plugin.cs:335, AdventureBackpacks GuiBar.cs:22) or by assembly "Auga"
+    // (EpicLoot/EAQS embedded Auga.API stub) take their vanilla path. The config file is new: BepInEx\config\
+    // morgott.valheim.augaskin.cfg (no migration from randyknapp.mods.auga.cfg).
+    [BepInPlugin(PluginID, "AugaSkin", Version)]
     [BepInDependency("Menthus.bepinex.plugins.BetterTrader", BepInDependency.DependencyFlags.SoftDependency)]
-    [BepInDependency("maximods.valheim.multicraft", BepInDependency.DependencyFlags.SoftDependency)]
     [BepInDependency("redseiko.valheim.chatter", BepInDependency.DependencyFlags.SoftDependency)]
-    [BepInDependency("redseiko.valheim.searscatalog", BepInDependency.DependencyFlags.SoftDependency)]
-    [BepInDependency("com.github.abearcodes.valheim.simplerecycling", BepInDependency.DependencyFlags.SoftDependency)]
-    [BepInDependency("org.bepinex.plugins.jewelcrafting", BepInDependency.DependencyFlags.SoftDependency)]
     public class Auga : BaseUnityPlugin
     {
-        public const string PluginID = "randyknapp.mods.auga";
-        public const string Version = "1.3.12";
+        public const string PluginID = "morgott.valheim.augaskin";
+        public const string Version = "2.0.0";
+        // Embedded resources are named by the project's RootNamespace (Auga), not by the assembly name.
+        private const string ResourcePrefix = "Auga.";
 
         private static ConfigEntry<bool> _loggingEnabled;
         private static ConfigEntry<LogLevel> _logLevel;
-        public static ConfigEntry<bool> UseAugaTrash;
 
         public static readonly AugaAssets Assets = new AugaAssets();
         public static readonly AugaColors Colors = new AugaColors();
 
         public static bool HasBetterTrader;
-        public static bool HasMultiCraft;
-        public static bool HasSimpleRecycling;
         public static bool HasChatter;
-        public static bool HasJewelcrafting;
 
         private static Auga _instance;
         private Harmony _harmony;
-        private static Type _multiCraftUiType;
-        private static Type _recyclingContainerButtonHolderType;
-        private static Type _recyclingStationButtonHolderType;
-        private static WorkbenchTabData _recyclingTabData;
 
         public static Auga instance => _instance;
 
@@ -128,7 +122,7 @@ namespace Auga
                 if (loaded.GetName().Name == name) return loaded;
             }
 
-            var stream = Assembly.GetExecutingAssembly().GetManifestResourceStream($"Auga.{name}.dll");
+            var stream = Assembly.GetExecutingAssembly().GetManifestResourceStream($"{ResourcePrefix}{name}.dll");
             if (stream == null) return null;
             using (stream)
             {
@@ -157,7 +151,6 @@ namespace Auga
             }
 
             LoadDependencies();
-            APIManager.Patcher.Patch();
             LoadTranslations();
             LoadConfig();
             LoadAssets();
@@ -165,10 +158,7 @@ namespace Auga
             ApplyCursor();
 
             HasBetterTrader = Chainloader.PluginInfos.ContainsKey("Menthus.bepinex.plugins.BetterTrader");
-            HasMultiCraft  = Chainloader.PluginInfos.TryGetValue("maximods.valheim.multicraft", out var multiCraftPlugin);
-            HasSimpleRecycling  = Chainloader.PluginInfos.TryGetValue("com.github.abearcodes.valheim.simplerecycling", out var recyclingPlugin);
             HasChatter = Chainloader.PluginInfos.TryGetValue("redseiko.valheim.chatter", out var chatterPlugin);
-            HasJewelcrafting = Chainloader.PluginInfos.TryGetValue("org.bepinex.plugins.jewelcrafting", out var jewelcraftingPlugin);
 
             _harmony = Harmony.CreateAndPatchAll(Assembly.GetExecutingAssembly(), PluginID);
 
@@ -187,216 +177,6 @@ namespace Auga
                     _harmony.Patch(onToggleValueChangedMethod, transpiler:new HarmonyMethod(typeof(Chatter), nameof(Chatter.OnToggleValueChanged_Transpiler)));
                 }
             }
-            
-            if (HasJewelcrafting)
-            {
-                Jewelcrafting.ModAssembly = Assembly.LoadFile(jewelcraftingPlugin.Location);
-                Jewelcrafting.Synergy = Jewelcrafting.ModAssembly.GetType("Jewelcrafting.Synergy");
-                Jewelcrafting.SocketsBackground = Jewelcrafting.ModAssembly.GetType("Jewelcrafting.SocketsBackground");
-                Jewelcrafting.FusionBoxSetup = Jewelcrafting.ModAssembly.GetType("Jewelcrafting.FusionBoxSetup");
-                Jewelcrafting.AddSealButton = Jewelcrafting.FusionBoxSetup.GetNestedType("AddSealButton");
-                Jewelcrafting.AddSynergyIcon = Jewelcrafting.Synergy.GetNestedType("AddSynergyIcon",BindingFlags.NonPublic | BindingFlags.Static);
-                Jewelcrafting.DisplaySynergyView = Jewelcrafting.Synergy.GetNestedType("DisplaySynergyView");
-                Jewelcrafting.GemCursor = Jewelcrafting.ModAssembly.GetType("Jewelcrafting.GemCursor");
-                Jewelcrafting.CacheVanillaCursor = Jewelcrafting.GemCursor.GetNestedType("CacheVanillaCursor",BindingFlags.NonPublic | BindingFlags.Static);
-                Jewelcrafting.GemStones = Jewelcrafting.ModAssembly.GetType("Jewelcrafting.GemStones");
-                Jewelcrafting.OpenFakeSocketsContainer = Jewelcrafting.GemStones.GetNestedType("OpenFakeSocketsContainer");
-                Jewelcrafting.CloseFakeSocketsContainer = Jewelcrafting.GemStones.GetNestedType("CloseFakeSocketsContainer",BindingFlags.NonPublic | BindingFlags.Static);
-
-                var compatibilityFailure = false;
-                
-                if (Jewelcrafting.DisplaySynergyView != null)
-                {
-                    var awakeMethod = AccessTools.Method(Jewelcrafting.DisplaySynergyView, "Awake");
-                    var awakePostfixMethod = AccessTools.Method(typeof(InventoryGui), nameof(InventoryGui.Awake));
-                    
-                    _harmony.Patch(awakeMethod, transpiler:new HarmonyMethod(typeof(Jewelcrafting), nameof(Jewelcrafting.DisplaySynergyView_Awake_Transpiler)));
-                    _harmony.Patch(awakePostfixMethod, postfix:new HarmonyMethod(typeof(Jewelcrafting), nameof(Jewelcrafting.IvnentoryGui_Awake_Postfix)));
-                }
-                else
-                    compatibilityFailure = true;
-
-                if (Jewelcrafting.AddSealButton != null)
-                {
-                    var sealPostfixMethod = Jewelcrafting.AddSealButton.GetMethod("Postfix", BindingFlags.NonPublic | BindingFlags.Static);
-
-                    if (sealPostfixMethod == null)
-                    {
-                        compatibilityFailure = true;
-                        Debug.LogWarning($"sealPostfixMethod ==  null: {sealPostfixMethod == null}");
-                    }
-                    
-                    _harmony.Patch(sealPostfixMethod, transpiler:new HarmonyMethod(typeof(Jewelcrafting), nameof(Jewelcrafting.FusionBoxSetup_AddSealButton_Postfix_Transpiler)));
-                }
-                else
-                    compatibilityFailure = true;
-                
-                if (Jewelcrafting.CacheVanillaCursor != null)
-                {
-                    var cursorPostfixMethod = Jewelcrafting.CacheVanillaCursor.GetMethod("Postfix", BindingFlags.NonPublic | BindingFlags.Static);
-
-                    if (cursorPostfixMethod == null)
-                    {
-                        compatibilityFailure = true;
-                        Debug.LogWarning($"cursorPostfixMethod ==  null: {cursorPostfixMethod ==  null}");
-                    }
-                    _harmony.Patch(cursorPostfixMethod, transpiler:new HarmonyMethod(typeof(Jewelcrafting), nameof(Jewelcrafting.GemCursor_CacheVanillaCursor_Postfix_Transpiler)));
-                }
-                else
-                    compatibilityFailure = true;
-
-                if (Jewelcrafting.OpenFakeSocketsContainer != null)
-                {
-                    var openSocketsMethod = Jewelcrafting.OpenFakeSocketsContainer.GetMethod("Open", BindingFlags.Public | BindingFlags.Static);
-                    if (openSocketsMethod == null)
-                    {
-                        compatibilityFailure = true;
-                        Debug.LogWarning($"openSocketsMethod ==  null: {openSocketsMethod ==  null}");
-                    }
-                    _harmony.Patch(openSocketsMethod, transpiler:new HarmonyMethod(typeof(Jewelcrafting), nameof(Jewelcrafting.GemStones_OpenFakeSocketsContainer_Open_Transpiler)));
-                }
-                else
-                    compatibilityFailure = true;
-
-                if (Jewelcrafting.CloseFakeSocketsContainer != null)
-                {
-                    var closeSocketsMethod = Jewelcrafting.CloseFakeSocketsContainer.GetMethod("Prefix", BindingFlags.NonPublic | BindingFlags.Static);
-                    if (closeSocketsMethod == null)
-                    {
-                        compatibilityFailure = true;
-                        Debug.LogWarning($"closeSocketsMethod ==  null: {closeSocketsMethod ==  null}");
-                    }
-                    _harmony.Patch(closeSocketsMethod, transpiler:new HarmonyMethod(typeof(Jewelcrafting), nameof(Jewelcrafting.GemStones_CloseFakeSocketsContainer_Prefix_Transpiler)));
-                }
-                else
-                    compatibilityFailure = true;
-
-                if (compatibilityFailure)
-                {
-                    Debug.LogWarning($"Jewelcrafting.DisplaySynergyView ==  null: {Jewelcrafting.DisplaySynergyView ==  null}");
-                    Debug.LogWarning($"Jewelcrafting.Synergy ==  null: {Jewelcrafting.Synergy ==  null}");
-                    Debug.LogWarning($"Jewelcrafting.SocketsBackground ==  null: {Jewelcrafting.SocketsBackground ==  null}");
-                    Debug.LogWarning($"Jewelcrafting.DisplaySynergyView ==  null: {Jewelcrafting.DisplaySynergyView ==  null}");
-                    Debug.LogWarning($"Jewelcrafting.AddSynergyIcon ==  null: {Jewelcrafting.AddSynergyIcon ==  null}");
-                    Debug.LogWarning($"Jewelcrafting.FusionBoxSetup ==  null: {Jewelcrafting.FusionBoxSetup ==  null}");
-                    Debug.LogWarning($"Jewelcrafting.AddSealButton ==  null: {Jewelcrafting.AddSealButton ==  null}");
-                    Debug.LogWarning($"Jewelcrafting.GemCursor ==  null: {Jewelcrafting.GemCursor ==  null}");
-                    Debug.LogWarning($"Jewelcrafting.CacheVanillaCursor ==  null: {Jewelcrafting.CacheVanillaCursor ==  null}");
-                    Debug.LogWarning($"Jewelcrafting.GemStones ==  null: {Jewelcrafting.GemStones ==  null}");
-                    Debug.LogWarning($"Jewelcrafting.OpenFakeSocketsContainer ==  null: {Jewelcrafting.OpenFakeSocketsContainer ==  null}");
-                    Debug.LogWarning($"Jewelcrafting.CloseFakeSocketsContainer ==  null: {Jewelcrafting.CloseFakeSocketsContainer ==  null}");
-                    Debug.LogError("Jewelcrafting Compatibility Failed - Contact Vapok with the above information");
-                }
-            }
-            
-            if (HasMultiCraft)
-            {
-                var multiCraftPluginType = Assembly.LoadFile(multiCraftPlugin.Location);
-                _multiCraftUiType = multiCraftPluginType.GetType("MultiCraft.MultiCraft_UI");
-                var multicraftLogicType = multiCraftPluginType.GetType("MultiCraft.MultiCraft_Logic");
-                var createCraftButtonSpaceMethod = AccessTools.Method(_multiCraftUiType, "CreateSpaceFromCraftButton");
-                var isCraftingMethod = AccessTools.Method(multicraftLogicType, "IsCrafting");
-                if (createCraftButtonSpaceMethod != null)
-                {
-                    _harmony.Patch(createCraftButtonSpaceMethod, new HarmonyMethod(typeof(Auga), nameof(MultiCraft_UI_CreateSpaceFromCraftButton_Patch)));
-                    _harmony.Patch(isCraftingMethod, new HarmonyMethod(typeof(Auga), nameof(MultiCraft_Logic_IsCrafting_Patch)));
-                }
-            }
-
-            // Patch Simple Recycling
-
-            if (HasSimpleRecycling)
-            {
-                var pluginType = Assembly.LoadFile(recyclingPlugin.Location);
-                _recyclingContainerButtonHolderType = pluginType.GetType("ABearCodes.Valheim.SimpleRecycling.UI.ContainerRecyclingButtonHolder");
-                _recyclingStationButtonHolderType = pluginType.GetType("ABearCodes.Valheim.SimpleRecycling.UI.StationRecyclingTabHolder");
-                var containerButtonMethod = AccessTools.Method(_recyclingContainerButtonHolderType, "SetupButton");
-                var tabButtonMethod = AccessTools.Method(_recyclingStationButtonHolderType, "SetupTabButton");
-                var setActiveMethod = AccessTools.Method(_recyclingStationButtonHolderType, "SetActive");
-                var inRecycleTabMethod = AccessTools.Method(_recyclingStationButtonHolderType, "InRecycleTab");
-                if (containerButtonMethod != null)
-                    _harmony.Patch(containerButtonMethod, new HarmonyMethod(typeof(Auga), nameof(SimpleRecycling_ContainerRecyclingButtonHolder_SetupButton_Patch)));
-                if (tabButtonMethod != null)
-                    _harmony.Patch(tabButtonMethod, new HarmonyMethod(typeof(Auga), nameof(SimpleRecycling_StationRecyclingTabHolder_SetupTabButton_Patch)));
-                if (setActiveMethod != null)
-                    _harmony.Patch(setActiveMethod, new HarmonyMethod(typeof(Auga), nameof(SimpleRecycling_StationRecyclingTabHolder_SetActive_Patch)));
-                if (inRecycleTabMethod != null)
-                    _harmony.Patch(inRecycleTabMethod, new HarmonyMethod(typeof(Auga), nameof(SimpleRecycling_StationRecyclingTabHolder_InRecycleTab_Patch)));
-            }
-        }
-
-
-        public static bool MultiCraft_UI_CreateSpaceFromCraftButton_Patch(InventoryGui instance)
-        {
-            API.GetCraftingControls().Multicraft.SetActive(true);
-            var multiCraftUiInstance = AccessTools.Method(_multiCraftUiType, "get_instance").Invoke(null, BindingFlags.Public | BindingFlags.Static | BindingFlags.GetProperty, null, new object[] { }, CultureInfo.InvariantCulture);
-
-            var plusButton = API.GetCraftingControls().PlusButton; 
-            var plusButtonMethod = AccessTools.Method(_multiCraftUiType, "OnPlusButtonPressed");
-            plusButton.GetComponent<Button>().onClick.AddListener(() => plusButtonMethod.Invoke(multiCraftUiInstance, new object[]{}));
-
-            var minusButton = API.GetCraftingControls().MinusButton;
-            var minusButtonMethod = AccessTools.Method(_multiCraftUiType, "OnMinusButtonPressed");
-            minusButton.GetComponent<Button>().onClick.AddListener(() => minusButtonMethod.Invoke(multiCraftUiInstance, new object[] { }));
-
-            return false;
-        }
-
-        public static bool MultiCraft_Logic_IsCrafting_Patch(ref bool __result)
-        {
-            __result = InventoryGui.instance.m_craftTimer >= 0;
-            return false;
-        }
-
-        public static bool SimpleRecycling_ContainerRecyclingButtonHolder_SetupButton_Patch()
-        {
-            var recycleAllButtonGO = InventoryGui.instance.m_container.Find("RecycleAll").gameObject;
-
-            var onRecycleAllPressedMethod = AccessTools.Method(_recyclingContainerButtonHolderType, "OnRecycleAllPressed");
-            var setButtonStateMethod = AccessTools.Method(_recyclingContainerButtonHolderType, "SetButtonState");
-            var recycleAllButtonFieldRef = AccessTools.FieldRefAccess<Button>(_recyclingContainerButtonHolderType, "_recycleAllButton");
-            var textComponentFieldRef = AccessTools.FieldRefAccess<Text>(_recyclingContainerButtonHolderType, "_textComponent");
-            var imageComponentFieldRef = AccessTools.FieldRefAccess<Image>(_recyclingContainerButtonHolderType, "_imageComponent");
-
-            var component = _instance.gameObject.GetComponent("ContainerRecyclingButtonHolder");
-            var recycleAllButton = recycleAllButtonGO.GetComponent<Button>();
-            recycleAllButtonFieldRef(component) = recycleAllButton;
-            recycleAllButton.onClick.RemoveAllListeners();
-            recycleAllButton.onClick.AddListener(() => { onRecycleAllPressedMethod.Invoke(component, new object[]{}); });
-
-            textComponentFieldRef(component) = recycleAllButton.GetComponentInChildren<Text>();
-            imageComponentFieldRef(component) = recycleAllButton.GetComponentInChildren<Image>();
-            setButtonStateMethod.Invoke(component, new object[] { false });
-
-            return false;
-        }
-
-        public static bool SimpleRecycling_StationRecyclingTabHolder_SetupTabButton_Patch()
-        {
-            var recyclingTabButtonFieldRef = AccessTools.FieldRefAccess<Button>(_recyclingStationButtonHolderType, "_recyclingTabButtonComponent");
-            var recyclingTabButtonGOFieldRef = AccessTools.FieldRefAccess<GameObject>(_recyclingStationButtonHolderType, "_recyclingTabButtonGameObject");
-            var updateCraftingPanelMethod = AccessTools.Method(_recyclingStationButtonHolderType, "UpdateCraftingPanel");
-            var component = _instance.gameObject.GetComponent("StationRecyclingTabHolder");
-
-            _recyclingTabData = API.Workbench_AddVanillaWorkbenchTab("RECYCLE", Assets.RecyclingPanelIcon, "Recycle", (_) =>
-            {
-                updateCraftingPanelMethod.Invoke(component, new object[] { });
-            });
-            recyclingTabButtonFieldRef(component) = _recyclingTabData.TabButtonGO.GetComponent<Button>();
-            recyclingTabButtonGOFieldRef(component) = _recyclingTabData.TabButtonGO;
-
-            return false;
-        }
-
-        public static bool SimpleRecycling_StationRecyclingTabHolder_SetActive_Patch()
-        {
-            return false;
-        }
-
-        public static bool SimpleRecycling_StationRecyclingTabHolder_InRecycleTab_Patch(ref bool __result)
-        {
-            __result = WorkbenchPanelController.instance != null && WorkbenchPanelController.instance.IsTabActiveById("RECYCLE");
-            return false;
         }
 
         public void OnDestroy()
@@ -435,7 +215,7 @@ namespace Auga
         {
             _loggingEnabled = Config.Bind("Logging", "LoggingEnabled", false, "Enable logging");
             _logLevel = Config.Bind("Logging", "LogLevel", LogLevel.Info, "Only log messages of the selected level or higher");
-            UseAugaTrash = Config.Bind("Options", "UseAugaTrash", false, "Enable Auga's built in trash button. Click on the button while holding an item or part of a stack with the mouse.");        }
+        }
 
         private static void LoadAssets()
         {
@@ -517,8 +297,8 @@ namespace Auga
                 return AssetBundle.LoadFromFile(assetBundlePath);
             }
 
-            var assembly = Assembly.GetCallingAssembly();
-            var assetBundle = AssetBundle.LoadFromStream(assembly.GetManifestResourceStream($"{assembly.GetName().Name}.{filename}"));
+            var assembly = typeof(Auga).Assembly;
+            var assetBundle = AssetBundle.LoadFromStream(assembly.GetManifestResourceStream($"{ResourcePrefix}{filename}"));
 
             return assetBundle;
         }
@@ -531,19 +311,12 @@ namespace Auga
 
         public static string GetAssetPath(string assetName)
         {
-            var assetFileName = Path.Combine(Paths.PluginPath, "Auga", assetName);
-            if (!File.Exists(assetFileName))
-            {
-                var assembly = typeof(Auga).Assembly;
-                assetFileName = Path.Combine(Path.GetDirectoryName(assembly.Location) ?? string.Empty, assetName);
-                if (!File.Exists(assetFileName))
-                {
-                    LogError($"Could not find asset ({assetName})");
-                    return null;
-                }
-            }
-
-            return assetFileName;
+            // Next to the plugin DLL (plugins\AugaSkin).
+            var assetFileName = Path.Combine(Path.GetDirectoryName(typeof(Auga).Assembly.Location) ?? string.Empty, assetName);
+            if (File.Exists(assetFileName))
+                return assetFileName;
+            LogError($"Could not find asset ({assetName})");
+            return null;
         }
 
         public static void Log(string message)
