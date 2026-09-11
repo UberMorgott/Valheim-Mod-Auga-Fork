@@ -29,6 +29,8 @@ namespace Auga
                          __instance.m_playerGrid.m_elementPrefab, __instance.m_containerGrid.m_elementPrefab,
                          __instance.m_recipeElementPrefab, __instance.m_trophieElementPrefab,
                          __instance.m_achievementsElementPrefab, __instance.m_dragItemPrefab,
+                         // skill rows, instantiated by SkillsDialog.Setup (SkillsDialog.cs:119)
+                         __instance.m_skillsDialog ? __instance.m_skillsDialog.m_elementPrefab : null,
                      })
                 if (template)
                     AugaStyle.Restyle(template.transform);
