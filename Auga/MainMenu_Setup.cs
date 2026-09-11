@@ -128,6 +128,22 @@ namespace Auga
                     kv.Key.SetValue(instance, kv.Value);
             }
 
+            // Vanilla Menu containers carry the layout (BottomLeftButtons: layout group stacking
+            // changelog/EULA/log buttons) or a nested canvas (ChangeLog). Moving just the field
+            // objects dumps them at anchor (0,0) of Auga's Menu, so the whole container moves.
+            // The generic loop below then skips them: they are no longer under the original.
+            foreach (var (original, replacement) in _replaced)
+            {
+                if (!original || !replacement || original.name != "Menu") continue;
+                foreach (var name in new[] { "BottomLeftButtons", "Canvas Changelog" })
+                {
+                    var c = original.Find(name);
+                    if (c == null) continue;
+                    c.SetParent(replacement, false);
+                    Debug.Log($"[Auga] MainMenu: kept vanilla container '{name}' -> {replacement.name}/");
+                }
+            }
+
             var toMove = new System.Collections.Generic.List<(string field, Transform t)>();
             foreach (var field in UiFields())
             {
