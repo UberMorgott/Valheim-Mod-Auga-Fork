@@ -194,7 +194,49 @@ namespace Auga
         [HarmonyPatch(typeof(InventoryGrid), nameof(InventoryGrid.UpdateGui))]
         public static class InventoryGrid_UpdateGui_Patch
         {
+            private static bool _layoutLogged;
+
+            // Runs after EAQS's postfix, which pulls its extra rows out of the grid.
+            [HarmonyPriority(Priority.Last)]
             public static void Postfix(InventoryGrid __instance)
+            {
+                try { Body(__instance); }
+                finally { if (__instance.name == "PlayerGrid") FitPlayerPanel(__instance); }
+            }
+
+            // The bundle's Main viewport is sized for exactly 3 rows (224px); if the rows left in
+            // Main/Grid need more, grow the Player panel instead of showing a scrollbar.
+            private static void FitPlayerPanel(InventoryGrid grid)
+            {
+                var gridRect = MainRowsInventory as RectTransform;
+                var viewport = gridRect ? gridRect.parent as RectTransform : null;
+                var player = InventoryGui.instance ? InventoryGui.instance.m_player : null;
+                if (!viewport || !player) return;
+
+                var content = LayoutUtility.GetPreferredHeight(gridRect);
+                var overflow = content - viewport.rect.height;
+                if (overflow > 0.5f)
+                    player.SetSizeWithCurrentAnchors(RectTransform.Axis.Vertical, player.rect.height + overflow);
+
+                if (_layoutLogged || !player.gameObject.activeInHierarchy || content <= 0) return;
+                _layoutLogged = true;
+                var cells = 0;
+                foreach (Transform c in gridRect) if (c.gameObject.activeSelf) cells++;
+                Debug.Log($"[Auga] PlayerGrid: {cells} main cells, content {content:0}px, viewport {viewport.rect.height:0}px, player panel {player.rect.size}, grew {Mathf.Max(0, overflow):0}px");
+                // EAQS (#5 slot alignment): its panel and slot root, in m_player space.
+                var eaqsPanel = player.Find("EAQS") as RectTransform;
+                var slotRoot = player.Find("EaqsSlotRoot") as RectTransform;
+                if (eaqsPanel)
+                    Debug.Log($"[Auga] EAQS panel: pos {eaqsPanel.localPosition} pivot {eaqsPanel.pivot} size {eaqsPanel.rect.size}");
+                if (slotRoot)
+                {
+                    Debug.Log($"[Auga] EAQS slotRoot: pos {slotRoot.localPosition} pivot {slotRoot.pivot} size {slotRoot.rect.size} gridRoot pivot {grid.m_gridRoot.pivot}");
+                    foreach (RectTransform cell in slotRoot)
+                        Debug.Log($"[Auga] EAQS cell {cell.name}: anchored {cell.anchoredPosition} inPlayer {player.InverseTransformPoint(cell.position)} pivot {cell.pivot}");
+                }
+            }
+
+            private static void Body(InventoryGrid __instance)
             {
                 if (__instance.name == "PlayerGrid")
                 {
