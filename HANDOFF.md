@@ -13,11 +13,12 @@ Target: Valheim 1.0.7 (Unity 6, network 39), BepInEx 5.4.23.5. Personal build.
 - AugaLite (ZenDragon) deleted from plugins.
 - AAACrafting disabled again: `plugins\AAACrafting\AzuAntiArthriticCrafting.dll.disabled`. 2.1.6 (latest on Thunderstore as of 2026-09-11) fails on 1.0.7 with Harmony `Undefined target method` - private `Inventory.AddItem` gained `bool skipValidPositionCheck`. Re-enable (rename back) once `update-mods.ps1` pulls a newer version.
 - AdventureBackpacks fork: `2d5688a` skips its 54px durability-bar override under Auga; old DLL kept as `plugins\AdventureBackpacks\AdventureBackpacks.dll.bak`.
-- First in-game run (2026-09-11): bundle loaded (39/39), no Auga exceptions, but the main menu was cluttered. Fixed statically, needs in-game recheck:
-  - The vanilla 1.0.7 cinematics list ("BLACK FOREST"/"LOCKED"/"BACK") showed because Auga's `HideAll` replacement lacked `m_cinematicsMenuList`. It is now hidden. Auga has no Cinematics button, so the list is unreachable.
-  - The vanilla 1.0 `Menu/Logo` is no longer rescued into Auga's menu, and the merch-store button (`m_merchStoreButtonParent`) is hidden.
-  - Second run: a stray bottom-left fragment ("...НИЕ" plus a yellow arrow) was the vanilla `showChangelog`/`showEula`/`showlog` buttons (with `newsNotification`). They were moved out of their layout container `Menu/BottomLeftButtons`, so they stacked at anchor (0,0), half off-screen. Now the whole `BottomLeftButtons` and `Canvas Changelog` containers move into Auga's Menu (log: `kept vanilla container`). Recheck: the three links sit bottom-left at (180,100) and the Changelog toggle opens and closes its panel.
-  - APIManager `Failed patching ... InvalidCastException ... AddOverrides` for EpicLoot/EquipmentAndQuickSlots: `VisitMethod` re-owned `MethodDefinition`s nested in their `Auga.API` stub (`<Transpiler>d__2`). It is now guarded like `VisitField`.
+- Main menu decision (user, 2026-09-11): the main menu (FejdStartup: menu, character select/creation, start game, join) is pure vanilla. Auga's main-menu replacement (`MainMenu_Setup.cs`, ~1000 lines) is deleted. `MainMenu_Setup.cs` now only has a `FejdStartup.Awake` postfix that:
+  - puts Auga's font on every vanilla TMP text (a dynamic `TMP_FontAsset` built from bundle `SourceSansPro-SemiBold`, with the vanilla fonts as glyph fallback), including the `m_worldListElement` / `ServerListGui.m_serverListElement` prefabs;
+  - hides the button whose onClick calls `OnCinematics`, so the 1.0.7 cinematics list (Black Forest / Locked / Back) is unreachable. Vanilla `HideAll` keeps the list hidden.
+  - Autotest smoke passes (menu reached). In-game recheck: menu looks vanilla in Source Sans Pro, the Cinematics button is gone, and Cyrillic and icons render (no boxes).
+  - `AugaAssets.MainMenuPrefab`/`AugaLogo`/`WorldListElement`/`ServerListElement` still load (public fields, kept for API compat) but are unused.
+- APIManager `Failed patching ... InvalidCastException ... AddOverrides` for EpicLoot/EquipmentAndQuickSlots: `VisitMethod` re-owned `MethodDefinition`s nested in their `Auga.API` stub (`<Transpiler>d__2`). It is now guarded like `VisitField`.
 - AAACrafting `Undefined target method ... InventoryAddItemPatchDataIntIntInt`: NOT Auga. Vanilla 1.0.7 changed private `Inventory.AddItem(ItemData,int,int,int)` to `(ItemData,int,int,int,bool skipValidPositionCheck=false)`. The exception aborts AAACrafting's `PatchAll`, so its later patch classes (ServerSync RPC, favoriting, paginator, ...) are not applied either. The mod is third-party (Azumatt, 2.1.6), so the options are: a newer AAACrafting build for 1.0.7, or disable it again (`.dll.disabled`).
 - AdventureBackpacks `RegisterSlot` NRE: the statically read EAQS `AddSlot` path is null-safe once EAQS `Awake` has run, so a stack is needed. AB commit (see below) now logs the full exception. AB also ships its own APIManager patcher copy with the same `VisitMethod` bug. It is fixed the same way as Auga 76853a8 and deployed, SHA256 `D390B9727B6FFE86C453B76D9C5E8316F57234B9DEB6E9C1727EDD0DBBEDC9BF`. In-game: confirm that no `Failed patching` appears and that `Registered the 'Backpack' equipment slot` is logged. Otherwise read the logged stack.
 
@@ -32,6 +33,7 @@ Target: Valheim 1.0.7 (Unity 6, network 39), BepInEx 5.4.23.5. Personal build.
 - T7 API compat: `Auga.API` unchanged (72 methods); consumers' calls all present.
 - T8 SmoothRegen HP bar: `FastBar.m_changeDelay = 0` (`tools\guibar-delay-check.ps1`).
 - T5 vanilla UI audit: pause menu wired to 1.0.7 fields (would have crashed), vanilla Info panel kept (Texts/Trophies/Achievements), mount panel + adrenaline bar passed through, main-menu vanilla elements passed through instead of dummies, `m_uiGroups` order fixed for 1.0.7.
+- Vanilla main menu with Auga font; cinematics button hidden (see State).
 - Review fixes: arrival log only on first spawn, chat scroll via `ZInput`, no double assembly loads, snapping icon like vanilla, HUD restyle independent of build-menu option.
 
 ## First in-game run
@@ -39,7 +41,7 @@ Target: Valheim 1.0.7 (Unity 6, network 39), BepInEx 5.4.23.5. Personal build.
 1. Start the game and play through the T9 checklist in the plan.
 2. Collect `D:\Steam\steamapps\common\Valheim\BepInEx\LogOutput.log` and grep `[Auga]`:
    - `all 39 assets found` means the bundle loaded; otherwise it lists what is missing.
-   - `MainMenu: kept vanilla <field>` lines show which vanilla elements were passed through (they may overlap the Auga layout).
+   - `MainMenu: could not create TMP font` means the main menu fell back to the vanilla font.
    - `FixDeadFields` / dead-ref warnings mean a field points at a destroyed object.
    - A transpiler hit-count error means the `UpdateBuild` anchor is wrong.
 

@@ -25,6 +25,7 @@ Revive RandyKnapp/Auga (abandoned 2024-05, targets Valheim 0.217.x) on Valheim 1
 1. Known breakages (from the static check):
    - `Settings_Setup.cs`: vanilla `Settings` was rewritten into tabs (`m_resButtonText`, `m_selectedRes`, `m_alternativeGlyphs`, `m_keys`, `m_resolutions`, `UpdateGamepadMap`, `UpdateBindings` are gone). Rewrite the file against 1.0.7.
    - `MainMenu_Setup.cs`: `m_joinIPPanel`, `m_manualIPButton`, `m_joinIPJoinButton`, `m_joinIPAddress`, `m_friendFilterSwitch`, `m_publicFilterSwitch` were removed from `FejdStartup`.
+   - Decision (2026-09-11, user): the main menu stays vanilla. Auga's main-menu replacement is dropped. Only Auga's font (Source Sans Pro) goes on the vanilla TMP texts, and the 1.0.7 Cinematics button is hidden. In-game UI (HUD, inventory, etc.) stays Auga.
    - `Hud_Setup.cs:710` `m_pieceBarPosX`; `PlayerInventory_Setup.cs:120` `m_splitPanel`.
 2. Transpilers: verify every IL pattern against 1.0.7 IL, not just member names.
 3. Vanilla UI audit: vanilla UI changed a lot since 0.217. For `Hud`, `InventoryGui`, `Menu`, `Settings`, `FejdStartup`, `Minimap`, `StoreGui`, `SkillsDialog`, `TextsDialog`, list the 1.0.7 UI fields and elements Auga does not handle. Decide per element: restyle, hide, or pass through vanilla. Nothing may end up hidden under Auga panels or non-interactive.
