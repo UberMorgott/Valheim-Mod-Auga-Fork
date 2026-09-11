@@ -17,7 +17,8 @@ namespace Auga
         private static readonly HashSet<string> OverlapAllow = new HashSet<string>
         {
             "Blur", "darken", "Darken", "bkg", "Background", "Scrim", "border (1)", "ornament", "GamepadMap",
-            "HeaderLine" // vanilla Settings: thin rule across the top of TabButtons/TabContent
+            "HeaderLine", // vanilla Settings: thin rule across the top of TabButtons/TabContent
+            "AugaCorner"  // AugaStyle.Panel corner ornaments, drawn over the panel's corners by design
         };
 
         private static readonly HashSet<string> VanillaAssemblies = new HashSet<string>

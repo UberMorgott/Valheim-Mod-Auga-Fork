@@ -8,44 +8,13 @@ using UnityEngine.UI;
 
 namespace Auga
 {
-    // Vanilla Settings window (pause menu Menu.cs:411-416 and main menu FejdStartup.cs:2960-2964), restyled
-    // in place: the vanilla backdrop sprites take Auga's panel art, tab and OK/Back labels take Auga's button
-    // font. Nothing is added or hidden; tabs, saving and layout stay vanilla (Settings.cs:50-56, 89-99).
+    // Vanilla Settings window (pause menu Menu.cs:411-416 and main menu FejdStartup.cs:2960-2964), restyled in
+    // place by the shared AugaStyle map. Tabs, saving and layout stay vanilla (Settings.cs:50-56, 89-99). Awake
+    // runs inside Instantiate, so the window is restyled before its first frame.
     [HarmonyPatch(typeof(Settings), nameof(Settings.Awake))]
     public static class Settings_Awake_Patch
     {
-        public static void Postfix(Settings __instance)
-        {
-            var panel = AugaStyle.FromPrefab<Image>(Auga.Assets.PanelBase, "Background");
-            var interior = AugaStyle.FromPrefab<Image>(Auga.Assets.PanelBase, "Darken");
-            const string augaButton = "MenuRoot/ExitConfirm/ExitConfirmDialog/ButtonYes";
-            var buttonImage = AugaStyle.FromPrefab<Image>(Auga.Assets.MenuPrefab, augaButton + "/Image");
-            var label = AugaStyle.FromPrefab<TMP_Text>(Auga.Assets.MenuPrefab, augaButton + "/Label");
-
-            foreach (var image in __instance.GetComponentsInChildren<Image>(true))
-            {
-                switch (image.sprite ? image.sprite.name : null)
-                {
-                    case "woodpanel_settings": AugaStyle.CopyImage(image, panel); break;
-                    case "panel_interior_bkg_128": AugaStyle.CopyImage(image, interior); break;
-                }
-            }
-
-            // m_tabHandler is set by InitializeTabs during Awake (Settings.cs:91). A tab may have no button; vanilla
-            // skips those (TabHandler.cs:64). A button's labels include its "Selected" copy (TabHandler.cs:72-101).
-            foreach (var tab in __instance.m_tabHandler.m_tabs)
-            {
-                if (!tab.m_button)
-                    continue;
-                foreach (var text in tab.m_button.GetComponentsInChildren<TMP_Text>(true))
-                    AugaStyle.CopyText(text, label);
-            }
-            foreach (var button in new[] { __instance.m_okButton, __instance.m_backButton })
-            {
-                AugaStyle.CopyImage(button.image, buttonImage);
-                AugaStyle.CopyText(button.GetComponentInChildren<TMP_Text>(true), label);
-            }
-        }
+        public static void Postfix(Settings __instance) => AugaStyle.Restyle(__instance.transform);
     }
 
     // AugaBindingDisplay.SetBinding: оригинальный метод обращается к

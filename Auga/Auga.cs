@@ -50,7 +50,7 @@ namespace Auga
         public Font SourceSansProSemiBold;
         public Font SourceSansProRegular;
         public TMPro.TMP_FontAsset NorseboldTMP;
-        public Sprite ItemBackgroundSprite;
+        public TMPro.TMP_FontAsset SourceSansProRegularTMP;        public Sprite ItemBackgroundSprite;
         public GameObject InventoryTooltip;
         public GameObject SimpleTooltip;
         public GameObject DividerSmall;
@@ -564,6 +564,7 @@ namespace Auga
             Assets.SourceSansProSemiBold = Load<Font>("SourceSansPro-SemiBold");
             Assets.SourceSansProRegular = Load<Font>("SourceSansPro-Regular");
             Assets.NorseboldTMP = Load<TMPro.TMP_FontAsset>("Norsebold SDF");
+            Assets.SourceSansProRegularTMP = Load<TMPro.TMP_FontAsset>("SourceSansPro-Regular SDF");
             Assets.ItemBackgroundSprite = Load<Sprite>("Container_Square_A");
             Assets.InventoryTooltip = Load<GameObject>("InventoryTooltip");
             Assets.SimpleTooltip = Load<GameObject>("SimpleTooltip");
