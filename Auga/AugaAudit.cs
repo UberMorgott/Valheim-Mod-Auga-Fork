@@ -26,7 +26,10 @@ namespace Auga
             "AdventureToggleContainer",
             // vanilla 1.0.12 inventory root/Info: the player-name title panel overlaps the Trophies button; Auga writes
             // no RectTransform under InventoryGui (PlayerInventory_Setup only restyles), so this is the vanilla layout
-            "TitlePanel"
+            "TitlePanel",
+            // vanilla 1.0.12 root/Crafting at a station: the RepairSimple rect reaches under the recipe list (its
+            // button sits left of the panel) and the station Level star overlaps TabsButtons; same reason as above
+            "RepairSimple", "TabsButtons"
         };
 
         // Fields the game itself points at objects it destroys, so they are not Auga's doing.
