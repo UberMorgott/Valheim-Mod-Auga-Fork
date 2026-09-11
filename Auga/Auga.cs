@@ -115,6 +115,10 @@ namespace Auga
         public static ConfigEntry<bool> EitrBarShowTicks;
         
         public static ConfigEntry<bool> BuildMenuShow;
+        // ponytail: Auga build menu forced off on 1.0.7 - its BuildHud replacement leaves ~15 new
+        // vanilla fields (m_buildSelection, m_pieceListRoot, m_requirementItems, hovered-author...) on
+        // destroyed objects. Rewire them to the bundle's BuildHud to re-enable BuildMenuShow.
+        public static bool UseAugaBuildMenu => false; // was: BuildMenuShow.Value && !HasSearsCatalog
         public static ConfigEntry<bool> AugaChatShow;
 
         public static readonly AugaAssets Assets = new AugaAssets();

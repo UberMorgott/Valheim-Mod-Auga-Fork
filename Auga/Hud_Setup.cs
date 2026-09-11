@@ -29,36 +29,34 @@ namespace Auga
             
             hotkeyBar.gameObject.AddComponent<MovableHudElement>().Init(TextAnchor.UpperLeft, 55, -44);
 
+            // The shipped bundle's StatusEffects has no StatusEffectsExt/StatusEffectsInt children
+            // (code expected a newer bundle); AugaStatusEffects renders the list itself and vanilla
+            // UpdateStatusEffects is skipped, so the whole panel is the movable element.
             var newStatusEffects = __instance.Replace("hudroot/StatusEffects", Auga.Assets.Hud);
-            var newTemplate = newStatusEffects.Find("StatusEffectsExt/SE_Template");
             var newExternalRoot = newStatusEffects.Find("StatusEffectsExt");
             var newInternalRoot = newStatusEffects.Find("StatusEffectsInt");
-            
-            newInternalRoot.gameObject.AddComponent<MovableHudElement>().Init("Status Effect List",TextAnchor.UpperRight, -40, 0);
-            newExternalRoot.gameObject.AddComponent<MovableHudElement>().Init("Abilities and Other Statuses",TextAnchor.UpperRight, -160, 0);
-            __instance.m_statusEffectTemplate = newTemplate.RectTransform();
-            __instance.m_statusEffectListRoot = newExternalRoot.RectTransform();
-            
+            if (newInternalRoot != null && newExternalRoot != null)
+            {
+                newInternalRoot.gameObject.AddComponent<MovableHudElement>().Init("Status Effect List", TextAnchor.UpperRight, -40, 0);
+                newExternalRoot.gameObject.AddComponent<MovableHudElement>().Init("Abilities and Other Statuses", TextAnchor.UpperRight, -160, 0);
+                __instance.m_statusEffectTemplate = newExternalRoot.Find("SE_Template").RectTransform();
+                __instance.m_statusEffectListRoot = newExternalRoot.RectTransform();
+            }
+            else
+            {
+                newStatusEffects.gameObject.AddComponent<MovableHudElement>().Init("Status Effect List", TextAnchor.UpperRight, -40, 0);
+            }
+
 
             __instance.m_saveIcon = __instance.Replace("hudroot/SaveIcon", Auga.Assets.Hud).gameObject;
             __instance.m_saveIconImage = __instance.m_saveIcon.GetComponent<Image>();
             __instance.m_badConnectionIcon = __instance.Replace("hudroot/BadConnectionIcon", Auga.Assets.Hud).gameObject;
 
 
-            var originalDreamTexts = __instance.m_sleepingProgress.GetComponent<SleepText>().m_dreamTexts;
-            var loadingScreen = __instance.Replace("LoadingBlack", Auga.Assets.Hud);
-            __instance.m_loadingScreen = loadingScreen.GetComponent<CanvasGroup>();
-            __instance.m_loadingProgress = loadingScreen.Find("Loading").gameObject;
-            __instance.m_sleepingProgress = loadingScreen.Find("Sleeping").gameObject;
-            __instance.m_teleportingProgress = loadingScreen.Find("Teleporting").gameObject;
-            __instance.m_loadingImage = loadingScreen.Find("Loading/Image").GetComponent<Image>();
-            __instance.m_loadingTip = loadingScreen.Find("Loading/Tip").GetComponent<TMP_Text>();
-            __instance.m_sleepingProgress.GetComponent<SleepText>().m_dreamTexts = originalDreamTexts;
-
-            
-            __instance.m_eventBar = __instance.Replace("hudroot/EventBar", Auga.Assets.Hud).gameObject;
-            __instance.m_eventName = __instance.m_eventBar.GetComponentInChildren<TMP_Text>();
-            __instance.m_eventBar.gameObject.AddComponent<MovableHudElement>().Init(TextAnchor.UpperCenter, 0, -90);
+            // Vanilla LoadingBlack, EventBar and GuardianPower are kept: the bundle versions use legacy
+            // Text where 1.0.7 fields are TMP_Text (m_loadingTip, m_eventName, m_gpName, m_gpCooldown)
+            // and lack 1.0.7 parts (m_loadingIndicator, m_gpTouchButton), so vanilla updates would NRE.
+            __instance.m_eventBar.AddComponent<MovableHudElement>().Init(TextAnchor.UpperCenter, 0, -90);
 
             __instance.m_damageScreen = __instance.Replace("hudroot/Damaged", Auga.Assets.Hud).GetComponent<Image>();
 
@@ -77,14 +75,6 @@ namespace Auga
             __instance.m_targetedAlert.transform.parent.gameObject.AddComponent<MovableHudElement>().Init("Stealth", TextAnchor.MiddleCenter, 0, 0);
 
 
-            var originalGuardianPowerMaterial = __instance.m_gpIcon.material;
-            
-            __instance.m_gpRoot = (RectTransform)__instance.Replace("hudroot/GuardianPower", Auga.Assets.Hud);
-            __instance.m_gpName = __instance.m_gpRoot.Find("Name").GetComponent<TMP_Text>();
-            __instance.m_gpIcon = __instance.m_gpRoot.Find("Icon").GetComponent<Image>();
-            __instance.m_gpIcon.material = originalGuardianPowerMaterial;
-            __instance.m_gpCooldown = __instance.m_gpRoot.Find("GPTimeText").GetComponent<TMP_Text>();
-            
             __instance.m_gpRoot.gameObject.AddComponent<MovableHudElement>().Init(TextAnchor.LowerLeft, 60, 70);
 
             var hudroot = __instance.transform.Find("hudroot");
@@ -154,7 +144,7 @@ namespace Auga
             __instance.m_staggerProgress = newStaggerPanel.Find("staggerbar/RightBar/Background/FillMask/FillFast").GetComponent<GuiBar>();
             newStaggerPanel.gameObject.AddComponent<MovableHudElement>().Init("StaggerPanel", TextAnchor.LowerCenter, 0, 151);
 
-            if (Auga.BuildMenuShow.Value && !Auga.HasSearsCatalog)
+            if (Auga.UseAugaBuildMenu)
             {
                 // Setup the icon material to grayscale the piece icons
                 var iconMaterial = __instance.m_pieceIconPrefab.transform.Find("icon").GetComponent<Image>().material;
@@ -205,8 +195,9 @@ namespace Auga
             __instance.m_pieceListRoot = pieceRoot.RectTransform();
             } // end if (Auga.BuildMenuShow.Value && !Auga.HasSearsCatalog)
 
-            var keyHints = __instance.transform.Replace("hudroot/KeyHints", Auga.Assets.Hud);
-            keyHints.gameObject.AddComponent<MovableHudElement>().Init(TextAnchor.LowerRight, -34, 62);
+            // Vanilla KeyHints kept: the bundle's KeyHints lacks 1.0.7 m_radialKeyHints and
+            // m_buildMenuHintsKB/GP, which KeyHints.Update dereferences every frame.
+            __instance.transform.Find("hudroot/KeyHints").gameObject.AddComponent<MovableHudElement>().Init(TextAnchor.LowerRight, -34, 62);
 
             var shipHud = __instance.transform.Replace("hudroot/ShipHud", Auga.Assets.Hud);
             __instance.m_shipHudRoot = shipHud.gameObject;
@@ -651,7 +642,7 @@ namespace Auga
     {
         public static bool Prefix(Hud __instance, Player player, Vector2Int selectedNr, Piece.PieceCategory category, bool updateAllBuildStatuses)
         {
-            if (!Auga.BuildMenuShow.Value || Auga.HasSearsCatalog)
+            if (!Auga.UseAugaBuildMenu)
                 return true;
             
             var buildPieces = player.GetBuildPieces();
@@ -725,7 +716,7 @@ namespace Auga
     {
         public static bool Prefix(ref PieceTable __instance)
         {
-            if (!Auga.BuildMenuShow.Value || Auga.HasSearsCatalog)
+            if (!Auga.UseAugaBuildMenu)
                 return true;
 
             return Input.GetAxis("Mouse ScrollWheel") == 0;
@@ -754,7 +745,7 @@ namespace Auga
     {
         public static bool Prefix(ref PieceTable __instance)
         {
-            if (!Auga.BuildMenuShow.Value || Auga.HasSearsCatalog)
+            if (!Auga.UseAugaBuildMenu)
                 return true;
             
             return Input.GetAxis("Mouse ScrollWheel") == 0;
