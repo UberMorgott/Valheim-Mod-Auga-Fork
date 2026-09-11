@@ -3,7 +3,17 @@
 Repo: https://github.com/UberMorgott/Valheim-Mod-AugaFork (fork of RandyKnapp/Auga), local `E:\DEV\Valheim\Auga`.
 Target: Valheim 1.0.12 (Unity 6, network 40), BepInEx 5.4.23.5. Personal build.
 
-## User report 2 fixes (2026-09-11 21:15) — BUILT, NOT DEPLOYED (valheim.exe PID 28504 was running)
+## User report 2 fixes (2026-09-11 21:15, deployed 21:31)
+
+- DEPLOYED: `AugaSkin.dll` `2C46F0553284616D465E57B21F6ACA0762CCFDACFE9FE2773624C9F8C64DB22C` (adds `eb267d6`: focused
+  inputs kept the vanilla selected sprite; SpriteSwap states cleared), AB `AdventureBackpacks.dll`
+  `1948F0D51E2A501F6CBF62202A8945D0B5EAE9DFC6680E00362E8162FA656191` (adds AB `fix(eqs): move an equipped backpack`:
+  EQS never moves equipped items into custom slots, so AB sets `m_gridPos` to the Backpack cell on equip),
+  `AdventureBackpacks.Russian.json` deployed. Autotest `20260911-213134`: all layers PASS, audit 0 incl. `skills`.
+  Shots verified: `09`/`09b` (text after chevron, focus keeps Auga art), `44-skills` (Russian, 18 skills, no modded
+  skill learned on the test char), `45-inventory-worn` (backpack in «Рюкзак» slot, cape unequipped in grid).
+- User decisions: EAQS built-in labels stay English; no inventory character preview; bar values stay centred.
+- Superseded below: build hashes and TODO list.
 
 - Input text over the chevron (`c459d16`): Auga `TextInputBG` has a wider 9-slice border than vanilla `text_field`;
   `AugaStyle.InsetInputText` grows `TMP_InputField.textViewport` (legacy: text + placeholder) by the border
