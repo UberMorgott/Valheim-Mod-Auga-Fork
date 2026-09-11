@@ -6,6 +6,33 @@ using HarmonyLib;
 
 namespace Auga
 {
+    // Vanilla Settings window (pause menu and main menu): swap the wooden backdrop on Settings/Panel
+    // (sprite woodpanel_settings) for Auga's panel prefab. Tabs, buttons and saving stay vanilla.
+    [HarmonyPatch(typeof(Settings), nameof(Settings.Awake))]
+    public static class Settings_Awake_Patch
+    {
+        public static void Postfix(Settings __instance)
+        {
+            var panel = __instance.transform.Find("Panel") as UnityEngine.RectTransform;
+            var wood = panel ? panel.GetComponent<UnityEngine.UI.Image>() : null;
+            if (wood == null || Auga.Assets.PanelBase == null)
+            {
+                UnityEngine.Debug.LogWarning("[Auga] Settings: Panel image or PanelBase missing; keeping vanilla backdrop");
+                return;
+            }
+
+            var bg = (UnityEngine.RectTransform)UnityEngine.Object.Instantiate(Auga.Assets.PanelBase, panel, false).transform;
+            bg.name = "AugaBackground";
+            bg.anchorMin = UnityEngine.Vector2.zero;
+            bg.anchorMax = UnityEngine.Vector2.one;
+            bg.offsetMin = bg.offsetMax = UnityEngine.Vector2.zero;
+            bg.SetAsFirstSibling();
+            var layout = bg.GetComponent<UnityEngine.UI.LayoutElement>() ?? bg.gameObject.AddComponent<UnityEngine.UI.LayoutElement>();
+            layout.ignoreLayout = true;
+            wood.enabled = false;
+        }
+    }
+
     // AugaBindingDisplay.SetBinding: оригинальный метод обращается к
     // ZInput.instance.m_buttons (private в Valheim 0.221) → FieldAccessException → SetText
     // никогда не вызывается → текст остаётся "W" (дефолт из префаба).
