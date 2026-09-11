@@ -13,7 +13,11 @@ Target: Valheim 1.0.7 (Unity 6, network 39), BepInEx 5.4.23.5. Personal build.
 - AugaLite (ZenDragon) deleted from plugins.
 - AAACrafting re-enabled: `plugins\AAACrafting\AzuAntiArthriticCrafting.dll` (was `.dll.disabled`; rename back to undo).
 - AdventureBackpacks fork: `2d5688a` skips its 54px durability-bar override under Auga; old DLL kept as `plugins\AdventureBackpacks\AdventureBackpacks.dll.bak`.
-- NOTHING has been run in-game yet. All verification so far is static (build + decompile 1.0.7 + bundle inspection with UnityPy).
+- First in-game run (2026-09-11): bundle loaded (39/39), no Auga exceptions, but the main menu was cluttered. Fixed statically, needs in-game recheck:
+  - The vanilla 1.0.7 cinematics list ("BLACK FOREST"/"LOCKED"/"BACK") showed because Auga's `HideAll` replacement lacked `m_cinematicsMenuList`. It is now hidden. Auga has no Cinematics button, so the list is unreachable.
+  - The vanilla 1.0 `Menu/Logo` is no longer rescued into Auga's menu, and the merch-store button (`m_merchStoreButtonParent`) is hidden.
+  - APIManager `Failed patching ... InvalidCastException ... AddOverrides` for EpicLoot/EquipmentAndQuickSlots: `VisitMethod` re-owned `MethodDefinition`s nested in their `Auga.API` stub (`<Transpiler>d__2`). It is now guarded like `VisitField`.
+- Not investigated yet, so recheck after the patcher fix: the AdventureBackpacks `RegisterSlot` NRE with EquipmentAndQuickSlots (EAQS used to load unpatched), and the AAACrafting `Undefined target method ... InventoryAddItemPatchDataIntIntInt` Harmony error.
 
 ## Done (main)
 
