@@ -55,11 +55,8 @@ namespace Auga
         {
             ZInput.Initialize();
 
-            // Сохраняем логотип до замены меню
-            var originalLogo = __instance.transform.Find("Menu/Logo");
-            if (originalLogo != null)
-                originalLogo.SetParent(__instance.transform, true);
-
+            // The vanilla Menu/Logo is not rescued: since 1.0 it is a large centred logo that
+            // covers Auga's layout, and no FejdStartup code references it.
             // Заменяем все префабы — должно произойти ДО ванильного Awake(),
             // чтобы ванильный код нашёл нужные объекты по именам.
             // Replace() uses deferred Object.Destroy, so the detached vanilla originals stay
@@ -77,8 +74,6 @@ namespace Auga
 
             var mainMenu = Swap("Menu");
             if (mainMenu == null) { Debug.LogError("[Auga] MainMenu: failed to replace Menu"); return; }
-            if (originalLogo != null)
-                originalLogo.SetParent(mainMenu, true);
 
             Swap("ConnectionFailed");
             Swap("Credits");
@@ -516,6 +511,10 @@ namespace Auga
             // m_patchLogScroll, m_serverOptionsButton, m_crossplayServerToggle etc. are moved
             // into the Auga menu before the deferred destroy of the vanilla originals lands.
             PassThroughVanillaFields(__instance, vanilla);
+            // Merch store button sits at its vanilla anchor over Auga's menu. Vanilla never
+            // re-activates it; SetupGui then finds no Button and leaves m_merchStoreButton null,
+            // which its nav/IsSideButton code tolerates.
+            if (__instance.m_merchStoreButtonParent) __instance.m_merchStoreButtonParent.SetActive(false);
             FixDeadFields(__instance);
 
             // ---- PhotoBooth ----
@@ -695,6 +694,7 @@ namespace Auga
             SafeHide(__instance.m_mainMenu);
             SafeHide(__instance.m_ndaPanel);
             SafeHide(__instance.m_betaText);
+            SafeHide(__instance.m_cinematicsMenuList); // 1.0.7 addition
             return false; // ванильный HideAll пропускаем
         }
 
