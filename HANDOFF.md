@@ -3,6 +3,35 @@
 Repo: https://github.com/UberMorgott/Valheim-Mod-AugaFork (fork of RandyKnapp/Auga), local `E:\DEV\Valheim\Auga`.
 Target: Valheim 1.0.12 (Unity 6, network 40), BepInEx 5.4.23.5. Personal build.
 
+## Native rework, Phases 0-1 (2026-09-11 evening)
+
+Spec: `docs/superpowers/specs/2026-09-11-auga-native-rework.md`. §5 now records the user's decisions. **D0: full vanilla skin** (inventory included, Auga layout deleted). **D0a: new GUID and assembly name, no `Auga.API`**, so consumers take their vanilla path (Phase 4b, not started). The EAQS patch is moot.
+- Phase 0 (`17925ed`; tools `85af006` in the outer repo, branch `master`):
+  - dev console command `auga_audit` (needs `devcommands`), `Auga/AugaAudit.cs`. It reports missing scripts, dead vanilla refs, Graphics without a Canvas, and sibling overlaps.
+  - TraceEsc/TraceInput and the debug warnings are gone.
+  - autotest layer 6 **world**: the `tools\AutotestDriver` plugin runs only for that layer with `-autotest <savedir>`. Saves go to `E:\DEV\Valheim\tools\out\autotest-saves` (`AutotestChar`/`AutotestWorld`, seed `autotest`), never to AppData. See `tools\AUTOTEST.md`.
+- Phase 1 (`feat(ui): restyle vanilla pause menu and Settings in place`):
+  - The vanilla `Menu` is kept with its Canvas and all fields, restyled from the AugaMenu prefab.
+  - The Compendium is an extra entry, spliced into gamepad navigation.
+  - Settings: vanilla sprites and labels restyled, the stacked backdrop is deleted.
+- Crutches removed: #12, #24, #26, #32, #33, #34 (spec §2.2).
+- Deployed `Auga.dll` SHA256 `D60AA45015612B333574C47E0797F325A1A993DFEEEF9E48EA82F2B7C7406C9D`.
+- Autotest: build/hash/patches (106)/smoke PASS. world FAIL = later-phase audit findings only:
+  - Hud dead refs (`m_foodTime[]`, `m_foodIcon`, `m_statusEffect*`)
+  - Minimap `m_mapSmall`/`m_mapLarge`
+  - BuildUi `m_debugUi`
+  - AugaChat 4 Graphics without Canvas
+  - InventoryGui dead refs plus the overlaps Info x RightPanel and EAQS
+  - Minimap IconPanel overlap
+  - `Fishlabs.GuiInputField` missing script
+  - Menu and Settings: 0 findings.
+- In-game check (user):
+  - Esc: the menu shows and pauses. Continue/Save/Settings/Compendium/Logout/Exit and both confirm dialogs work.
+  - Gamepad: up/down passes through Compendium.
+  - Settings from the pause and main menus: Auga panel art, all tabs, OK saves.
+  - The Compendium opens and closes with Esc.
+- Do not click in autotest-launched windows. The smoke layer uses the real save dir (quality-gate#27).
+
 ## 1.0.12 update (2026-09-11)
 
 - Rebuilt against 1.0.12 with no source changes: 0 errors. Autotest: patches 107/107 resolve, smoke PASS.

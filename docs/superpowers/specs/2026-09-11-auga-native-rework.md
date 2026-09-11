@@ -265,10 +265,19 @@ Every phase ends with the steps below. The phase is not done until all of them p
 - Delete `Thread.Sleep` failure paths.
 - Verify: zero missing-script warnings at plugin load and on world load.
 
-## 5. Decisions needed from the user
+## 5. Decisions (user, 2026-09-11)
 
-- D1. The main menu was pure vanilla plus the Auga font. The new goal is "menus restyled". Proposal: keep the vanilla layout and add Auga sprites and fonts in place (A). Do not bring back Auga's old MainMenu prefab. OK?
-- D2. The EAQS pivot fix belongs in EAQS (1 line: `pivot = (0,1)`, or cells parented to the panel). Should we fork/patch EAQS 3.1.1, or add an Auga-side compat patch on `EquipmentAndQuickSlots.AugaPanel.UpdatePanel`? The patch is a crutch by the user's definition.
-- D3. The Auga build menu will be deleted in favour of a restyled vanilla build menu. OK?
-- D4. "No warnings" scope: Auga-owned lines only. Vanilla (4) and third-party (Jotunn 11, V+ 1) warnings are out of scope unless the user wants those mods patched or updated.
-- D5. HUD movable elements (`MovableHudElement`): keep them as a feature, applied to vanilla elements?
+- **D0. Full vanilla skin (supersedes option C).** Every screen is option A, inventory and crafting included: vanilla objects restyled in place. Auga's own inventory layout is deleted. The right stats panel and tabs survive only as additive panels, if at all.
+- **D0a. No `Auga.API` for consumers.** The plugin gets a new GUID and a new assembly name, so EpicLoot, EAQS, VNEI and AdventureBackpacks see no Auga and take their normal vanilla code path. EAQS's stub detects assembly `Auga` and caches the result in `Awake` (Codex), so both names change. The APIManager legacy redirect is dropped. The config file resets (new GUID = new file); accepted.
+- D1. Main menu and pre-world screens: vanilla layout and logic, restyled in place with Auga sprites, frames and fonts. The old Auga MainMenu prefab does not come back. (Phase 2.)
+- D2. ~~EAQS offset: one sanctioned Auga-side compat patch on EAQS's own positioning code.~~ **Moot after D0a:** EAQS takes its vanilla path, so there is no Auga panel to align to.
+- D3. Build menu: the Auga build menu code is deleted, the vanilla one is restyled. (Phase 3.)
+- D4. Warnings scope: zero Auga-originated errors and warnings. Vanilla and third-party lines are only reported.
+- D5. Movable HUD elements (`MovableHudElement`) stay as a feature, applied to vanilla elements. (Phase 3.)
+- Hard rule (user): no crutches (dummy objects, skip-guards, hide-and-hope, post-hoc resizes, `Thread.Sleep`). Every change mirrors the vanilla code path; cite decompile `file:line` where non-obvious. If something cannot be native, stop and report instead of hacking.
+
+### Phase list after D0/D0a
+
+Phases 0-4 and 6 as in §4. Phase 5 changes, and a rename phase comes before it:
+- **Phase 4b: GUID and assembly rename.** First decompile the installed EpicLoot 0.14.2, VNEI 0.17.6, EAQS 3.1.1 and AdventureBackpacks (fork) with ilspycmd and record exactly how each detects Auga (assembly name, type `Auga.API`, GUID `randyknapp.mods.auga`, `Chainloader.PluginInfos`). Then rename the GUID and assembly, delete `API.cs`, `API.Common.cs`, `API.External.cs` and `APIManagerPatcher.cs`, and check that every consumer logs its non-Auga path.
+- **Phase 5: inventory and crafting (A, was C).** Restyle vanilla `root/Player`, `root/Container`, `root/Crafting`, `root/Info` and the upgrade/quality panel in place. Delete the Auga inventory layout, `RightPanel`, `CraftingPanel.Dummy*`, `FitPlayerPanel`, the grid hand-wiring and the `UpdateCharacterStats` skip. No EAQS patch.
