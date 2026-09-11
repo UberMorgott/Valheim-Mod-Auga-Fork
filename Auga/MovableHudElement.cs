@@ -1,4 +1,4 @@
-﻿using BepInEx.Configuration;
+using BepInEx.Configuration;
 using UnityEngine;
 
 namespace Auga
@@ -8,6 +8,10 @@ namespace Auga
         public ConfigEntry<TextAnchor> Anchor;
         public ConfigEntry<Vector2> Position;
         public ConfigEntry<float> Scale;
+        public ConfigEntry<Vector2> Offset;
+
+        private Vector2 _vanillaPosition;
+        private Vector3 _vanillaScale;
 
         public void Init(TextAnchor defaultAnchor, float defaultPositionX, float defaultPositionY)
         {
@@ -19,6 +23,35 @@ namespace Auga
             Anchor = Auga.instance.Config.Bind(nameOverride, $"{nameOverride}Anchor", defaultAnchor, $"Anchor for {nameOverride}");
             Position = Auga.instance.Config.Bind(nameOverride, $"{nameOverride}Position", new Vector2(defaultPositionX, defaultPositionY), $"Position for {nameOverride}");
             Scale = Auga.instance.Config.Bind(nameOverride, $"{nameOverride}Scale", 1.0f, $"Uniform scale for {nameOverride}");
+        }
+
+        // Vanilla HUD elements (spec D5): keep the game's anchors and layout; the config only shifts and scales the
+        // element relative to where the game put it. Applied once and on config change, never per frame.
+        public void InitOffset(string name)
+        {
+            var rt = (RectTransform)transform;
+            _vanillaPosition = rt.anchoredPosition;
+            _vanillaScale = rt.localScale;
+            Offset = Auga.instance.Config.Bind("HudLayout", $"{name}Offset", Vector2.zero, $"Shift of {name} from its vanilla position, in UI pixels");
+            Scale = Auga.instance.Config.Bind("HudLayout", $"{name}Scale", 1f, $"Uniform scale of {name}");
+            Offset.SettingChanged += ApplyOffset;
+            Scale.SettingChanged += ApplyOffset;
+            ApplyOffset(null, null);
+        }
+
+        private void ApplyOffset(object sender, System.EventArgs e)
+        {
+            var rt = (RectTransform)transform;
+            rt.anchoredPosition = _vanillaPosition + Offset.Value;
+            rt.localScale = _vanillaScale * Scale.Value;
+        }
+
+        public void OnDestroy()
+        {
+            if (Offset == null)
+                return;
+            Offset.SettingChanged -= ApplyOffset;
+            Scale.SettingChanged -= ApplyOffset;
         }
 
         public void Update()

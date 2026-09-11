@@ -25,12 +25,6 @@ public static class Jewelcrafting
     public static Type OpenFakeSocketsContainer;
     public static Type CloseFakeSocketsContainer;
     
-    [HarmonyBefore(new []{"org.bepinex.plugins.jewelcrafting"})]
-    public static void Hud_Awake_Prefix(Hud __instance)
-    {
-        var hotkeyBar = __instance.Replace("hudroot/HotKeyBar", Auga.Assets.Hud, "hudroot/HotKeyBar");
-    }
-
     public static Vector2 ChangeSealPosition(Vector2 anchoredPosition)
     {
         return new Vector2(41f,340f);

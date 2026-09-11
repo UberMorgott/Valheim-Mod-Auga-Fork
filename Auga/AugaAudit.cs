@@ -18,7 +18,18 @@ namespace Auga
         {
             "Blur", "darken", "Darken", "bkg", "Background", "Scrim", "border (1)", "ornament", "GamepadMap",
             "HeaderLine", // vanilla Settings: thin rule across the top of TabButtons/TabContent
-            "AugaCorner"  // AugaStyle.Panel corner ornaments, drawn over the panel's corners by design
+            "AugaCorner", // AugaStyle.Panel corner ornaments, drawn over the panel's corners by design
+            "small_biome", // vanilla minimap: biome name drawn over the top of the small map
+            "iconhints",   // vanilla large map: mouse-button hints beside the pin icon column
+            // vanilla 1.0.12 large map: the centred KeyHints row runs under the Quests/Treasure toggles without Auga
+            // too (baseline run with Auga disabled, tools\out\20260911-184749\shots\23-map.png)
+            "AdventureToggleContainer"
+        };
+
+        // Fields the game itself points at objects it destroys, so they are not Auga's doing.
+        private static readonly HashSet<string> VanillaDead = new HashSet<string>
+        {
+            "BuildUi.m_debugUi" // BuildUi.cs:140 destroys its debug panel in Awake and keeps the field
         };
 
         private static readonly HashSet<string> VanillaAssemblies = new HashSet<string>
@@ -95,6 +106,8 @@ namespace Auga
                 var dead = new List<string>();
                 foreach (var field in c.GetType().GetFields(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic))
                 {
+                    if (VanillaDead.Contains(c.GetType().Name + "." + field.Name))
+                        continue;
                     var value = field.GetValue(c);
                     if (value is Object obj && !obj)
                         dead.Add(field.Name);

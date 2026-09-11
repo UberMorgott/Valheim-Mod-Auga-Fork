@@ -94,7 +94,6 @@ namespace Auga
             if (Auga.Assets.PanelBase == null)
             {
                 Auga.LogError($"Auga.Assets.PanelBase is null");
-                Thread.Sleep(25000);
             }
             panel.name = name;
             if (!withCornerDecoration)
