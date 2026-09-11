@@ -14,6 +14,19 @@ namespace Auga
     [HarmonyPatch]
     public static class PauseMenu_Setup
     {
+        // Config Logging/TraceInput: every term of 1.0.7 Menu.Update's "open on Esc" condition.
+        public static void TraceEsc()
+        {
+            var m = Menu.instance;
+            if (m == null) { Debug.LogWarning("[Auga] Esc: Menu.instance is null"); return; }
+            Debug.LogWarning($"[Auga] Esc: menu={m.name} activeInHierarchy={m.gameObject.activeInHierarchy} enabled={m.enabled} " +
+                $"root={(m.m_root ? m.m_root.gameObject.activeInHierarchy.ToString() : "null")} hiddenFrames={m.m_hiddenFrames} demo={DemoMode.Disabled} | " +
+                $"inv={InventoryGui.IsVisible()} map={Minimap.IsOpen()} console={Console.IsVisible()} textInput={TextInput.IsVisible()} " +
+                $"pwd={ZNet.instance?.InPasswordDialog()} connecting={ZNet.instance?.InConnectingScreen()} store={StoreGui.IsVisible()} " +
+                $"pieceSel={Hud.IsPieceSelectionVisible()} popup={UnifiedPopup.IsVisible()} barber={PlayerCustomizaton.IsBarberGuiVisible()} " +
+                $"radial={Hud.InRadial()} chatWasFocused={Chat.instance?.m_wasFocused}");
+        }
+
         [HarmonyPatch(typeof(TextsDialog), nameof(TextsDialog.Update))]
         public static class TextDialog_Update_Patch
         {
