@@ -124,7 +124,11 @@ namespace Auga
                     case Role.Panel: Panel(image); break;
                     case Role.Backdrop: SetSprite(image, "TextBackdrop", BackdropColor, Image.Type.Sliced); break;
                     case Role.Tooltip: SetSprite(image, "TextBackdrop", TooltipColor, Image.Type.Sliced); break;
-                    case Role.Input: SetSprite(image, "TextInputBG", Color.white, Image.Type.Sliced, 2f); break;
+                    case Role.Input:
+                        var vanillaBorder = image.sprite.border / Ppu(image);
+                        SetSprite(image, "TextInputBG", Color.white, Image.Type.Sliced, 2f);
+                        InsetInputText(image, vanillaBorder);
+                        break;
                     case Role.Button:
                     case Role.Tab:
                         var tab = role == Role.Tab;
@@ -205,6 +209,36 @@ namespace Auga
             image.color = color;
             image.material = null;
             image.pixelsPerUnitMultiplier = ppu;
+        }
+
+        // Rendered size of a sliced border, in local units per texture pixel (Image.pixelsPerUnit already divides by
+        // the canvas reference PPU).
+        private static float Ppu(Image image) => image.pixelsPerUnit * image.pixelsPerUnitMultiplier;
+
+        // Vanilla insets the text area of an input field (TMP_InputField.textViewport, or a legacy InputField's
+        // text/placeholder) by a margin inside its own sprite's 9-slice border. Auga's TextInputBG has chevron ends
+        // in a wider border, so the same margin is kept past the Auga border: the text area grows its inset by the
+        // border difference on each side. The field's own RectTransform and the vanilla margin stay untouched.
+        private static void InsetInputText(Image background, Vector4 vanillaBorder)
+        {
+            var extra = background.sprite.border / Ppu(background) - vanillaBorder;
+            var left = Mathf.Max(0f, extra.x);
+            var right = Mathf.Max(0f, extra.z);
+            if (left == 0f && right == 0f)
+                return;
+            var areas = new List<RectTransform>();
+            if (background.TryGetComponent<TMP_InputField>(out var tmp) && tmp.textViewport)
+                areas.Add(tmp.textViewport);
+            else if (background.TryGetComponent<InputField>(out var legacy))
+            {
+                if (legacy.textComponent) areas.Add(legacy.textComponent.rectTransform);
+                if (legacy.placeholder) areas.Add(legacy.placeholder.rectTransform);
+            }
+            foreach (var area in areas)
+            {
+                area.offsetMin += new Vector2(left, 0f);
+                area.offsetMax -= new Vector2(right, 0f);
+            }
         }
 
         // Auga's panel art has no sprite: a plain quad coloured by a JoshH UIGradient mesh effect, with four
