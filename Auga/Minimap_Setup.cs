@@ -183,7 +183,6 @@ namespace Auga
 
             Localization.instance.Localize(__instance.transform);
             minimap.Reset();
-            SetupHelper.LogDeadRefsNextFrame(minimap);
         }
 
         private static void SetButtonListener(Transform root, string childName, UnityAction listener)

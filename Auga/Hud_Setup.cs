@@ -223,7 +223,6 @@ namespace Auga
             Auga.UpdateStatBars();
 
             Localization.instance.Localize(__instance.transform);
-            SetupHelper.LogDeadRefsNextFrame(__instance);
         } // end Hud_Awake_Postfix
 
         [HarmonyPatch(nameof(Hud.UpdateStatusEffects))]

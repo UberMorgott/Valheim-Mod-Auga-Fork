@@ -14,19 +14,6 @@ namespace Auga
     [HarmonyPatch]
     public static class PauseMenu_Setup
     {
-        // Config Logging/TraceInput: every term of 1.0.7 Menu.Update's "open on Esc" condition.
-        public static void TraceEsc()
-        {
-            var m = Menu.instance;
-            if (m == null) { Debug.LogWarning("[Auga] Esc: Menu.instance is null"); return; }
-            Debug.LogWarning($"[Auga] Esc: menu={m.name} activeInHierarchy={m.gameObject.activeInHierarchy} enabled={m.enabled} " +
-                $"root={(m.m_root ? m.m_root.gameObject.activeInHierarchy.ToString() : "null")} hiddenFrames={m.m_hiddenFrames} demo={DemoMode.Disabled} | " +
-                $"inv={InventoryGui.IsVisible()} map={Minimap.IsOpen()} console={Console.IsVisible()} textInput={TextInput.IsVisible()} " +
-                $"pwd={ZNet.instance?.InPasswordDialog()} connecting={ZNet.instance?.InConnectingScreen()} store={StoreGui.IsVisible()} " +
-                $"pieceSel={Hud.IsPieceSelectionVisible()} popup={UnifiedPopup.IsVisible()} barber={PlayerCustomizaton.IsBarberGuiVisible()} " +
-                $"radial={Hud.InRadial()} chatWasFocused={Chat.instance?.m_wasFocused}");
-        }
-
         [HarmonyPatch(typeof(TextsDialog), nameof(TextsDialog.Update))]
         public static class TextDialog_Update_Patch
         {
@@ -275,7 +262,6 @@ namespace Auga
                 newMenu.m_settingsPrefab = __instance.m_settingsPrefab;
                 WireMenu(newMenu, __instance);
                 Object.Destroy(__instance.gameObject);
-                SetupHelper.LogDeadRefsNextFrame(newMenu);
             }
 
             // The AugaMenu prefab was serialized against the pre-1.0.7 Menu (saveButton, menuCurrentPlayersListButton),
@@ -331,7 +317,6 @@ namespace Auga
                 menu.m_feedbackPrefab = vanilla.m_feedbackPrefab;
                 // SceneReference is not serialized in the Auga prefab; Logout loads it.
                 menu.m_startScene = vanilla.m_startScene;
-                SetupHelper.LogDeadRefsNextFrame(menu.m_gamepadMapController);
 
                 // Save button: Update() and UpdateNavigation deref it every frame.
                 if (menu.m_saveButton == null && vanilla.m_saveButton != null)

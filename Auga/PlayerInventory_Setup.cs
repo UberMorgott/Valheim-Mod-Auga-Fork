@@ -21,7 +21,6 @@ namespace Auga
             [HarmonyPriority(Priority.First)]
             public static void Postfix(InventoryGui __instance)
             {
-                Debug.LogWarning($"Starting Auga InventoryGui.Postfix");
                 AddItemIconMaterial.IconMaterial = __instance.m_dragItemPrefab.transform.Find("icon").GetComponent<Image>().material;
 
                 __instance.m_playerGrid.m_onSelected = null;
@@ -80,9 +79,6 @@ namespace Auga
                 dummyContainer.SetActive(false);
 
                 var rightPanel = Object.Instantiate(Auga.Assets.InventoryScreen.transform.Find("root/RightPanel"), containerInventory.parent, false);
-                Debug.LogWarning($"API AAA is null: {API.GetCraftingControls().Amount == null}");
-                Debug.LogWarning($"API InputAmount is null: {API.GetCraftingControls().InputAmount == null}");
-                Debug.LogWarning($"API InputAmount is null: {API.GetCraftingControls().CraftButton == null}");
                 rightPanel.gameObject.name = "RightPanel";
                 rightPanel.SetSiblingIndex(craftingPanelSiblingIndex);
                 CraftingPanel = rightPanel.GetComponentInChildren<AugaCraftingPanel>(true);
@@ -187,7 +183,6 @@ namespace Auga
                 trashDivider.gameObject.SetActive(Auga.UseAugaTrash.Value);
 
                 Localization.instance.Localize(__instance.transform);
-                SetupHelper.LogDeadRefsNextFrame(__instance);
             }
         }
 

@@ -95,7 +95,6 @@ namespace Auga
         private static ConfigEntry<bool> _loggingEnabled;
         private static ConfigEntry<LogLevel> _logLevel;
         public static ConfigEntry<bool> UseAugaTrash;
-        public static ConfigEntry<bool> TraceInput;
 
         public static ConfigEntry<bool> HealthBarShow;
         public static ConfigEntry<int> HealthBarFixedSize;
@@ -491,7 +490,6 @@ namespace Auga
         {
             _loggingEnabled = Config.Bind("Logging", "LoggingEnabled", false, "Enable logging");
             _logLevel = Config.Bind("Logging", "LogLevel", LogLevel.Info, "Only log messages of the selected level or higher");
-            TraceInput = Config.Bind("Logging", "TraceInput", false, "Debug: on Esc, log why the pause menu did or did not open.");
             UseAugaTrash = Config.Bind("Options", "UseAugaTrash", false, "Enable Auga's built in trash button. Click on the button while holding an item or part of a stack with the mouse.");
             
             HealthBarShow = Config.Bind("StatBars", "HealthBarShow", true, "If false, hides the health bar completely.");
@@ -654,8 +652,6 @@ namespace Auga
         public void Update()
         {
             UpdateStatBars();
-            if (TraceInput.Value && ZInput.GetKeyDown(KeyCode.Escape))
-                PauseMenu_Setup.TraceEsc();
         }
 
         public static void UpdateStatBars()
@@ -707,6 +703,7 @@ namespace Auga
                     BindingFlags.Instance | BindingFlags.NonPublic);
                 t.SetValue(Player.m_localPlayer,new HashSet<Heightmap.Biome>());
             });
+            AugaAudit.Register();
         }
     }
 }

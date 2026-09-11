@@ -7,34 +7,6 @@ namespace Auga
 {
     public static class SetupHelper
     {
-        /// <summary>
-        /// Diagnostic for the first in-game run: one frame after setup (Object.Destroy is deferred),
-        /// list fields of a vanilla UI component that still point at objects Auga destroyed.
-        /// Those are vanilla 1.0.7 elements left dead by a Replace.
-        /// </summary>
-        public static void LogDeadRefsNextFrame(MonoBehaviour owner)
-        {
-            if (owner != null && owner.isActiveAndEnabled)
-                owner.StartCoroutine(LogDeadRefs(owner));
-        }
-
-        private static IEnumerator LogDeadRefs(MonoBehaviour owner)
-        {
-            yield return null;
-            var dead = new List<string>();
-            foreach (var field in owner.GetType().GetFields(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic))
-            {
-                // Destroyed UnityEngine.Object: managed ref non-null, Unity null.
-                if (field.GetValue(owner) is Object obj && !obj)
-                    dead.Add(field.Name);
-            }
-
-            if (dead.Count > 0)
-                Debug.LogWarning($"[Auga] {owner.GetType().Name}: fields point to destroyed objects: {string.Join(", ", dead)}");
-            else
-                Debug.Log($"[Auga] {owner.GetType().Name}: no destroyed UI refs");
-        }
-
         public static bool DirectObjectReplace(Transform original, GameObject prefab, string originalName)
         {
             return DirectObjectReplace(original, prefab, originalName, out _);
