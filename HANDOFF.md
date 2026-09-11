@@ -14,9 +14,9 @@ Target: Valheim 1.0.7 (Unity 6, network 39), BepInEx 5.4.23.5. Personal build.
 - AAACrafting disabled again: `plugins\AAACrafting\AzuAntiArthriticCrafting.dll.disabled`. 2.1.6 (latest on Thunderstore as of 2026-09-11) fails on 1.0.7 with Harmony `Undefined target method` - private `Inventory.AddItem` gained `bool skipValidPositionCheck`. Re-enable (rename back) once `update-mods.ps1` pulls a newer version.
 - AdventureBackpacks fork: `2d5688a` skips its 54px durability-bar override under Auga; old DLL kept as `plugins\AdventureBackpacks\AdventureBackpacks.dll.bak`.
 - Main menu decision (user, 2026-09-11): the main menu (FejdStartup: menu, character select/creation, start game, join) is pure vanilla. Auga's main-menu replacement (`MainMenu_Setup.cs`, ~1000 lines) is deleted. `MainMenu_Setup.cs` now only has a `FejdStartup.Awake` postfix that:
-  - puts Auga's font on every vanilla TMP text (a dynamic `TMP_FontAsset` built from bundle `SourceSansPro-SemiBold`, with the vanilla fonts as glyph fallback), including the `m_worldListElement` / `ServerListGui.m_serverListElement` prefabs;
+  - puts the font of Auga's old main-menu buttons (bundle TMP `Norsebold SDF`, 74 Cyrillic chars, loaded as `AugaAssets.NorseboldTMP`) on vanilla TMP texts inside a `Button`, with the vanilla fonts as glyph fallback. It is a display font, so body/list texts (world/server/character names) keep the vanilla font. The first try, Source Sans Pro on everything, was rejected as plain.
   - hides the button whose onClick calls `OnCinematics`, so the 1.0.7 cinematics list (Black Forest / Locked / Back) is unreachable. Vanilla `HideAll` keeps the list hidden.
-  - Autotest smoke passes (menu reached). In-game recheck: menu looks vanilla in Source Sans Pro, the Cinematics button is gone, and Cyrillic and icons render (no boxes).
+  - Autotest smoke passes (menu reached, 40/40 assets). In-game recheck: the menu looks vanilla with Norse-style button labels, the Cinematics button is gone, and Cyrillic and icons render (no boxes).
   - `AugaAssets.MainMenuPrefab`/`AugaLogo`/`WorldListElement`/`ServerListElement` still load (public fields, kept for API compat) but are unused.
 - APIManager `Failed patching ... InvalidCastException ... AddOverrides` for EpicLoot/EquipmentAndQuickSlots: `VisitMethod` re-owned `MethodDefinition`s nested in their `Auga.API` stub (`<Transpiler>d__2`). It is now guarded like `VisitField`.
 - AAACrafting `Undefined target method ... InventoryAddItemPatchDataIntIntInt`: NOT Auga. Vanilla 1.0.7 changed private `Inventory.AddItem(ItemData,int,int,int)` to `(ItemData,int,int,int,bool skipValidPositionCheck=false)`. The exception aborts AAACrafting's `PatchAll`, so its later patch classes (ServerSync RPC, favoriting, paginator, ...) are not applied either. The mod is third-party (Azumatt, 2.1.6), so the options are: a newer AAACrafting build for 1.0.7, or disable it again (`.dll.disabled`).
@@ -41,7 +41,7 @@ Target: Valheim 1.0.7 (Unity 6, network 39), BepInEx 5.4.23.5. Personal build.
 1. Start the game and play through the T9 checklist in the plan.
 2. Collect `D:\Steam\steamapps\common\Valheim\BepInEx\LogOutput.log` and grep `[Auga]`:
    - `all 39 assets found` means the bundle loaded; otherwise it lists what is missing.
-   - `MainMenu: could not create TMP font` means the main menu fell back to the vanilla font.
+   - `MainMenu: Norsebold SDF missing` means the main menu fell back to the vanilla font.
    - `FixDeadFields` / dead-ref warnings mean a field points at a destroyed object.
    - A transpiler hit-count error means the `UpdateBuild` anchor is wrong.
 
