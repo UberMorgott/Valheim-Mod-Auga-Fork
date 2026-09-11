@@ -8,7 +8,7 @@ Revive RandyKnapp/Auga (abandoned 2024-05, targets Valheim 0.217.x) on Valheim 1
 
 ## Sources and baseline
 
-- Fork: https://github.com/UberMorgott/Auga, local `E:\DEV\Valheim\Auga`. Remotes: `origin` (fork), `upstream` (RandyKnapp), `mrcook1e` (https://github.com/mrcook1e-ai/Auga).
+- Fork: https://github.com/UberMorgott/Auga, local `E:\DEV\Valheim\Auga-Fork`. Remotes: `origin` (fork), `upstream` (RandyKnapp), `mrcook1e` (https://github.com/mrcook1e-ai/Auga).
 - Base = upstream `main` + merge of mrcook1e-ai `main` (19 commits ahead, 0 behind: Unity 6 build, API fixes, MainMenu rewrite). Each merged commit reviewed against the 1.0.7 decompile.
 - ZenDragon AugaLite is NOT a source. It was removed from `plugins`.
 - Ground truth for game code: `E:\DEV\Valheim\ValheimDecompiled\` (1.0.7: `assembly_valheim`, `assembly_utils`, `assembly_guiutils`). No guessing of members or signatures.

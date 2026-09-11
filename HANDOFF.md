@@ -1,6 +1,6 @@
 # Auga fork — handoff (2026-09-11 night session)
 
-Repo: https://github.com/UberMorgott/Valheim-Mod-AugaFork (fork of RandyKnapp/Auga), local `E:\DEV\Valheim\Auga`.
+Repo: https://github.com/UberMorgott/Valheim-Mod-AugaFork (fork of RandyKnapp/Auga), local `E:\DEV\Valheim\Auga-Fork`.
 Target: Valheim 1.0.12 (Unity 6, network 40), BepInEx 5.4.23.5. Personal build.
 
 ## User report 2 fixes (2026-09-11 21:15, deployed 21:31)
@@ -47,7 +47,7 @@ Target: Valheim 1.0.12 (Unity 6, network 40), BepInEx 5.4.23.5. Personal build.
   is orphaned, no migration). Old build parked OUTSIDE plugins: `BepInEx\Auga.bak\Auga.dll.bak` (BepInEx loads DLLs
   recursively, so no `Auga.dll` may stay under `plugins`). Log shows one plugin: `Loading [AugaSkin 2.0.0]`.
   `mods.json` entry: `AugaSkin/AugaSkin.dll`, `"mine": true`, 2.0.0. Repo, C# namespace `Auga` and RootNamespace
-  (embedded resources `Auga.*`) unchanged. Build: same `dotnet build Auga\Auga\Auga.csproj ...` command.
+  (embedded resources `Auga.*`) unchanged. Build: same `dotnet build Auga-Fork\Auga\Auga.csproj ...` command.
 - Q1 text inputs (`a412a7a`): typed text ran past the field's left edge because chat and the sign dialog were Auga
   bundle replacements. AugaChat sat outside any Canvas and its runtime-added input had the text rect left of the
   viewport (x -474..0 vs 0..484); AugaTextInput predates `GuiInputField`, so `TextInput.Show` NREd. Now vanilla
