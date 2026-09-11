@@ -3,33 +3,48 @@ using System.Collections.Generic;
 using System.Reflection;
 using AugaUnity;
 using HarmonyLib;
+using TMPro;
+using UnityEngine.UI;
 
 namespace Auga
 {
-    // Vanilla Settings window (pause menu and main menu): swap the wooden backdrop on Settings/Panel
-    // (sprite woodpanel_settings) for Auga's panel prefab. Tabs, buttons and saving stay vanilla.
+    // Vanilla Settings window (pause menu Menu.cs:411-416 and main menu FejdStartup.cs:2960-2964), restyled
+    // in place: the vanilla backdrop sprites take Auga's panel art, tab and OK/Back labels take Auga's button
+    // font. Nothing is added or hidden; tabs, saving and layout stay vanilla (Settings.cs:50-56, 89-99).
     [HarmonyPatch(typeof(Settings), nameof(Settings.Awake))]
     public static class Settings_Awake_Patch
     {
         public static void Postfix(Settings __instance)
         {
-            var panel = __instance.transform.Find("Panel") as UnityEngine.RectTransform;
-            var wood = panel ? panel.GetComponent<UnityEngine.UI.Image>() : null;
-            if (wood == null || Auga.Assets.PanelBase == null)
+            var panel = AugaStyle.FromPrefab<Image>(Auga.Assets.PanelBase, "Background");
+            var interior = AugaStyle.FromPrefab<Image>(Auga.Assets.PanelBase, "Darken");
+            const string augaButton = "MenuRoot/ExitConfirm/ExitConfirmDialog/ButtonYes";
+            var buttonImage = AugaStyle.FromPrefab<Image>(Auga.Assets.MenuPrefab, augaButton + "/Image");
+            var label = AugaStyle.FromPrefab<TMP_Text>(Auga.Assets.MenuPrefab, augaButton + "/Label");
+
+            foreach (var image in __instance.GetComponentsInChildren<Image>(true))
             {
-                UnityEngine.Debug.LogWarning("[Auga] Settings: Panel image or PanelBase missing; keeping vanilla backdrop");
-                return;
+                switch (image.sprite ? image.sprite.name : null)
+                {
+                    case "woodpanel_settings": AugaStyle.CopyImage(image, panel); break;
+                    case "panel_interior_bkg_128": AugaStyle.CopyImage(image, interior); break;
+                }
             }
 
-            var bg = (UnityEngine.RectTransform)UnityEngine.Object.Instantiate(Auga.Assets.PanelBase, panel, false).transform;
-            bg.name = "AugaBackground";
-            bg.anchorMin = UnityEngine.Vector2.zero;
-            bg.anchorMax = UnityEngine.Vector2.one;
-            bg.offsetMin = bg.offsetMax = UnityEngine.Vector2.zero;
-            bg.SetAsFirstSibling();
-            var layout = bg.GetComponent<UnityEngine.UI.LayoutElement>() ?? bg.gameObject.AddComponent<UnityEngine.UI.LayoutElement>();
-            layout.ignoreLayout = true;
-            wood.enabled = false;
+            // m_tabHandler is set by InitializeTabs during Awake (Settings.cs:91). A tab may have no button; vanilla
+            // skips those (TabHandler.cs:64). A button's labels include its "Selected" copy (TabHandler.cs:72-101).
+            foreach (var tab in __instance.m_tabHandler.m_tabs)
+            {
+                if (!tab.m_button)
+                    continue;
+                foreach (var text in tab.m_button.GetComponentsInChildren<TMP_Text>(true))
+                    AugaStyle.CopyText(text, label);
+            }
+            foreach (var button in new[] { __instance.m_okButton, __instance.m_backButton })
+            {
+                AugaStyle.CopyImage(button.image, buttonImage);
+                AugaStyle.CopyText(button.GetComponentInChildren<TMP_Text>(true), label);
+            }
         }
     }
 

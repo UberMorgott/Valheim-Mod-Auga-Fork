@@ -24,14 +24,8 @@ namespace Auga
 
             foreach (var text in __instance.GetComponentsInChildren<TMP_Text>(true))
             {
-                var original = text.font;
-                if (original == font || text.GetComponentInParent<Button>(true) == null)
-                    continue;
-                // Glyphs Norsebold lacks (icons, symbols) still render from the vanilla font.
-                if (original != null && !font.fallbackFontAssetTable.Contains(original))
-                    font.fallbackFontAssetTable.Add(original);
-                text.font = font;
-                text.fontSharedMaterial = font.material;
+                if (text.GetComponentInParent<Button>(true) != null)
+                    AugaStyle.SetFont(text, font);
             }
         }
 

@@ -7,6 +7,7 @@ using HarmonyLib;
 using JetBrains.Annotations;
 using UnityEngine;
 using UnityEngine.UI;
+using TMPro;
 using Object = UnityEngine.Object;
 
 namespace Auga
@@ -116,270 +117,127 @@ namespace Auga
             }
         }
 
-        [HarmonyPatch(typeof(Menu), nameof(Menu.UpdateNavigation))]
-        public static class Menu_UpdateNavigation_Patch
+        // Pause menu (Esc), restyled in place (spec 2026-09-11-auga-native-rework, Phase 1). The vanilla Menu keeps
+        // its GameObject, its own Canvas (override sorting, order 1700; scene _GameMain/LoadingGUI/PixelFix/IngameGui/Menu)
+        // and every field, so Start/Show/Hide/Update/UpdateNavigation (Menu.cs:120-403) run unchanged. Sprites and fonts
+        // come from the AugaMenu bundle prefab; Auga's Compendium is the one added element.
+        [HarmonyPatch(typeof(Menu), nameof(Menu.Start))]
+        public static class Menu_Start_Patch
         {
-            public static void UpdateNavigation(Menu instance)
-            {
-                try
-                {
-                    Button component1;
-                    Button component2;
-                    Button component3;
-                    Button component4;
-                    Button component5;
-                    
-                    List<Button> buttonList = new List<Button>();
+            private const string Entry = "MenuRoot/Menu/MenuEntries/Settings";
+            private const string Dialog = "MenuRoot/ExitConfirm/ExitConfirmDialog";
 
-                    if (instance.name.StartsWith("Auga"))
-                    {
-                        component1 = instance.m_menuDialog.Find("MenuEntries/Logout").GetComponent<Button>();
-                        component2 = instance.m_menuDialog.Find("MenuEntries/Exit").GetComponent<Button>();
-                        component3 = instance.m_menuDialog.Find("MenuEntries/DividerMedium/CloseButton").GetComponent<Button>();
-                        component4 = instance.m_menuDialog.Find("MenuEntries/Settings").GetComponent<Button>();
-                        component5 = instance.m_menuDialog.Find("MenuEntries/Compendium").GetComponent<Button>();
-
-                        instance.m_firstMenuButton = component3;
-                        
-                        //Settings
-                        buttonList.Add(component4);
-                        
-                        //Compendium
-                        buttonList.Add(component5);
-
-                        if (instance.m_skipButton != null && instance.m_skipButton.gameObject.activeSelf)
-                            buttonList.Add(instance.m_skipButton);
-
-                        //Save
-                        if (instance.m_saveButton != null && instance.m_saveButton.interactable)
-                            buttonList.Add(instance.m_saveButton);
-
-                        if (instance.m_playerListButton != null && instance.m_playerListButton.gameObject.activeSelf)
-                            buttonList.Add(instance.m_playerListButton);
-
-                        if (instance.m_inviteButton != null && instance.m_inviteButton.gameObject.activeSelf)
-                            buttonList.Add(instance.m_inviteButton);
-
-                        //Logout
-                        buttonList.Add(component1);
-
-                        //Exit
-                        if (component2.gameObject.activeSelf)
-                            buttonList.Add(component2);
-
-                        //Close Menu
-                        buttonList.Add(component3);
-                    }
-                    else
-                    {
-                        component1 = instance.m_menuDialog.Find("MenuEntries/Logout").GetComponent<Button>();
-                        component2 = instance.m_menuDialog.Find("MenuEntries/Exit").GetComponent<Button>();
-                        component3 = instance.m_menuDialog.Find("MenuEntries/Continue").GetComponent<Button>();
-                        component4 = instance.m_menuDialog.Find("MenuEntries/Settings").GetComponent<Button>();
-
-                        instance.m_firstMenuButton = component3;
-                        
-                        buttonList.Add(component3);
-                        
-                        if (instance.m_saveButton.interactable)
-                            buttonList.Add(instance.m_saveButton);
-
-                        if (instance.m_playerListButton.gameObject.activeSelf)
-                            buttonList.Add(instance.m_playerListButton);
-                        
-                        buttonList.Add(component4);
-
-                        buttonList.Add(component1);
-                        
-                        if (component2.gameObject.activeSelf)
-                            buttonList.Add(component2);
-                    }
-                    
-                    for (int index = 0; index < buttonList.Count; ++index)
-                    {
-                        Navigation navigation = buttonList[index].navigation with
-                        {
-                            selectOnUp = index <= 0 ? buttonList[buttonList.Count - 1] : (Selectable) buttonList[index - 1],
-                            selectOnDown = index >= buttonList.Count - 1 ? buttonList[0] : (Selectable) buttonList[index + 1]
-                        };
-                        buttonList[index].navigation = navigation;
-                    }
-                }
-                catch (Exception e)
-                {
-                    Debug.LogWarning($"Start Menu Navigation ({instance.name}) Error Caught {e.Message}");
-                    Debug.LogWarning($"{e.StackTrace}");
-                }
-            }
-            
             [UsedImplicitly]
-            public static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions)
+            public static void Postfix(Menu __instance)
             {
-                var instrs = instructions.ToList();
+                var prefab = Auga.Assets.MenuPrefab;
 
-                var counter = 0;
-
-                CodeInstruction LogMessage(CodeInstruction instruction)
+                // Backdrop: vanilla darken takes Auga's. The wooden ornament and border are decoration only
+                // (no Menu field references them, Menu.cs:28-102) and Auga's menu has no counterpart.
+                var dialog = __instance.m_menuDialog;
+                AugaStyle.CopyImage(ImageAt(dialog, "darken"), AugaStyle.FromPrefab<Image>(prefab, "MenuRoot/Menu/Darken"));
+                foreach (var decor in new[] { "ornament", "border (1)" })
                 {
-                    //Debug.LogWarning($"IL_{counter}: Opcode: {instruction.opcode} Operand: {instruction.operand}");
-                    return instruction;
+                    var image = ImageAt(dialog, decor);
+                    if (image) image.enabled = false;
                 }
 
-                for (int i = 0; i < instrs.Count; ++i)
+                // Entries (m_continueButton .. m_quitButton): Auga label font and knot glyphs on the vanilla buttons.
+                var entryText = AugaStyle.FromPrefab<TMP_Text>(prefab, Entry + "/Text");
+                var leftKnot = AugaStyle.FromPrefab<Image>(prefab, Entry + "/Knots/LeftKnot/Glyph");
+                var rightKnot = AugaStyle.FromPrefab<Image>(prefab, Entry + "/Knots/RightKnot/Glyph");
+                foreach (var button in __instance.menuEntriesParent.GetComponentsInChildren<Button>(true))
                 {
-                    if (i == 0)
-                    {
-                        yield return LogMessage(new CodeInstruction(OpCodes.Ldarg_0));
-                        counter++;
-
-                        yield return LogMessage(new CodeInstruction(OpCodes.Call,AccessTools.DeclaredMethod(typeof(Menu_UpdateNavigation_Patch), nameof(UpdateNavigation))));
-                        counter++;
-
-                        yield return LogMessage(new CodeInstruction(OpCodes.Ret));
-                        counter++;
-
-                    }
+                    AugaStyle.CopyText(button.GetComponentInChildren<TMP_Text>(true), entryText);
+                    Knot(ImageAt(button.transform, "LeftKnot"), leftKnot);
+                    Knot(ImageAt(button.transform, "RightKnot"), rightKnot);
                 }
+                AugaStyle.CopyText(__instance.lastSaveText, AugaStyle.FromPrefab<TMP_Text>(prefab, "MenuRoot/Menu/MenuEntries/LastTimeSaved"));
+
+                RestyleDialog(__instance.m_quitDialog, prefab);
+                RestyleDialog(__instance.m_logoutDialog, prefab);
+                RestyleDialog(__instance.m_cloudStorageWarning.transform, prefab);
+                RestyleDialog(__instance.m_cloudStorageWarningNextSave.transform, prefab);
+
+                AddCompendium(__instance, prefab);
+            }
+
+            // Auga's Compendium (AugaCompendiumController is the only Auga-only part). A child of the Menu, so it
+            // draws in the Menu Canvas like vanilla's Settings instance (Menu.cs:414). Closed until ShowCompendium
+            // (AugaCompendiumController.cs:135-149). Its entry is a clone of the vanilla Settings entry.
+            private static void AddCompendium(Menu menu, GameObject prefab)
+            {
+                var compendium = Object.Instantiate(prefab.transform.Find("Compendium").gameObject, menu.transform, false);
+                compendium.SetActive(false);
+                var controller = compendium.GetComponent<AugaCompendiumController>();
+
+                var settings = menu.m_settingsButton;
+                var entry = Object.Instantiate(settings.gameObject, settings.transform.parent, false);
+                entry.name = "Compendium";
+                entry.transform.SetSiblingIndex(settings.transform.GetSiblingIndex() + 1);
+                var button = entry.GetComponent<Button>();
+                button.onClick = new Button.ButtonClickedEvent(); // the clone carries Settings' persistent OnSettings call
+                button.onClick.AddListener(controller.ShowCompendium);
+                entry.GetComponentInChildren<TMP_Text>(true).text = AugaStyle.FromPrefab<TMP_Text>(prefab, "MenuRoot/Menu/MenuEntries/Compendium/Text").text;
+                Localization.instance.Localize(entry.transform);
+                menu.UpdateNavigation(); // Start built the chain before the entry existed (Menu.cs:124)
+            }
+
+            // Confirm and cloud-storage dialogs: backdrop (the dialog's own Image or its "bkg"), buttons, labels.
+            private static void RestyleDialog(Transform root, GameObject prefab)
+            {
+                var background = AugaStyle.FromPrefab<Image>(prefab, Dialog + "/Background");
+                var buttonImage = AugaStyle.FromPrefab<Image>(prefab, Dialog + "/ButtonYes/Image");
+                var label = AugaStyle.FromPrefab<TMP_Text>(prefab, Dialog + "/ButtonYes/Label");
+                foreach (var image in root.GetComponentsInChildren<Image>(true))
+                {
+                    if (string.Equals(image.name, "dialog", StringComparison.OrdinalIgnoreCase) || image.name == "bkg")
+                        AugaStyle.CopyImage(image, background);
+                    else if (image.name == "border (1)")
+                        image.enabled = false;
+                }
+                foreach (var button in root.GetComponentsInChildren<Button>(true))
+                    AugaStyle.CopyImage(button.image, buttonImage);
+                foreach (var text in root.GetComponentsInChildren<TMP_Text>(true))
+                    AugaStyle.CopyText(text, label);
+            }
+
+            private static Image ImageAt(Transform parent, string name)
+            {
+                var t = parent.Find(name);
+                return t ? t.GetComponent<Image>() : null;
+            }
+
+            private static void Knot(Image knot, Image glyph)
+            {
+                AugaStyle.CopyImage(knot, glyph);
+                if (knot) knot.preserveAspect = true;
             }
         }
 
-        [HarmonyPatch(typeof(Menu), nameof(Menu.Start))]
-        public static class Menu_Start_Patch
+        // Splices the Compendium entry after Settings into vanilla's explicit gamepad chain (Menu.cs:148-197).
+        [HarmonyPatch(typeof(Menu), nameof(Menu.UpdateNavigation))]
+        public static class Menu_UpdateNavigation_Patch
         {
             [UsedImplicitly]
             public static void Postfix(Menu __instance)
             {
-                if (__instance.name != "Menu")
+                var entry = __instance.menuEntriesParent.Find("Compendium");
+                if (!entry)
+                    return; // Menu.Start's own call runs before Menu_Start_Patch adds the entry
+                var compendium = entry.GetComponent<Button>();
+                var settings = __instance.m_settingsButton;
+                var nav = settings.navigation;
+                var next = nav.selectOnDown;
+                nav.selectOnDown = compendium;
+                settings.navigation = nav;
+                compendium.navigation = new Navigation { mode = Navigation.Mode.Explicit, selectOnUp = settings, selectOnDown = next };
+                if (next)
                 {
-                    return;
+                    var n = next.navigation;
+                    n.selectOnUp = compendium;
+                    next.navigation = n;
                 }
-
-                var parent = __instance.transform.parent;
-                var playerPrefab = __instance.CurrentPlayersPrefab;
-                var newMenu = Object.Instantiate(Auga.Assets.MenuPrefab, parent, false).GetComponent<Menu>();
-                newMenu.CurrentPlayersPrefab = playerPrefab;
-                // Vanilla 1.0.7 Settings window: Menu.OnSettings instantiates m_settingsPrefab
-                newMenu.m_settingsPrefab = __instance.m_settingsPrefab;
-                WireMenu(newMenu, __instance);
-                Object.Destroy(__instance.gameObject);
-            }
-
-            // The AugaMenu prefab was serialized against the pre-1.0.7 Menu (saveButton, menuCurrentPlayersListButton),
-            // so every 1.0.7 button field is null and Menu.Show()/SetButtonsEnabled() would NRE. Wire them by path
-            // (paths verified in the augaassets bundle) and pass through vanilla parts Auga has no equivalent for.
-            private static void WireMenu(Menu menu, Menu vanilla)
-            {
-                var entries = menu.m_menuDialog.Find("MenuEntries");
-                Button Find(string path)
-                {
-                    var button = entries.Find(path)?.GetComponent<Button>();
-                    if (button == null)
-                        Debug.LogError($"[Auga] AugaMenu: MenuEntries/{path} missing");
-                    return button;
-                }
-
-                menu.m_continueButton = Find("DividerMedium/CloseButton");
-                menu.m_saveButton = Find("Save");
-                menu.m_playerListButton = Find("CurrentPlayerList");
-                menu.m_settingsButton = Find("Settings");
-                menu.m_logoutButton = Find("Logout");
-                menu.m_quitButton = Find("Exit");
-                menu.m_skipButton = Find("SkipIntro");
-                // Prefab wires SkipIntro to OnManualSave; vanilla skip is OnSkip.
-                Rewire(menu.m_skipButton, menu.OnSkip);
-
-                // Invite (host + platform invite support): no Auga button, keep the vanilla one.
-                menu.m_inviteButton = vanilla.m_inviteButton;
-                if (menu.m_inviteButton != null)
-                {
-                    menu.m_inviteButton.transform.SetParent(entries, false);
-                    if (menu.m_playerListButton != null)
-                        menu.m_inviteButton.transform.SetSiblingIndex(menu.m_playerListButton.transform.GetSiblingIndex() + 1);
-                    Rewire(menu.m_inviteButton, menu.InviteFriends);
-                }
-
-                // Gamepad map (Show() -> HandleInputLayoutChanged derefs both).
-                menu.m_gamepadRoot = Adopt(vanilla.m_gamepadRoot, menu.m_root);
-                menu.m_gamepadMapController = vanilla.m_gamepadMapController;
-                if (menu.m_gamepadMapController != null && menu.m_gamepadRoot != null
-                    && !menu.m_gamepadMapController.transform.IsChildOf(menu.m_gamepadRoot.transform))
-                    Adopt(menu.m_gamepadMapController.gameObject, menu.m_root);
-
-                // Cloud storage warnings: vanilla dialogs, buttons rewired to the new Menu.
-                // ponytail: every button in the dialog maps to its OK handler; split if a dialog gains a second action.
-                menu.m_cloudStorageWarning = Adopt(vanilla.m_cloudStorageWarning, menu.m_root);
-                foreach (var b in menu.m_cloudStorageWarning ? menu.m_cloudStorageWarning.GetComponentsInChildren<Button>(true) : new Button[0])
-                    Rewire(b, menu.OnCloudStorageFullWarningOk);
-                menu.m_cloudStorageWarningNextSave = Adopt(vanilla.m_cloudStorageWarningNextSave, menu.m_root);
-                foreach (var b in menu.m_cloudStorageWarningNextSave ? menu.m_cloudStorageWarningNextSave.GetComponentsInChildren<Button>(true) : new Button[0])
-                    Rewire(b, menu.OnCloudStorageLowNextSaveWarningOk);
-
-                menu.m_feedbackPrefab = vanilla.m_feedbackPrefab;
-                // SceneReference is not serialized in the Auga prefab; Logout loads it.
-                menu.m_startScene = vanilla.m_startScene;
-
-                // Save button: Update() and UpdateNavigation deref it every frame.
-                if (menu.m_saveButton == null && vanilla.m_saveButton != null)
-                {
-                    Debug.LogWarning("[Auga] AugaMenu: no Save button, adopting vanilla");
-                    menu.m_saveButton = vanilla.m_saveButton;
-                    menu.m_saveButton.transform.SetParent(entries, false);
-                    Rewire(menu.m_saveButton, menu.OnManualSave);
-                }
-                if (menu.m_saveButton == null)
-                    Debug.LogError("[Auga] AugaMenu: m_saveButton unset; Menu.Update will NRE");
-
-                // 1.0.7 fields (SetButtonsEnabled/Update deref both); Auga prefab predates them.
-                menu.menuEntriesParent = (RectTransform)entries;
-                if (menu.lastSaveText == null && vanilla.lastSaveText != null)
-                {
-                    menu.lastSaveText = vanilla.lastSaveText;
-                    menu.lastSaveText.transform.SetParent(entries, false);
-                    if (menu.m_saveButton != null)
-                        menu.lastSaveText.transform.SetSiblingIndex(menu.m_saveButton.transform.GetSiblingIndex() + 1);
-                }
-                if (menu.lastSaveText == null)
-                    Debug.LogError("[Auga] AugaMenu: lastSaveText unset; Menu.Show will NRE");
-
-                // Show() hides both dialogs; fall back to vanilla's if the prefab lost them.
-                menu.m_quitDialog = menu.m_quitDialog ? menu.m_quitDialog : AdoptDialog(vanilla.m_quitDialog, menu, "m_quitDialog");
-                menu.m_logoutDialog = menu.m_logoutDialog ? menu.m_logoutDialog : AdoptDialog(vanilla.m_logoutDialog, menu, "m_logoutDialog");
-            }
-
-            private static Transform AdoptDialog(Transform dialog, Menu menu, string field)
-            {
-                if (dialog == null)
-                {
-                    Debug.LogError($"[Auga] AugaMenu: {field} missing in Auga and vanilla; Menu.Show will NRE");
-                    return null;
-                }
-                Debug.LogWarning($"[Auga] AugaMenu: {field} not serialized, adopting vanilla");
-                Adopt(dialog.gameObject, menu.m_root);
-                dialog.gameObject.SetActive(false);
-                // Vanilla buttons target the destroyed Menu; re-point each by its persistent method name.
-                foreach (var b in dialog.GetComponentsInChildren<Button>(true))
-                {
-                    if (b.onClick.GetPersistentEventCount() == 0) continue;
-                    var method = AccessTools.Method(typeof(Menu), b.onClick.GetPersistentMethodName(0));
-                    if (method != null)
-                        Rewire(b, () => method.Invoke(menu, null));
-                }
-                return dialog;
-            }
-
-            private static GameObject Adopt(GameObject go, Transform parent)
-            {
-                if (go == null) return null;
-                go.transform.SetParent(parent, false);
-                go.transform.SetAsLastSibling();
-                return go;
-            }
-
-            private static void Rewire(Button button, UnityEngine.Events.UnityAction action)
-            {
-                if (button == null) return;
-                button.onClick = new Button.ButtonClickedEvent();
-                button.onClick.AddListener(action);
             }
         }
 
@@ -389,11 +247,9 @@ namespace Auga
             [UsedImplicitly]
             public static void Postfix(Menu __instance)
             {
-                var compendium = __instance.GetComponent<AugaCompendiumController>();
-                if (compendium != null)
-                {
+                var compendium = __instance.GetComponentInChildren<AugaCompendiumController>(true);
+                if (compendium != null && compendium.gameObject.activeSelf)
                     compendium.HideCompendium();
-                }
             }
         }
 
