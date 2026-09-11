@@ -170,12 +170,14 @@ namespace Auga
             var flip = bar == Health ? Vector3.one : new Vector3(1f, -1f, 1f);
 
             rect.SetSizeWithCurrentAnchors(RectTransform.Axis.Vertical, BarHeight);
+            Image bkg = null;
             foreach (Transform child in rect)
             {
                 if (!child.TryGetComponent<Image>(out var image))
                     continue;
                 if (child.name == "bkg")
                 {
+                    bkg = image;
                     AugaStyle.CopyImage(image, background);
                     child.localScale = flip;
                 }
@@ -244,13 +246,13 @@ namespace Auga
             text.textWrappingMode = TextWrappingModes.NoWrap;
             text.overflowMode = TextOverflowModes.Overflow;
             text.raycastTarget = false;
+            // No TMP outline: the bundle Norsebold SDF atlas has too little padding for a material outline, so the
+            // dilated glyph quads showed as a dark box behind the value. The value sits on the black track as in Auga.
             if (label)
                 text.color = label.color;
-            text.outlineWidth = 0.2f; // bundle label has an Outline component
-            text.outlineColor = new Color32(0, 0, 0, 255);
 
             if (bar == Health)
-                Shield(rect, background);
+                Shield(rect, bkg);
         }
 
         // Shield (1.0.x SE_Shield, staff of protection): vanilla shows it only as a status-effect icon
@@ -267,6 +269,8 @@ namespace Auga
 
         private static void Shield(RectTransform health, Image background)
         {
+            if (!background)
+                return;
             _shieldRim = NewChild(health, "AugaShield");
             _shieldRim.anchorMin = new Vector2(0f, 0f);
             _shieldRim.anchorMax = new Vector2(0f, 1f);
@@ -283,6 +287,15 @@ namespace Auga
             AugaStyle.CopyImage(gapImage, background);
             gapImage.color = ShieldGapColor;
             gapImage.raycastTarget = false;
+            // The slanted ends are the sprite's border slices, drawn at a fixed size (Image sliced mesh; a rect shorter
+            // than its borders squeezes them on that axis only). A taller copy with the same multiplier keeps the cap
+            // size and adds a vertical run, so its ends slant differently. Dividing the multiplier by the height ratio
+            // scales the caps with the height: the outline is the bar's silhouette scaled uniformly, same slant.
+            var barHeight = background.rectTransform.rect.height;
+            var rimHeight = health.rect.height + 2f * ShieldPad;
+            var gapHeight = rimHeight - 2f * (ShieldPad - ShieldGap);
+            rim.pixelsPerUnitMultiplier = background.pixelsPerUnitMultiplier * barHeight / rimHeight;
+            gapImage.pixelsPerUnitMultiplier = background.pixelsPerUnitMultiplier * barHeight / gapHeight;
             _shieldRim.gameObject.SetActive(false);
         }
 
