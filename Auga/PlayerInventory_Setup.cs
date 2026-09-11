@@ -46,6 +46,17 @@ namespace Auga
                 __instance.m_containerGrid = containerInventory.Find("ContainerGrid").GetComponent<InventoryGrid>();
                 __instance.m_containerGrid.m_onSelected += __instance.OnSelectedItem;
                 __instance.m_containerGrid.m_onRightClick += __instance.OnRightClickItem;
+                // 1.0.7 InventoryGui.Awake wires these on the vanilla grids only; UpdateGui calls
+                // CanDropDragOntoItem unchecked, so an unwired grid NREs after the first item.
+                foreach (var grid in new[] { __instance.m_playerGrid, __instance.m_containerGrid })
+                {
+                    grid.m_onReleased += __instance.OnReleasedItem;
+                    grid.m_onEnter += __instance.OnEnterElement;
+                    grid.OnSetTouchSelection += __instance.SetTouchSelection;
+                    grid.CanDropDragOntoItem += __instance.CanDropDragOntoItem;
+                }
+                __instance.m_playerGrid.OnMoveToLowerInventoryGrid += __instance.MoveToLowerInventoryGrid;
+                __instance.m_containerGrid.OnMoveToUpperInventoryGrid += __instance.MoveToUpperInventoryGrid;
                 __instance.m_containerWeight = containerInventory.Find("Weight/Text").GetComponent<TMP_Text>();
                 __instance.m_takeAllButton = containerInventory.Find("TakeAll").GetComponent<ColorButtonText>();
                 __instance.m_takeAllButton.onClick.AddListener(__instance.OnTakeAll);
@@ -211,7 +222,8 @@ namespace Auga
                         itemTooltip.Item = item;
                     }
 
-                    if (__instance.name == "PlayerGrid")
+                    // Move fresh elements only: other mods (EAQS slot cells) reparent their own.
+                    if (__instance.name == "PlayerGrid" && element.transform.parent == __instance.m_gridRoot)
                     {
                         if (element.Position.y == 0)
                         {
