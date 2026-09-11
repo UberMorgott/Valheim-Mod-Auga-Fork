@@ -126,6 +126,15 @@ namespace Auga
             minimap.SelectIcon(Minimap.PinType.Icon0);
             minimap.m_nameInput = newMap.Find("NameField").GetComponent<GUIFramework.GuiInputField>();
 
+            // Auga's large map has no ping icon/panel; vanilla still touches these (SelectIcon,
+            // SetMapMode), so point them at a hidden dummy instead of the destroyed vanilla ones.
+            var pingDummy = new GameObject("AugaPingDummy", typeof(RectTransform), typeof(Image));
+            pingDummy.transform.SetParent(newMap, false);
+            pingDummy.SetActive(false);
+            minimap.m_selectedIconPing = pingDummy.GetComponent<Image>();
+            minimap.m_pingImageObject = minimap.m_selectedIconPing;
+            minimap.m_touchPingPanel = pingDummy.transform;
+
             minimap.m_sharedMapHint = newMap.Find("SharedPanel").gameObject;
             minimap.m_hints = new List<GameObject> { newMap.Find("PingPanel").gameObject };
 
