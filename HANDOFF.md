@@ -3,6 +3,58 @@
 Repo: https://github.com/UberMorgott/Valheim-Mod-AugaFork (fork of RandyKnapp/Auga), local `E:\DEV\Valheim\Auga`.
 Target: Valheim 1.0.12 (Unity 6, network 40), BepInEx 5.4.23.5. Personal build.
 
+## Now AugaSkin: rename, vanilla inventory/crafting, text inputs (2026-09-11 late night)
+
+- **Plugin identity (memory-relevant):** GUID `morgott.valheim.augaskin`, name `AugaSkin` 2.0.0, assembly
+  `AugaSkin.dll`, deploy `D:\Steam\steamapps\common\Valheim\BepInEx\plugins\AugaSkin\` (`AugaSkin.dll` +
+  `translations.json`), config `BepInEx\config\morgott.valheim.augaskin.cfg` (fresh; old `randyknapp.mods.auga.cfg`
+  is orphaned, no migration). Old build parked OUTSIDE plugins: `BepInEx\Auga.bak\Auga.dll.bak` (BepInEx loads DLLs
+  recursively, so no `Auga.dll` may stay under `plugins`). Log shows one plugin: `Loading [AugaSkin 2.0.0]`.
+  `mods.json` entry: `AugaSkin/AugaSkin.dll`, `"mine": true`, 2.0.0. Repo, C# namespace `Auga` and RootNamespace
+  (embedded resources `Auga.*`) unchanged. Build: same `dotnet build Auga\Auga\Auga.csproj ...` command.
+- Q1 text inputs (`a412a7a`): typed text ran past the field's left edge because chat and the sign dialog were Auga
+  bundle replacements. AugaChat sat outside any Canvas and its runtime-added input had the text rect left of the
+  viewport (x -474..0 vs 0..484); AugaTextInput predates `GuiInputField`, so `TextInput.Show` NREd. Now vanilla
+  `Chat`/`TextInput` restyled (`Chat.cs:185-211`, `TextInput.cs:90-97`). Char-name and map-pin fields were already
+  vanilla. Shots `08`, `30`, `31`, `32` show typed text inside the field. `AugaChatShow` option removed.
+- Q2 shield outline (`d17ad1c`): the rim is the HP bar's sliced `HealthBarBG` at a larger height; same
+  pixels-per-unit multiplier kept the cap size and added a vertical run, so the slant differed. Multiplier now
+  scaled by bar height / rim height (and gap height): uniform silhouette, same slant (zoomed shot `24`).
+- Q3 dark box behind bar values (`d17ad1c`): the TMP material outline (0.2) on the bundle Norsebold SDF dilated
+  the glyph quads into a box; outline removed on all three bars (zoomed shots `24`, `26`).
+- Phase 4b rename (`5377c19`): detection verified with ilspycmd of the installed builds. EpicLoot 0.14.2 and EAQS
+  3.1.1 use an embedded `Auga.API` stub that looks up assembly `Auga` (EAQS caches `HasAuga` in `Awake`; EpicLoot's
+  `HasAuga` is never assigned). VNEI 0.17.6 (`Plugin.cs:335`) and AdventureBackpacks (`Patches\GuiBar.cs:22`) check
+  GUID `randyknapp.mods.auga`. After the rename: EAQS draws its own vanilla equipment/quick-slot panels, VNEI adds
+  its vanilla crafting tab (the `MainVneiHandlerAuga` NRE is gone), EpicLoot's `MagicSearchField` finds
+  `m_crafting/RepairButton/Glow`, AB applies its own durability-bar width. Deleted: `API.cs`, `API.Common.cs`,
+  `API.External.cs`, `APIManagerPatcher.cs`, MultiCraft/SimpleRecycling/Jewelcrafting compat (drove Auga's crafting
+  panel; none installed), the `API` build configuration. Codex agreed (answer `E:\Temp\cx\a47406e09b1a483ca510fb0d445e8f35.out.md`).
+- Phase 5 (`838e1a1`): the vanilla `InventoryGui` is the only inventory UI (`root/Player`, `Container`, `Crafting`,
+  `Info`, split dialog, upgrade/quality panel; every field and listener from `InventoryGui.Awake`,
+  `InventoryGui.cs:353-422`), restyled in place, plus the slot/recipe/trophy/achievement/drag templates. Deleted:
+  the Auga inventory screen replace, `RightPanel`, `CraftingPanel.Dummy*`, grid delegate hand-wiring,
+  `FitPlayerPanel`, the `UpdateCharacterStats` skip, `InventoryGrid_Patches.cs`, `UseAugaTrash`.
+  - User reports: P1 double interface (old panel under Auga's) gone, one vanilla layout. P2 EAQS slots now in
+    EAQS's own vanilla panel. P3 English "Base 25 + Food 206" came from Auga's stats panel; the panel is gone,
+    vanilla texts are localized (EAQS slot labels are EAQS's own strings). P4 crafting: recipe list, requirements,
+    craft/upgrade tabs, station level, VNEI tab work by hand and at a workbench (shots `43`, `41`); chest `42`.
+  - Auga-only extras dropped (stats panel, food cards): extra data feed, localization and geometry to maintain on
+    top of a vanilla skin, and the HUD already shows food and bars (Codex concurred).
+  - Audit allowlist: `TitlePanel`, `RepairSimple`, `TabsButtons` overlaps are vanilla geometry; Auga writes no
+    RectTransform under `InventoryGui` (`PlayerInventory_Setup` only calls `AugaStyle.Restyle`).
+- Crutches removed this session: #1-4, #15, #19, #21, #29 (spec §2.2), plus the chat prefab mutation.
+- Driver (outer repo `b375a63`, `1f59cea`): typed input via `ProcessEvent` + `ForceLabelUpdate`, eitr food, crafting
+  by hand/at a spawned workbench (1.5 m, in use range), spawned chest, rename-proof audit lookup; `autotest.ps1`
+  targets `AugaSkin.dll`. Docs: `tools\AUTOTEST.md`, `GAME-AUTOMATION.md`, port-plan deploy snippet.
+- Deployed `AugaSkin.dll` SHA256 `97C7EA52E917852BDD6859967B79FC565119D92AC7950AEC9134881E0014EAD8`. Autotest `20260911-204539`: build/hash/patches(66)/smoke/world all PASS; audit 0 findings on hud, build,
+  inventory, crafting-hand, crafting-workbench, container, map, menu, settings, compendium; one plugin load
+  (`Loading [AugaSkin 2.0.0]`); zero exceptions (no VNEI/EpicLoot NREs).
+- In-game check (user): type in chat, a sign and a map pin (text stays inside the field); shield outline ends
+  parallel to the HP bar; no dark box behind bar numbers; Tab opens one inventory (no panel behind); EAQS slots in
+  their own panel; crafting by hand and at a workbench (craft, upgrade tab, repair); chest take-all/stack-all;
+  split a stack; EpicLoot enchanting tab; log free of `[Auga]` warnings and of EpicLoot/VNEI NREs.
+
 ## Phase 3 follow-up: Auga stat bars on the vanilla bars (2026-09-11 night)
 
 - `Auga/AugaStatBars.cs`: the vanilla health, stamina, eitr, adrenaline and food objects are re-parented, re-anchored and re-skinned once (Hud.Awake postfix) into the bundle `HUD/hudroot` arrangement: three flat bars lower-left (health (208,123.5), stamina (208,99.5), eitr (185,74.5)), food diamonds (138,66)/(167,95)/(138,124), vanilla food timers left of each diamond. Vanilla `UpdateHealth/UpdateStamina/UpdateEitr/UpdateFood` still drive everything; GuiBar fill is horizontal by construction (`GuiBar.cs:118-121`), vanilla only rotated the health bar 90 degrees.
