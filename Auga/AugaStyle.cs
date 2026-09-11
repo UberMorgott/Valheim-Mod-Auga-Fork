@@ -128,6 +128,10 @@ namespace Auga
                         var vanillaBorder = image.sprite.border / Ppu(image);
                         SetSprite(image, "TextInputBG", Color.white, Image.Type.Sliced, 2f);
                         InsetInputText(image, vanillaBorder);
+                        // Vanilla GuiInputField swaps to its own selected/highlighted sprites on focus; with empty
+                        // states SpriteSwap keeps the Auga sprite.
+                        if (owns && selectable.transition == Selectable.Transition.SpriteSwap)
+                            selectable.spriteState = default;
                         break;
                     case Role.Button:
                     case Role.Tab:
