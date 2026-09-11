@@ -3,6 +3,40 @@
 Repo: https://github.com/UberMorgott/Valheim-Mod-AugaFork (fork of RandyKnapp/Auga), local `E:\DEV\Valheim\Auga`.
 Target: Valheim 1.0.12 (Unity 6, network 40), BepInEx 5.4.23.5. Personal build.
 
+## Native rework: Phase 3 HUD, minimap, build menu (2026-09-11 night)
+
+- One HUD: the vanilla Hud, Minimap and build menu (BuildUIV2) keep every object, field, Canvas and update path. `Hud_Setup` now only calls `AugaStyle.Restyle` on `hudroot`, `m_pieceIconPrefab`, `HotkeyBar.m_elementPrefab` and, in a `BuildUi.Awake` prefix, `m_tagButtonPrefab`/`m_pieceButtonPrefab` (instantiated from `BuildUi.cs:154`).
+- Deleted:
+  - all Hud replaces (hotbar, status effects, save/connection icons, damage, crosshair, food, health, stamina and eitr bars, action bar, stagger, ship HUD)
+  - the 7 skip prefixes, the 15 nulled bar fields and the rudder dummy
+  - the `SetupPieceInfo` transpiler and the `UpdatePieceList`/`PieceTable` prefixes
+  - `UseAugaBuildMenu`, `BuildMenuShow` and the Auga build menu
+  - `StaminaBarEmptyFlash`, the `UpdateShipHud` postfix and the `HotkeyBar.UpdateIcons` postfix
+  - the minimap replace, its ping dummy and the `ShowPinNameInput` transpiler
+  - the Jewelcrafting hotbar prefix and `Compat/SearsCatalog.cs`
+  - both `Thread.Sleep` failure paths
+- Stat-bar options (`[StatBars]` text mode, ticks, fixed size) were dropped, not ported. Vanilla bars show their own value.
+- Kept: the gold crosshair on hover (postfix on vanilla `UpdateCrosshair`) and the build-hint colour transpiler.
+- Movable HUD (D5): `MovableHudElement.InitOffset` keeps the vanilla anchor. Config `[HudLayout] <Name>Offset`/`<Name>Scale` shifts and scales from the vanilla position, applied once and on SettingChanged.
+  - Elements: HotKeyBar, KeyHints, StatusEffects, HealthPanel, the stamina/eitr/adrenaline parent, GuardianPower, EventBar, ActionProgress, StaggerPanel, MountPanel, ShipHud, Minimap.
+  - The stamina, eitr and adrenaline bars themselves are not movable: vanilla sets their `anchoredPosition` every frame (`Hud.cs:1109-1186`).
+- Phase 2 polish (`AugaStyle`):
+  - The list selection uses Auga's `RecipeElement/selected` colour instead of blue: world, server and save rows, the compendium list, and the build-menu tag rows via `BuildUiTagButton.m_toggledOnObject`.
+  - Button labels that vanilla auto-sizes get the Auga art's label inset as a TMP margin (bundle `ButtonFancy/Label` -56, `ButtonSettings/Label` -28), and vanilla auto-size shrinks them. The RectTransforms stay vanilla.
+- Audit:
+  - `BuildUi.m_debugUi` is ignored, because vanilla destroys it itself (`BuildUi.cs:140`).
+  - Allowlist entries: `small_biome`, `iconhints` and `AdventureToggleContainer`. The vanilla large map draws KeyHints under the Quests/Treasure toggles without Auga too: baseline run with Auga disabled, `tools\out\20260911-184749\shots\23-map.png`.
+- Driver (outer repo): in-world shots `20-hud`, `21-build` (hammer), `22-buildmenu`, `23-map`, plus `dump-hud`, `dump-pieceicon`, `dump-map-layout` and TMP auto-size in the dumps.
+- Deployed `Auga.dll` SHA256 `4F268231389EDDB114614FA211DBE2F8F3848308E8B4E89017FB85FEED54B462`.
+- Autotest `20260911-185332`: build/hash/patches(81)/smoke PASS. World FAIL from later phases only: Chat 7 (Phase 4), InventoryGui 8 plus 2 EpicLoot errors (Phase 5). Hud/Minimap findings: 0.
+- In-game check (user):
+  - HP, stamina, eitr and food update; status effects show.
+  - The ship HUD works.
+  - The minimap and large map work, including pins and ping.
+  - The hammer build menu places pieces.
+  - `[HudLayout]` offsets move elements.
+  - The old `[StatBars]` and `[BuildMenu]` config sections are dead and can be deleted.
+
 ## Native rework: Phase 1 fixes and Phase 2 (2026-09-11 night)
 
 - Shared restyle map `Auga/AugaStyle.cs` (`a26fdc0`). `Restyle(root)` maps vanilla sprite names (runtime dump) to Auga art and fonts. It's used by Settings, FejdStartup (plus the world-row template), ServerListGui (server-row template), UnifiedPopup, TextsDialog and the pause menu.
