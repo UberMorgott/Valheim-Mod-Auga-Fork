@@ -13,11 +13,11 @@ Positive values spread the text out more than normal. This will NOT respect the 
 Zero spacing will present the font with no changes.
 Relies on counting off characters in your Text component's text property and
 matching those against the quads passed in via the verts array. This is really
-rather primative, but I can't see any better way at the moment. It means that
+rather primitive, but I can't see any better way at the moment. It means that
 all sorts of things can break the effect...
 
 This component should be placed higher in component list than any other vertex
-modifiers that alter the total number of verticies. Eg, place this ABOVE Shadow
+modifiers that alter the total number of vertices. Eg, place this ABOVE Shadow
 or Outline effects. If you don't, the outline/shadow won't match the position
 of the letters properly. If you place the outline/shadow effect second however,
 it will just work on the altered vertices from this component, and function
@@ -45,7 +45,7 @@ namespace UnityEngine.UI
     [AddComponentMenu("UI/Effects/Letter Spacing", 15)]
     public class LetterSpacing : BaseMeshEffect
     {
-        private const string SupportedTagRegexPattersn = @"<b>|</b>|<i>|</i>|<size=.*?>|</size>|<color=.*?>|</color>|<material=.*?>|</material>";
+        private const string SupportedTagRegexPatterns = @"<b>|</b>|<i>|</i>|<size=.*?>|</size>|<color=.*?>|</color>|<material=.*?>|</material>";
 
         public bool UseRichText;
         public float Spacing;
@@ -160,7 +160,7 @@ namespace UnityEngine.UI
                     currentMatchedTag = null;
                     if (matchedTagCollection.MoveNext())
                     {
-                        currentMatchedTag = (Match) matchedTagCollection.Current;
+                        currentMatchedTag = (Match)matchedTagCollection.Current;
                     }
                 }
 
@@ -181,7 +181,7 @@ namespace UnityEngine.UI
                             currentMatchedTag = null;
                             if (matchedTagCollection.MoveNext())
                             {
-                                currentMatchedTag = (Match) matchedTagCollection.Current;
+                                currentMatchedTag = (Match)matchedTagCollection.Current;
                             }
 
                             continue;
@@ -234,7 +234,7 @@ namespace UnityEngine.UI
 
         private static IEnumerator GetRegexMatchedTagCollection(string line, out int lineLengthWithoutTags)
         {
-            var matchedTagCollection = Regex.Matches(line, SupportedTagRegexPattersn);
+            var matchedTagCollection = Regex.Matches(line, SupportedTagRegexPatterns);
             lineLengthWithoutTags = 0;
             var tagsLength = 0;
 

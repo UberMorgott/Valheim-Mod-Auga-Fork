@@ -100,7 +100,7 @@ Since 1.0.x, the game's UI components have gained many fields that the 0.21x pre
 | Chat | `Chat_Setup.cs:15-66` | Awake prefix: IndirectTwoObjectReplace with `AugaChat`; mutates the bundle prefab to add `GuiInputField` | Missing-script warnings stay |
 | Store | `Store_Setup.cs:14-93` | Awake transpiler instantiates a 2nd StoreGui, deactivates the original | Two StoreGui instances |
 | MessageHud | `MessageHud_Setup.cs:12-14` | IndirectTwoObjectReplace | Prefab predates 1.0.x fields (unverified) |
-| TextInput, TextViewer, EnemyHud, DamageText, Barber | `TextInput_Setup.cs:13`, `TextViewer_Setup.cs:13`, `EnemeyHud_Setup.cs:17`, `DamageText_Setup.cs:15`, `Barber_Setup.cs:14` | Awake prefix: DirectObjectReplace (vanilla Awake skipped on the original) | Fields unverified against 1.0.12 |
+| TextInput, TextViewer, EnemyHud, DamageText, Barber | `TextInput_Setup.cs:13`, `TextViewer_Setup.cs:13`, `EnemyHud_Setup.cs:17`, `DamageText_Setup.cs:15`, `Barber_Setup.cs:14` | Awake prefix: DirectObjectReplace (vanilla Awake skipped on the original) | Fields unverified against 1.0.12 |
 | ZNet dialogs | `Connection_Setup.cs:11-21` | Destroy vanilla password/connecting dialogs, instantiate Auga's | Fields unverified |
 | Skills | `SkillsDialog_Patch.cs:11-17` | `Update`/`OnClose`/`SkillClicked` skipped; `Setup` transpiled | Vanilla skill-dialog behaviour lost |
 | Tooltips | `UITooltip_Patch.cs:10-49` | `UpdateTextElements` prefix reimplementation | Parallel logic |

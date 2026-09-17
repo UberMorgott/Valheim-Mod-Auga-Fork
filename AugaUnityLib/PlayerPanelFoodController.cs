@@ -28,14 +28,14 @@ namespace AugaUnity
 
         [CanBeNull] protected UITooltip _tooltip;
         protected FoodTooltip _foodTooltip;
-        protected string _hightlightColor;
+        protected string _highlightColor;
         protected bool _hasFood;
 
         public virtual void Start()
         {
             _tooltip = GetComponent<UITooltip>();
             _foodTooltip = GetComponent<FoodTooltip>();
-            _hightlightColor = ColorUtility.ToHtmlStringRGB(HighlightColor);
+            _highlightColor = ColorUtility.ToHtmlStringRGB(HighlightColor);
             Show(false);
             Update();
         }
@@ -106,7 +106,7 @@ namespace AugaUnity
         public virtual void UpdateFood(Player.Food food)
         {
             _foodTooltip.Food = food;
-            
+
             var percent = food.m_time / food.m_item.m_shared.m_foodBurnTime;
             var secondsRemaining = Mathf.CeilToInt(food.m_time);
 
@@ -119,7 +119,7 @@ namespace AugaUnity
             var totalTimeDisplay = TimeSpan.FromSeconds(Mathf.CeilToInt(food.m_item.m_shared.m_foodBurnTime)).ToString(TimeFormat);
             if (TimeRemainingText != null)
             {
-                TimeRemainingText.text = $"<color={_hightlightColor}>{timeDisplay}</color> / {totalTimeDisplay}";
+                TimeRemainingText.text = $"<color={_highlightColor}>{timeDisplay}</color> / {totalTimeDisplay}";
             }
 
             Icon.sprite = food.m_item.GetIcon();

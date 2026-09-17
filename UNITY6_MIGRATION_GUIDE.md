@@ -447,11 +447,11 @@ private static T FC<T>(Transform root, string path) where T : Component
     return c;
 }
 
-private static GameObject FO(Transform root, string path)
+private static GameObject FindGo(Transform root, string path)
 {
-    if (root == null) { Auga.LogWarning($"FO: root is null (path={path})"); return null; }
+    if (root == null) { Auga.LogWarning($"FindGo: root is null (path={path})"); return null; }
     var t = root.Find(path);
-    if (t == null) { Auga.LogWarning($"FO: path not found: {path}"); return null; }
+    if (t == null) { Auga.LogWarning($"FindGo: path not found: {path}"); return null; }
     return t.gameObject;
 }
 ```

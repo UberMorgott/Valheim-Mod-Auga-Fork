@@ -28,13 +28,13 @@ namespace AugaUnity
         private PortraitMode _currentMode;
         private const float FOV = 11;
         private readonly Vector3 _offset = new Vector3(0, -0.05f, 0);
-        private PlayerCustomizaton _playerCustomizaton;
+        private PlayerCustomizaton _playerCustomization;
         private readonly List<CharacterPortrait> _characterPortraits = new List<CharacterPortrait>();
         private readonly Renderer[] _noRenderers = Array.Empty<Renderer>();
 
         public void Awake()
         {
-            _playerCustomizaton = FejdStartup.instance.m_newCharacterPanel.GetComponent<PlayerCustomizaton>();
+            _playerCustomization = FejdStartup.instance.m_newCharacterPanel.GetComponent<PlayerCustomizaton>();
 
             _camera = GetCamera(RenderTexture, Profile);
             _camera.name = "AugaCamera NewCharPortraits";
@@ -79,13 +79,13 @@ namespace AugaUnity
             }
             _characterPortraits.Clear();
 
-            var count = Mode == PortraitMode.Hair ? _playerCustomizaton.m_hairs.Count : _playerCustomizaton.m_beards.Count;
+            var count = Mode == PortraitMode.Hair ? _playerCustomization.m_hairs.Count : _playerCustomization.m_beards.Count;
             for (var i = 0; i < count; i++)
             {
                 var characterPortrait = Instantiate(PortraitPrefab, PortraitList);
                 var index = i;
                 characterPortrait.Button.onClick.AddListener(() => OnPortraitClick(index));
-                characterPortrait.Setup(_playerCustomizaton, Mode, index);
+                characterPortrait.Setup(_playerCustomization, Mode, index);
                 _characterPortraits.Add(characterPortrait);
             }
         }
@@ -95,11 +95,11 @@ namespace AugaUnity
             switch (Mode)
             {
                 case PortraitMode.Hair:
-                    _playerCustomizaton.SetHair(index);
+                    _playerCustomization.SetHair(index);
                     break;
 
                 default:
-                    _playerCustomizaton.SetBeard(index);
+                    _playerCustomization.SetBeard(index);
                     break;
             }
         }
@@ -116,7 +116,7 @@ namespace AugaUnity
             _lookTarget = newLookTarget;
             _camera.transform.LookAt(_lookTarget.position + _offset);
 
-            var player = _playerCustomizaton.GetPlayer();
+            var player = _playerCustomization.GetPlayer();
             var visEquip = player.m_visEquipment;
             var itemInstance = Mode == PortraitMode.Hair ? visEquip.m_hairItemInstance : visEquip.m_beardItemInstance;
             var renderers = itemInstance?.GetComponentsInChildren<Renderer>() ?? _noRenderers;
@@ -125,7 +125,7 @@ namespace AugaUnity
                 renderer.forceRenderingOff = true;
             }
 
-            var currentIndex = Mode == PortraitMode.Hair ? _playerCustomizaton.GetHairIndex() : _playerCustomizaton.GetBeardIndex();
+            var currentIndex = Mode == PortraitMode.Hair ? _playerCustomization.GetHairIndex() : _playerCustomization.GetBeardIndex();
             for (var index = 0; index < _characterPortraits.Count; index++)
             {
                 var characterPortrait = _characterPortraits[index];
@@ -150,11 +150,11 @@ namespace AugaUnity
         private GameObject _attachedItem;
         private List<Renderer> _renderers;
 
-        public void Setup(PlayerCustomizaton playerCustomizaton, PortraitMode mode, int index)
+        public void Setup(PlayerCustomizaton playerCustomization, PortraitMode mode, int index)
         {
-            var player = playerCustomizaton.GetPlayer();
+            var player = playerCustomization.GetPlayer();
             var visEquip = player.m_visEquipment;
-            var items = mode == PortraitMode.Hair ? playerCustomizaton.m_hairs : playerCustomizaton.m_beards;
+            var items = mode == PortraitMode.Hair ? playerCustomization.m_hairs : playerCustomization.m_beards;
             var itemName = items[index].gameObject.name;
             var itemHash = itemName.GetStableHashCode();
 

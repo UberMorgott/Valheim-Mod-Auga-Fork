@@ -93,7 +93,7 @@
   * Passive Powers compatibility added to Auga
 * KNOWN ISSUES
   * Compendium Weakness Updates Wrong **(pre-existing bug)**
-  * EpicLoot +Weapon Skills aren't represented in Auga Skills Window (actual increase still applies) **(pre-exisitng bug)**
+  * EpicLoot +Weapon Skills aren't represented in Auga Skills Window (actual increase still applies) **(pre-existing bug)**
   * Mods that add Categories to Build Hud Cause Errors **(pre-existing bug - due to a change in JVL)**
     * Low priority, disable Auga Build Menu (in config) or Use Sears Catalog until fixed.
 * NOT FIXING
@@ -150,7 +150,7 @@
 * NPC Dialog now wraps
 ### 1.2.10
 * Updates Valheim 0.216.9
-* Adds in additional fonts to hopfully fix blurry text on unit frames.
+* Adds in additional fonts to hopefully fix blurry text on unit frames.
 ### 1.2.9
 * Hotfix for Blurry Text
 * Added in Chinese, Japanese, Korean, Russian, and other languages to fonts.
@@ -168,7 +168,7 @@
 * Completely redesigned how StoreGui is attached to Auga.
 * Better Trader and Knarr the Trader both now work together
 ### 1.2.6
-* Better Trader now loads fully, and has been tested for compatibilty.
+* Better Trader now loads fully, and has been tested for compatibility.
 * Knarr the Trader compatibility has been set.
   * Known Issue: Both Knarr and Better Trader currently don't work at the same time with Auga
 * Additional tweaks to Build Menu Controller in order to support Jotunn and HammerTime Compatibility

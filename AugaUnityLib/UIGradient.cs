@@ -10,7 +10,7 @@ namespace Coffee.UIEffects
     [AddComponentMenu("UI/UIEffects/UIGradient", 101)]
     public class UIGradient : BaseMeshEffect
     {
-        static readonly Vector2[] s_SplitedCharacterPosition = {Vector2.up, Vector2.one, Vector2.right, Vector2.zero};
+        static readonly Vector2[] s_SplitCharacterPosition = {Vector2.up, Vector2.one, Vector2.right, Vector2.zero};
 
         /// <summary>
         /// Gradient direction.
@@ -286,7 +286,7 @@ namespace Coffee.UIEffects
                 if (m_GradientStyle == GradientStyle.Split)
                 {
                     // Each characters.
-                    normalizedPos = localMatrix * s_SplitedCharacterPosition[i % 4] + offset2;
+                    normalizedPos = localMatrix * s_SplitCharacterPosition[i % 4] + offset2;
                 }
                 else
                 {

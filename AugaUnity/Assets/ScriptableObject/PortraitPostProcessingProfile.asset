@@ -10,7 +10,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: -1710835243, guid: a9a0be6611ce12a6054c0c76037d55de, type: 3}
-  m_Name: PortratPostProcessingProfile
+  m_Name: PortraitPostProcessingProfile
   m_EditorClassIdentifier: 
   debugViews:
     m_Enabled: 1
