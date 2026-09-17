@@ -5,13 +5,13 @@ using UnityEngine.UI;
 
 namespace AugaUnity
 {
-    public class InputFieldSubmitEvents: MonoBehaviour
+    public class InputFieldSubmitEvents : MonoBehaviour
     {
         private InputField m_field;
-        
+
         private HashSet<Action<string>> _submitActions = new HashSet<Action<string>>();
-        
-        public Action<string> m_onSubmit   
+
+        public Action<string> m_onSubmit
         {
             set { AddListener(value); }
         }
@@ -22,7 +22,7 @@ namespace AugaUnity
         {
             if (m_field.text == "" || !Input.GetKeyDown(KeyCode.Return) && !Input.GetKeyDown(KeyCode.KeypadEnter) && !ZInput.GetButtonDown("JoyButtonA"))
                 return;
-            
+
             foreach (var submitAction in _submitActions)
             {
                 submitAction(m_field.text);

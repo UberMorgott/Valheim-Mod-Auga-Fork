@@ -168,12 +168,12 @@ namespace Auga
             }
 
             var quality = __instance.m_craftUpgradeItem?.m_quality + 1 ?? 1;
-            if (quality > __instance.m_craftRecipe.m_item.m_itemData.m_shared.m_maxQuality 
-                || !player.HaveRequirements(__instance.m_craftRecipe, false, quality) 
-                && !player.NoCostCheat() 
-                || (__instance.m_craftUpgradeItem != null 
-                    && !player.GetInventory().ContainsItem(__instance.m_craftUpgradeItem) 
-                    || __instance.m_craftUpgradeItem == null 
+            if (quality > __instance.m_craftRecipe.m_item.m_itemData.m_shared.m_maxQuality
+                || !player.HaveRequirements(__instance.m_craftRecipe, false, quality)
+                && !player.NoCostCheat()
+                || (__instance.m_craftUpgradeItem != null
+                    && !player.GetInventory().ContainsItem(__instance.m_craftUpgradeItem)
+                    || __instance.m_craftUpgradeItem == null
                     && !player.GetInventory().HaveEmptySlot()))
             {
                 return true;

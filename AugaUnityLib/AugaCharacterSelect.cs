@@ -91,7 +91,7 @@ namespace AugaUnity
             var bytes = ImageConversionReflection.EncodeToPNG(profilePic);
 
             SaveProfilePic(profile, bytes);
-            
+
             Destroy(profilePic);
         }
 

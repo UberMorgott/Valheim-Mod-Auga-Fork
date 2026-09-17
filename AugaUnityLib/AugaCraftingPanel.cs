@@ -40,7 +40,7 @@ namespace AugaUnity
         public Image CraftProgressBar;
         public GameObject ResultsPanelPrefab;
 
-        [Header("MultiCraft Objects")] 
+        [Header("MultiCraft Objects")]
         public GameObject Multicraft;
         public Button PlusButton;
         public Button MinusButton;
@@ -72,7 +72,7 @@ namespace AugaUnity
             {
                 Debug.LogError($"Too many instances of AugaCraftingPanel exist! other={_instance} parent={_instance.transform.parent}");
             }
-            
+
             _instance = this;
         }
 
@@ -126,7 +126,7 @@ namespace AugaUnity
             SetRecipe(inventoryGui.m_selectedRecipe.Recipe, inventoryGui.m_selectedRecipe.ItemData, inventoryGui.m_selectedVariant);
             panel.gameObject.SetActive(true);
             panel.Activate(inventoryGui, ItemInfo);
-            
+
         }
 
 

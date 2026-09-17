@@ -71,10 +71,10 @@ namespace AugaUnity
             {
                 switch (localizedKeyString)
                 {
-                    case "LeftArrow":  localizedKeyString = "←"; break;
+                    case "LeftArrow": localizedKeyString = "←"; break;
                     case "RightArrow": localizedKeyString = "→"; break;
-                    case "UpArrow":    localizedKeyString = "↑"; break;
-                    case "DownArrow":  localizedKeyString = "↓"; break;
+                    case "UpArrow": localizedKeyString = "↑"; break;
+                    case "DownArrow": localizedKeyString = "↓"; break;
                 }
             }
 

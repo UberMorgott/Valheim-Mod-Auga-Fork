@@ -156,7 +156,7 @@ namespace AugaUnity
             if (!ShowTicks)
                 return;
 
-            var modifiedPixelsPerUnit = FixedLength > 0 ? ((MinBackgroundSize + FixedLength) / MaxPotentialValue ) : PixelsPerUnit;
+            var modifiedPixelsPerUnit = FixedLength > 0 ? ((MinBackgroundSize + FixedLength) / MaxPotentialValue) : PixelsPerUnit;
 
             var tickCount = Mathf.CeilToInt(MaxPotentialValue / UnitsPerTick) - 1;
             for (var index = 0; index < tickCount; ++index)

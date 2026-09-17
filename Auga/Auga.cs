@@ -47,7 +47,7 @@ namespace Auga
         public Font SourceSansProSemiBold;
         public Font SourceSansProRegular;
         public TMPro.TMP_FontAsset NorseboldTMP;
-        public TMPro.TMP_FontAsset SourceSansProRegularTMP;        public Sprite ItemBackgroundSprite;
+        public TMPro.TMP_FontAsset SourceSansProRegularTMP; public Sprite ItemBackgroundSprite;
         public GameObject InventoryTooltip;
         public GameObject SimpleTooltip;
         public GameObject DividerSmall;
@@ -136,7 +136,7 @@ namespace Auga
         public void Awake()
         {
             _instance = this;
-            if (int.TryParse(Assembly.GetExecutingAssembly().GetName().Version.ToString().Split('.')[3],out var revision))
+            if (int.TryParse(Assembly.GetExecutingAssembly().GetName().Version.ToString().Split('.')[3], out var revision))
             {
                 if (revision > 0)
                 {
@@ -173,8 +173,8 @@ namespace Auga
                 if (Chatter.ToggleCell != null)
                 {
                     _harmony.Patch(createChildCellMethod, new HarmonyMethod(typeof(Chatter), nameof(Chatter.CreateChildCell_Patch)));
-                    _harmony.Patch(createChildLabelMethod, transpiler:new HarmonyMethod(typeof(Chatter), nameof(Chatter.CreateChildLabel_Transpiler)));
-                    _harmony.Patch(onToggleValueChangedMethod, transpiler:new HarmonyMethod(typeof(Chatter), nameof(Chatter.OnToggleValueChanged_Transpiler)));
+                    _harmony.Patch(createChildLabelMethod, transpiler: new HarmonyMethod(typeof(Chatter), nameof(Chatter.CreateChildLabel_Transpiler)));
+                    _harmony.Patch(onToggleValueChangedMethod, transpiler: new HarmonyMethod(typeof(Chatter), nameof(Chatter.OnToggleValueChanged_Transpiler)));
                 }
             }
         }
@@ -354,7 +354,7 @@ namespace Auga
             {
                 var t = typeof(Player).GetField(nameof(Player.m_knownBiome),
                     BindingFlags.Instance | BindingFlags.NonPublic);
-                t.SetValue(Player.m_localPlayer,new HashSet<Heightmap.Biome>());
+                t.SetValue(Player.m_localPlayer, new HashSet<Heightmap.Biome>());
             });
             AugaAudit.Register();
         }

@@ -9,8 +9,8 @@ namespace AugaUnity
     {
         [Header("Crafting Controls")]
         public Button craftButton;
-        
-        [Header("MultiCraft Objects")] 
+
+        [Header("MultiCraft Objects")]
         public GameObject multicraft;
         public Button plusButton;
         public Button minusButton;
@@ -23,7 +23,7 @@ namespace AugaUnity
         public static AugaCraftingControls Instance => _instance;
 
         private static AugaCraftingControls _instance;
-        
+
         private void Awake()
         {
             _instance = this;

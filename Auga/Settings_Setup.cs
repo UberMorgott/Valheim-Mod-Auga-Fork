@@ -52,7 +52,7 @@ namespace Auga
 
                 // Обнаружение кнопок мыши
                 var showMouse = -1;
-                if      (key == "Mouse0" || key == "LMB") showMouse = 0;
+                if (key == "Mouse0" || key == "LMB") showMouse = 0;
                 else if (key == "Mouse1" || key == "RMB") showMouse = 1;
                 else if (key == "Mouse2" || key == "MMB") showMouse = 2;
                 else if (key == "Mouse3") showMouse = 3;
@@ -63,7 +63,7 @@ namespace Auga
                 // Нормализация строк (из оригинального SetBinding)
                 switch (key)
                 {
-                    case "Equals":    key = "="; break;
+                    case "Equals": key = "="; break;
                     case "BackQuote": key = "`"; break;
                 }
 
@@ -85,10 +85,10 @@ namespace Auga
                 {
                     switch (key)
                     {
-                        case "LeftArrow":  key = "←"; break;
+                        case "LeftArrow": key = "←"; break;
                         case "RightArrow": key = "→"; break;
-                        case "UpArrow":    key = "↑"; break;
-                        case "DownArrow":  key = "↓"; break;
+                        case "UpArrow": key = "↑"; break;
+                        case "DownArrow": key = "↓"; break;
                     }
                 }
 

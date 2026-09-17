@@ -52,7 +52,7 @@ namespace AugaUnity
             {
                 var atWorkbench = player.GetCurrentCraftingStation() != null;
                 DefaultContent.SetActive(!atWorkbench);
-                WorkbenchContent.SetActive(atWorkbench); 
+                WorkbenchContent.SetActive(atWorkbench);
                 if (atWorkbench)
                 {
                     _inventoryGui.m_repairButton = CraftingPanel.RepairButton;
@@ -78,8 +78,8 @@ namespace AugaUnity
                         CraftingPanel.DefaultRepairButton.gameObject.SetActive(false);
                     }
                 }
-                
-                
+
+
 
                 var tabController = GetComponent<AugaTabController>();
                 if (atWorkbench)

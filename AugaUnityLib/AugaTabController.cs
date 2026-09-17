@@ -37,13 +37,13 @@ namespace AugaUnity
             SelectedIndex = index;
             for (var tabIndex = 0; tabIndex < TabButtons.Count; tabIndex++)
             {
-                
+
                 var selected = tabIndex == SelectedIndex;
 
                 var tabTitle = tabIndex < TabTitles.Count ? TabTitles[tabIndex] : null;
                 var tabButton = tabIndex < TabButtons.Count ? TabButtons[tabIndex] : null;
                 var tabContent = tabIndex < TabContents.Count ? TabContents[tabIndex] : null;
-                
+
                 if (tabTitle != null)
                 {
                     tabTitle.gameObject.SetActive(selected);

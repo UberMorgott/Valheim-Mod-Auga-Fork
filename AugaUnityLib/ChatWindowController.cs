@@ -38,7 +38,8 @@ namespace AugaUnity
                     _chatHandler.m_hideTimer = 0.0f;
                     _chatHandler.m_input.ActivateInputField();
                     _lastPosition = 0.0f;
-                } else if (_chatHandler.m_wasFocused)
+                }
+                else if (_chatHandler.m_wasFocused)
                 {
                     _chatHandler.m_hideTimer = 0.0f;
                     _lastPosition += ZInput.GetMouseScrollWheel();

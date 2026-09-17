@@ -167,18 +167,18 @@ namespace Auga
             }
 
             for (var i = 0; i < panels.Count; i++)
-            for (var j = i + 1; j < panels.Count; j++)
-            {
-                var a = panels[i].Rect;
-                var b = panels[j].Rect;
-                var w = Mathf.Min(a.xMax, b.xMax) - Mathf.Max(a.xMin, b.xMin);
-                var h = Mathf.Min(a.yMax, b.yMax) - Mathf.Max(a.yMin, b.yMin);
-                if (w <= 0f || h <= 0f)
-                    continue;
-                var smaller = Mathf.Min(a.width * a.height, b.width * b.height);
-                if (w * h > 0.25f * smaller)
-                    findings.Add($"overlap {PathOf(panels[i].Rt)} {a} x {panels[j].Rt.name} {b} ({w * h / smaller:P0} of smaller)");
-            }
+                for (var j = i + 1; j < panels.Count; j++)
+                {
+                    var a = panels[i].Rect;
+                    var b = panels[j].Rect;
+                    var w = Mathf.Min(a.xMax, b.xMax) - Mathf.Max(a.xMin, b.xMin);
+                    var h = Mathf.Min(a.yMax, b.yMax) - Mathf.Max(a.yMin, b.yMin);
+                    if (w <= 0f || h <= 0f)
+                        continue;
+                    var smaller = Mathf.Min(a.width * a.height, b.width * b.height);
+                    if (w * h > 0.25f * smaller)
+                        findings.Add($"overlap {PathOf(panels[i].Rt)} {a} x {panels[j].Rt.name} {b} ({w * h / smaller:P0} of smaller)");
+                }
 
             foreach (Transform child in parent)
                 if (child.gameObject.activeInHierarchy)

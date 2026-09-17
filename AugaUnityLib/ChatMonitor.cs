@@ -17,7 +17,7 @@ namespace AugaUnity
         {
             if (Chat.instance == null)
                 return;
-            
+
             UpdateVisibility(Chat.instance.IsChatDialogWindowVisible());
         }
 

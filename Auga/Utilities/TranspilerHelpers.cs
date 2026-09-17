@@ -18,7 +18,7 @@ public class TranspilerHelpers
     {
         if (!_enableLogging)
             return instruction;
-        
+
         //Debug.Log($"VAPOK: IL_{_counter}: Opcode: {instruction.opcode} Operand: {instruction.operand}");
         _counter++;
         return instruction;
@@ -27,10 +27,10 @@ public class TranspilerHelpers
     {
         if (index >= codeInstructions.Count)
             return null;
-                
+
         if (codeInstructions[index].labels.Contains(label))
             return codeInstructions[index];
-                
+
         return FindInstructionWithLabel(codeInstructions, index + 1, label);
     }
 
