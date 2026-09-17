@@ -22,10 +22,10 @@ namespace AugaUnity
 
         public void Awake()
         {
-            Set(new[] { WireState.Absent, WireState.Absent, WireState.Absent, WireState.Absent }, true);
+            SetStates(new[] { WireState.Absent, WireState.Absent, WireState.Absent, WireState.Absent }, true);
         }
 
-        public virtual void Set(IReadOnlyList<WireState> wireStates, bool canUpgrade)
+        public virtual void SetStates(IReadOnlyList<WireState> wireStates, bool canUpgrade)
         {
             for (var index = 0; index < Wires.Length; index++)
             {

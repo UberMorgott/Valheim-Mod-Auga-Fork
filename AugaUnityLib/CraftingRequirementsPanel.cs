@@ -20,7 +20,7 @@ namespace AugaUnity
         {
             inventoryGui.m_recipeRequirementList = RequirementList;
             itemInfo.Icon = Icon;
-            ColorUtility.TryParseHtmlString("#EAE1D9", out inventoryGui.m_minStationLevelBasecolor);
+            inventoryGui.m_minStationLevelBasecolor = new Color32(0xEA, 0xE1, 0xD9, 0xFF);
             inventoryGui.m_minStationLevelText = WorkbenchLevel;
             inventoryGui.m_itemCraftType = ItemCraftType;
             Update();

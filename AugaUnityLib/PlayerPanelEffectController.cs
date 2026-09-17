@@ -75,8 +75,6 @@ namespace AugaUnity
                 var percent = 1 - (statusEffect.m_time / statusEffect.m_ttl);
                 CountdownImage.fillAmount = percent;
             }
-
-            // TODO: "new effect" flash?
         }
 
         public virtual void SetActive(bool active)

@@ -27,8 +27,9 @@ namespace Auga
             }
 
             // "dmg" parameter was removed in current Valheim; parse damage from the text string
-            float.TryParse(text, System.Globalization.NumberStyles.Float,
-                System.Globalization.CultureInfo.InvariantCulture, out var dmg);
+            // Unparsable text (e.g. "Miss") counts as zero damage.
+            var dmg = float.TryParse(text, System.Globalization.NumberStyles.Float,
+                System.Globalization.CultureInfo.InvariantCulture, out var parsed) ? parsed : 0f;
 
             Color color;
             if (type == DamageText.TextType.Heal)

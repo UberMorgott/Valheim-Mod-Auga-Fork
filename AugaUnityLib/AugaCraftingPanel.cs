@@ -267,7 +267,7 @@ namespace AugaUnity
             var stationLevel = requiredCraftingStation == null || currentCraftingStation == null || currentCraftingStation.GetLevel() >= requiredStationLevel;
             canCraft = canCraft && hasStation && stationLevel;
 
-            _currentPanel.WireFrame.Set(states, canCraft);
+            _currentPanel.WireFrame.SetStates(states, canCraft);
         }
 
         public void OnCustomVariantButtonClicked()

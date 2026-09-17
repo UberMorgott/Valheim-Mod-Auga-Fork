@@ -24,7 +24,7 @@ namespace Auga
                 {
                     value = Localization.instance.Localize(value);
                 }
-                value = value.ToUpper();
+                value = value.ToUpper(CultureInfo.CurrentCulture);
             }
             else if (__instance.GetComponent<TitleCase>() != null)
             {

@@ -45,7 +45,7 @@ namespace Auga
 
         public static void Register()
         {
-            new Terminal.ConsoleCommand("auga_audit", "[Auga dev] report missing scripts, dead UI refs, canvas-less graphics and panel overlaps",
+            _ = new Terminal.ConsoleCommand("auga_audit", "[Auga dev] report missing scripts, dead UI refs, canvas-less graphics and panel overlaps",
                 args => { args.Context?.AddString($"auga_audit: {Run()} finding(s), see BepInEx log"); }, isCheat: true);
         }
 

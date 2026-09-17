@@ -70,8 +70,9 @@ namespace Auga
         {
             if (__instance.m_crosshair.color != Color.yellow)
                 return;
-            if (_gold == default)
-                ColorUtility.TryParseHtmlString(Auga.Colors.BrightestGold, out _gold);
+            // A bad colour string leaves _gold default and the vanilla yellow crosshair untouched.
+            if (_gold == default && !ColorUtility.TryParseHtmlString(Auga.Colors.BrightestGold, out _gold))
+                return;
             __instance.m_crosshair.color = _gold;
         }
     }

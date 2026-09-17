@@ -186,10 +186,10 @@ namespace Auga
 
         private void LoadDependencies()
         {
-            foreach (var name in new[] { "fastJSON", "Unity.Auga" })
+            foreach (var assemblyName in new[] { "fastJSON", "Unity.Auga" })
             {
-                if (LoadEmbedded(name) == null)
-                    Debug.LogError($"[Auga] Could not load embedded assembly ({name}.dll)!");
+                if (LoadEmbedded(assemblyName) == null)
+                    Debug.LogError($"[Auga] Could not load embedded assembly ({assemblyName}.dll)!");
             }
         }
 
@@ -350,7 +350,7 @@ namespace Auga
     {
         public static void Postfix()
         {
-            new Terminal.ConsoleCommand("resetbiomes", "", args =>
+            _ = new Terminal.ConsoleCommand("resetbiomes", "", args =>
             {
                 var t = typeof(Player).GetField(nameof(Player.m_knownBiome),
                     BindingFlags.Instance | BindingFlags.NonPublic);
