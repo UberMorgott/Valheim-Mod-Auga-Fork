@@ -10,11 +10,10 @@ Auga — полный UI-оверхол для Valheim. Переработан �
 
 ## Структура проекта
 
-```
+```text
 Auga/
 ├── Auga/                  — основной BepInEx-плагин (C#)
 │   ├── Auga.cs            — точка входа, BepInEx Plugin
-│   ├── API.cs             — публичный API для других модов
 │   ├── *_Setup.cs         — патчи UI по элементам
 │   ├── Compat/            — совместимость с другими модами
 │   └── manifest.json      — метаданные мода (Thunderstore)
@@ -59,6 +58,7 @@ cd Auga
 3. Нажми **Build Solution**
 
 **Valheim находится автоматически.** При сборке запускается [`build/FindValheim.ps1`](build/FindValheim.ps1), который:
+
 - читает реестр Windows → находит путь к Steam
 - парсит `steamapps/libraryfolders.vdf` → перебирает все Steam-библиотеки
 - возвращает путь к Valheim куда бы он ни был установлен
@@ -68,9 +68,11 @@ cd Auga
 ### Если Valheim не найден автоматически
 
 Передай путь явно при сборке:
-```
+
+```shell
 msbuild /p:ValheimDir="D:\Games\Valheim"
 ```
+
 или отредактируй первую строку в [`Valheim.props`](Valheim.props).
 
 ### APIManager.dll
@@ -83,7 +85,7 @@ msbuild /p:ValheimDir="D:\Games\Valheim"
 ## Как работает сборка
 
 | Инструмент | Назначение |
-|---|---|
+| --- | --- |
 | `BepInEx.AssemblyPublicizer.MSBuild` | Автоматически делает internal-члены Valheim DLL публичными для компиляции |
 | `ILRepack` | Упаковывает зависимости (fastJSON, APIManager) в один итоговый DLL |
 | `Valheim.props` | Единый файл с путями — все `.csproj` импортируют его |
@@ -96,10 +98,9 @@ Valheim assemblies, помеченные `<Publicize>true</Publicize>` в `.cspr
 ## Конфигурации сборки
 
 | Конфигурация | Описание |
-|---|---|
+| --- | --- |
 | `Debug` | Отладочная сборка, копируется в плагины Valheim |
 | `Release` | Оптимизированная сборка |
-| `API` | Собирает только `AugaAPI.dll` для других модов |
 
 ---
 
@@ -115,7 +116,7 @@ Valheim assemblies, помеченные `<Publicize>true</Publicize>` в `.cspr
 ## Совместимость с другими модами
 
 | Мод | Совместимость |
-|---|---|
+| --- | --- |
 | EpicLoot | ✓ |
 | Equipment & Quick Slots | ✓ |
 

@@ -8,7 +8,7 @@ Revive RandyKnapp/Auga (abandoned 2024-05, targets Valheim 0.217.x) on Valheim 1
 
 ## Sources and baseline
 
-- Fork: https://github.com/UberMorgott/Auga, local `E:\DEV\Valheim\Auga-Fork`. Remotes: `origin` (fork), `upstream` (RandyKnapp), `mrcook1e` (https://github.com/mrcook1e-ai/Auga).
+- Fork: <https://github.com/UberMorgott/Auga>, local `E:\DEV\Valheim\Auga-Fork`. Remotes: `origin` (fork), `upstream` (RandyKnapp), `mrcook1e` (<https://github.com/mrcook1e-ai/Auga>).
 - Base = upstream `main` + merge of mrcook1e-ai `main` (19 commits ahead, 0 behind: Unity 6 build, API fixes, MainMenu rewrite). Each merged commit reviewed against the 1.0.7 decompile.
 - ZenDragon AugaLite is NOT a source. It was removed from `plugins`.
 - Ground truth for game code: `E:\DEV\Valheim\ValheimDecompiled\` (1.0.7: `assembly_valheim`, `assembly_utils`, `assembly_guiutils`). No guessing of members or signatures.
@@ -30,6 +30,7 @@ Revive RandyKnapp/Auga (abandoned 2024-05, targets Valheim 0.217.x) on Valheim 1
 2. Transpilers: verify every IL pattern against 1.0.7 IL, not just member names.
 3. Vanilla UI audit: vanilla UI changed a lot since 0.217. For `Hud`, `InventoryGui`, `Menu`, `Settings`, `FejdStartup`, `Minimap`, `StoreGui`, `SkillsDialog`, `TextsDialog`, list the 1.0.7 UI fields and elements Auga does not handle. Decide per element: restyle, hide, or pass through vanilla. Nothing may end up hidden under Auga panels or non-interactive.
 4. Assets: load the existing bundle (built with Unity 2022.3.12f1) in the Unity 6 runtime first. Rebuild in a Unity 6 editor only if loading or rendering is broken.
+
 - Done when: the game boots to the world, the BepInEx log shows no Auga exceptions, and the manual checklist passes: main menu, settings (all tabs), HUD, inventory, crafting, build menu, map, trader, skills, compendium, chat, tooltips.
 
 ## Phase 2 — Mod integration via Auga API
@@ -39,12 +40,12 @@ Rule: `Auga/API.cs` (72 static methods) is a public contract. Existing consumers
 Rejected: a universal runtime adapter that restyles or re-parents foreign UI. It does not restore handlers, references, or UI semantics, so it is fragile.
 
 | Mod (installed) | Built-in Auga support | Plan |
-|---|---|---|
+| --- | --- | --- |
 | EquipmentAndQuickSlots 3.1.1 | yes (`IsLoaded`, `Panel_Create`, `PlayerPanel_*`, `ComplexTooltip_*`, `Workbench_*`, `Button_*`) | Should work once the API is compatible. Fix the slot display only if needed (local fork of the mod as the last resort). |
 | EpicLoot 0.14.2 | yes (`EpicLootAuga`, `EnchantingTabAuga`, `AugaTooltipPreprocessor`) | Verify tooltips, rarity, enchanting tab. Add missing extension points to Auga. |
 | Vnei 0.17.6 | yes, minimal (`PlayerPanel_AddTab/GetTabButton/HasTab/IsTabActive`) | Verify the tab. |
 | AAACrafting 2.1.6 | yes (`AugaAPI`, `augaCraftingButton`, `AugaTextInput`) | Re-enable (currently `.dll.disabled`) and verify. UI-position fixes go in `Auga/Compat/`, recipe-logic fixes go in a local fork of the mod. |
-| AdventureBackpacks 1.9.13.3 (our fork `E:\DEV\Valheim\AdventureBackpacks-Morgott`) | no | First check whether the backpack works as a plain container under Auga's container panel with no adapter. If something is missing (weight, backpack name), add it in our fork through the stub API pattern. |
+| AdventureBackpacks 1.9.13.3 (our fork `E:\DEV\Valheim\AdventureBackpacks-Fork`) | no | First check whether the backpack works as a plain container under Auga's container panel with no adapter. If something is missing (weight, backpack name), add it in our fork through the stub API pattern. |
 | SmoothRegen (our mod `E:\DEV\Valheim\SmoothRegen`) | n/a | Bug: during regen, Auga's health bar fills with a white "pending" layer while the red fill stays still. Fix: the red fill tracks current HP smoothly. The fix location (Auga `GuiBar`/HUD patch vs. a SmoothRegen hook) is decided after reading the code. |
 
 Built-in Auga compat (`Compat/Chatter.cs`, `Jewelcrafting.cs`, `SearsCatalog.cs`; MultiCraft, BetterTrader, SimpleRecycling in `Auga.cs`) is kept as is. It is ported only if those mods are installed.

@@ -25,7 +25,7 @@
 ## 1. Что изменилось — краткий список
 
 | Категория | Было (Valheim ≤ 0.217 / Unity 2022) | Стало (Valheim 0.221+ / Unity 6) |
-|-----------|--------------------------------------|-----------------------------------|
+| ----------- | -------------------------------------- | ----------------------------------- |
 | Формат проекта | Legacy `.csproj` с захардкоженными путями | SDK-style + `Valheim.props` |
 | Pre-publicized DLLs | `assembly_valheim_publicized.dll` и др. | Оригинальные DLL + `BepInEx.AssemblyPublicizer.MSBuild` |
 | `ui_lib.dll` / `Fishlabs` namespace | `using Fishlabs;` + `GuiInputField` | `gui_framework.dll` + `GUIFramework.GuiInputField` |
@@ -51,6 +51,7 @@
 ### 2.1 Переход на SDK-style проекты
 
 **Было (legacy format):**
+
 ```xml
 <Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup>
@@ -65,6 +66,7 @@
 ```
 
 **Стало (SDK-style):**
+
 ```xml
 <Project Sdk="Microsoft.NET.Sdk">
   <Import Project="..\Valheim.props" />
@@ -86,6 +88,7 @@
 ```
 
 **Ключевые моменты:**
+
 - `<GenerateAssemblyInfo>false</GenerateAssemblyInfo>` — обязателен, если в проекте уже есть `Properties/AssemblyInfo.cs`
 - `<Nullable>disable</Nullable>` — отключает nullable-предупреждения (мод под .NET Framework 4.7.2)
 - Больше не нужны предварительно публикованные `_publicized.dll` — `BepInEx.AssemblyPublicizer.MSBuild` делает это автоматически при сборке
@@ -116,7 +119,7 @@
 Сборка с пространством имён `Fishlabs` переименована. **Все** `using Fishlabs;` нужно заменить.
 
 | Старое | Новое | Файл |
-|--------|-------|------|
+| -------- | ------- | ------ |
 | `using Fishlabs;` | `using GUIFramework;` или убрать | везде |
 | `Fishlabs.GuiInputField` | `GUIFramework.GuiInputField` (Minimap) | `Minimap_Setup.cs` |
 | `GuiInputField` (Fishlabs) как тип поля | `TMP_InputField` | `GuiInputFieldSubmit.cs`, `AugaCraftingControls.cs`, `AugaCraftingPanel.cs`, `API.Common.cs` |
@@ -157,6 +160,7 @@ public Image UpgradedIcon;
 **Стало:** Именованная структура с полями `.Recipe` и `.ItemData`
 
 Затронутые файлы:
+
 - `AugaUnityLib/AugaCraftingPanel.cs`
 - `AugaUnityLib/CraftingRequirementsPanel.cs`
 - `Auga/PlayerInventory_Setup.cs`
@@ -392,12 +396,15 @@ public void Start()
 Когда Valheim делает метод/поле `internal`, есть несколько вариантов:
 
 ### Вариант A: Reflection wrapper (применён в проекте)
+
 Подходит для редко вызываемых методов (Editor-превью, разовая инициализация).  
 Пример: `SetBarViaReflection`, `ImageConversionReflection`.
 
 ### Вариант B: AssemblyPublicizer (применён в проекте)
+
 `BepInEx.AssemblyPublicizer.MSBuild` — NuGet пакет, который при сборке автоматически делает все `internal`/`private` члены `public` в копии DLL.  
 Указывается в `.csproj`:
+
 ```xml
 <PackageReference Include="BepInEx.AssemblyPublicizer.MSBuild" Version="0.4.2" />
 ...
@@ -408,6 +415,7 @@ public void Start()
 ```
 
 ### Вариант C: Harmony Transpiler
+
 Для патча логики без прямого вызова приватного метода.
 
 ---
@@ -418,7 +426,7 @@ public void Start()
 
 ### Стратегия: Prefix + Postfix разделение
 
-```
+```text
 FejdStartup.Awake()
   │
   ├─ [Prefix] — Replace() все префабы ДО ванильного кода
@@ -467,7 +475,7 @@ __instance.m_characterSelectScreen = characterSelectionNode.gameObject;
 ### Изменение типов полей
 
 | Поле | Было | Стало |
-|------|------|-------|
+| ------ | ------ | ------- |
 | `m_removeCharacterName` | `Text` (Unity legacy) | `TMP_Text` |
 | `m_csName` | `Text` (Unity legacy) | `TMP_Text` |
 | `m_csFileSource` | не существовало | `TMP_Text` |
@@ -475,7 +483,7 @@ __instance.m_characterSelectScreen = characterSelectionNode.gameObject;
 
 ### Пути в иерархии Auga-префабов
 
-```
+```text
 FejdStartup (root)
 ├── Menu/
 │   ├── Logo
@@ -510,6 +518,7 @@ FejdStartup (root)
 ### Что изменилось в Valheim 0.221
 
 `Settings.cs` полностью переработан:
+
 - Добавлен интерфейс `ISettingsTab` (в namespace `Valheim.SettingsGui`)
 - `private List<ISettingsTab> SettingsTabs` — список реализаций по одной на вкладку
 - `private void InitializeTabs()` — создаёт и наполняет SettingsTabs
@@ -568,8 +577,9 @@ public static class Settings_OnOk_Patch
 ```
 
 **Ключевые исправления PlatformPrefs-ключей:**
+
 | Старый ключ | Новый ключ |
-|-------------|------------|
+| ------------- | ------------ |
 | `LoD` | `LodBias` |
 | `TargetFrameRate` | `FPSLimit` |
 | `SSAO` | `SSAO`, `SSAO_2` (два поля) |
@@ -586,6 +596,7 @@ public static class Settings_OnOk_Patch
 `Menu: Auga → Fix Missing Scripts`
 
 Она:
+
 1. Force-reimport `Assets/ExternalLibraries/Unity.Auga.dll`
 2. Обходит все prefab'ы в `Assets/Prefabs/`
 3. Удаляет компоненты с missing scripts
@@ -624,6 +635,7 @@ platformData:
 ```csharp
 // TODO: augaText/augaSelectedText source GameObjects were lost; text styling skipped
 ```
+
 Нужно найти откуда брать стили для текста билд-меню или захардкодить их.
 
 ### 10.2 Minimap — `GuiInputField` неоднозначность
@@ -631,6 +643,7 @@ platformData:
 ```csharp
 minimap.m_nameInput = newMap.Find("NameField").GetComponent<GUIFramework.GuiInputField>();
 ```
+
 Нужно проверить, что `NameField` в Auga-префабе Minimap действительно имеет `GUIFramework.GuiInputField`.
 
 ### 10.3 Settings — dropdown и slider wire-up
@@ -644,6 +657,7 @@ minimap.m_nameInput = newMap.Find("NameField").GetComponent<GUIFramework.GuiInpu
 // Переопределения из MainMenu.prefab не применяются без пересборки asset bundle
 SetMenuButtonText(mainMenu, "MenuList/StartGame", "$menu_start");
 ```
+
 Решение: пересобрать asset bundle с обновлёнными текстами, **или** оставить программный override.
 
 ### 10.5 ConnectionFailed путь неоднозначен
@@ -652,6 +666,7 @@ SetMenuButtonText(mainMenu, "MenuList/StartGame", "$menu_start");
 var connectionFailed = __instance.transform.Find("CharacterSelection/ConnectionFailed")
                     ?? __instance.transform.Find("ConnectionFailed");
 ```
+
 Нужно определить точный путь в Auga-префабе.
 
 ### 10.6 `m_connectionFailedError` и `m_versionLabel` — null
@@ -663,7 +678,7 @@ var connectionFailed = __instance.transform.Find("CharacterSelection/ConnectionF
 ## 11. Шпаргалка: быстрый поиск по симптому
 
 | Симптом / Ошибка | Причина | Решение |
-|-----------------|---------|---------|
+| ----------------- | --------- | --------- |
 | `NullReferenceException` в `Settings.Awake()` | SettingsTabs = null | Патч `InitializeTabs` → пустой список |
 | `NullReferenceException` в `Settings.OnOk()` | Ждёт `SaveTab` callbacks | Полная замена `OnOk` через Prefix |
 | `MissingMethodException: GuiInputField` | DLL переименована | `gui_framework.dll`, убрать `using Fishlabs;` |

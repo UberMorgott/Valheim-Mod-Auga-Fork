@@ -1,6 +1,6 @@
 # Auga fork — handoff (2026-09-11 night session)
 
-Repo: https://github.com/UberMorgott/Valheim-Mod-AugaFork (fork of RandyKnapp/Auga), local `E:\DEV\Valheim\Auga-Fork`.
+Repo: <https://github.com/UberMorgott/Valheim-Mod-AugaFork> (fork of RandyKnapp/Auga), local `E:\DEV\Valheim\Auga-Fork`.
 Target: Valheim 1.0.12 (Unity 6, network 40), BepInEx 5.4.23.5. Personal build.
 
 ## User report 2 fixes (2026-09-11 21:15, deployed 21:31)
@@ -162,6 +162,7 @@ Target: Valheim 1.0.12 (Unity 6, network 40), BepInEx 5.4.23.5. Personal build.
 ## Native rework, Phases 0-1 (2026-09-11 evening)
 
 Spec: `docs/superpowers/specs/2026-09-11-auga-native-rework.md`. §5 now records the user's decisions. **D0: full vanilla skin** (inventory included, Auga layout deleted). **D0a: new GUID and assembly name, no `Auga.API`**, so consumers take their vanilla path (Phase 4b, not started). The EAQS patch is moot.
+
 - Phase 0 (`17925ed`; tools `85af006` in the outer repo, branch `master`):
   - dev console command `auga_audit` (needs `devcommands`), `Auga/AugaAudit.cs`. It reports missing scripts, dead vanilla refs, Graphics without a Canvas, and sibling overlaps.
   - TraceEsc/TraceInput and the debug warnings are gone.
@@ -221,6 +222,7 @@ Spec: `docs/superpowers/specs/2026-09-11-auga-native-rework.md`. §5 now records
 ## In-world crash (camera in the sky, placeholder HUD), fixed 2026-09-11
 
 What the user's run log showed: Chat, Hud, and InventoryGui postfixes threw on world load, followed by ~3700x `Chat.HasFocus` NRE from `Player.TakeInput`/`Minimap.Update`/`HotkeyBar.Update`, which stalled player input, the camera and the minimap. Causes and fixes:
+
 - Chat: the bundle's `AugaChat/Chat_box/ChatInput` uses `Fishlabs.GuiInputField` (ui_lib.dll, removed in 1.0.7), so `Chat.m_input` was null. `Chat_Setup.FixChatInput` now adds `GUIFramework.GuiInputField` to the prefab before instantiation, and falls back to vanilla chat if the layout is unexpected.
 - Hud: the bundle (both mrcook1e's Unity 6000.0.61 build and upstream's 2020.3 build) has no `StatusEffectsExt/StatusEffectsInt`, which killed the postfix at the first `.gameObject`. Now guarded. Vanilla GuardianPower, LoadingBlack, EventBar and KeyHints are kept: the bundle has legacy `Text` where the 1.0.7 fields are `TMP_Text`, and it lacks `m_loadingIndicator`, `m_gpTouchButton`, `m_radialKeyHints` and `m_buildMenuHints*`.
 - Build menu: `Auga.UseAugaBuildMenu => false`. The BuildHud replacement left about 15 1.0.7 fields (`m_buildSelection`, `m_pieceListRoot`, `m_requirementItems`, hovered-author...) on destroyed objects, so the vanilla build menu is used. Re-enabling means rewiring those fields.
@@ -240,6 +242,7 @@ What the user's run log showed: Chat, Hud, and InventoryGui postfixes threw on w
 ## In-world retest fixes, 2026-09-11 afternoon (b792ec9..)
 
 Deployed `Auga.dll` SHA256 `5128F5CEE7A747EBA0A0D3ACFCD8FC837CE0774681462C4683A7707CD0AEBBC2`; autotest build/hash/patches(107)/smoke PASS.
+
 - Esc/pause menu (b792ec9): NOT fixed, no static cause. Checked: AugaMenu `m_root`=MenuRoot (not the Menu GO), all `Menu.Update` open-condition terms (inventory, minimap, TextInput/Barber/Store replacements, ZNet dialogs, chat focus, radial, build UI); none stuck on paper; user log has no exception. Added config `[Logging] TraceInput = true` (`BepInEx\config\randyknapp.mods.auga.cfg`; add the line under `[Logging]` if absent): each Esc logs `[Auga] Esc: ...` with every term; the `true` one is the blocker (or `Menu.instance is null` / `root=True`).
 - Tab double click (ab08cc3): bundle `ButtonSfx` sets `m_selectSfxPrefab` on ~130 buttons (vanilla 2/59). Mouse-down selects (select sfx), mouse-up clicks (click sfx) >2 frames later, past `SfxTimer`. `ButtonSfx.OnSelect` now skips `PointerEventData`. If tabs still act twice (not just sound), trace listeners next.
 - Inventory scroll (6214414): bundle Main viewport = exactly 3 rows (224px, pad 10+10, 64+6). Postfix (now `Priority.Last`, after EAQS) grows `m_player` by any content overflow. One-shot log `[Auga] PlayerGrid: N main cells, content, viewport, grew` shows why it overflowed.

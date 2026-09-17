@@ -18,7 +18,7 @@ and EAQS 3.1.1 decompiled with ilspycmd.
 No errors or exceptions in the run. 39 warnings:
 
 | Group | Count | Source | Root cause | Owner |
-|---|---|---|---|---|
+| --- | --- | --- | --- | --- |
 | `[Auga] Esc: ...` | 7 | `PauseMenu_Setup.TraceEsc` (`Auga.cs:657`) | Diagnostic we added (config `TraceInput`). Remove after the Esc fix. | Auga |
 | `Starting Auga InventoryGui.Postfix`, `API AAA/InputAmount is null` | 4 | `PlayerInventory_Setup.cs:24,83-85` | Leftover debug output, logged as warnings | Auga |
 | `ACP is Awake`, `AAA/InputAmount/CraftButton is null` | 4 | `AugaUnityLib\AugaCraftingControls.cs:30-33` | Leftover debug output, logged as warnings | Auga |
@@ -33,6 +33,7 @@ Auga owns 23 of the 39 warnings. Every one of them is fixable at the source. The
 ### 1.1 Esc: pause menu opens but is invisible
 
 The trace shows the menu logic works:
+
 - Log line 378: `root=True hiddenFrames=1717`. Vanilla `Menu.Update` is in its hidden branch (`Menu.cs:384-392`). All `flag` terms are false and `m_hiddenFrames > 1`, so it calls `Show()` (`Menu.cs:391`), which activates `m_root` (`Menu.cs:224`) and pauses the game (`Menu.cs:229-232`). `TraceEsc` runs later in the same frame, before `m_hiddenFrames` is reset (`Menu.cs:326`).
 - Log line 379: `root=False hiddenFrames=0`. The next Esc goes through the shown branch and calls `Hide()` (`Menu.cs:328-347`).
 - Log lines 401-402: Esc while the inventory or map is open is blocked by `flag` (`Menu.cs:388`). That is vanilla behaviour.
@@ -49,12 +50,14 @@ No input or condition is at fault. This is a structural bug from replacing the o
 EAQS 3.1.1 `AugaPanel.UpdatePanel` (decompiled `AugaPanel.cs:101-113`) calls `Auga.API.Panel_Create(m_player, (255,352))`. `Panel_Create` sets pivot and anchors to (0.5,0.5) (`Auga\API.cs:109`). EAQS then sets only the anchors to (0,1) and `anchoredPosition = (752,-166)`, and leaves the pivot at the centre.
 Its slot positions assume a top-left pivot. `GetSlotPosition` = `panelBase + equipClusterCenter + equipPositions[i]` (`AugaPanel.cs:63-79,170-182`). The cells live in `EaqsSlotRoot`, which EAQS places at `m_gridRoot`'s reference point with `m_gridRoot`'s pivot (`EquipmentPanel.cs:611-631`).
 Rects from the dump (m_player space):
+
 - The panel centre is at (752,-166), so the panel art spans x 624.5..879.5 and y +10..-342.
 - `EaqsSlotRoot` is at (4,-4), pivot (0,1).
 - The cells sit where a top-left panel at (752,-166) would put them, e.g. the helmet at (866.5,-227). That is +4,-4 from the slot root.
 
 Total offset between cells and art: (+127.5+4, -176-4) = **(+131.5, -180)**, i.e. half the panel size plus the slot-root inset.
 The pivot contract bug is in EAQS. Auga's `Panel_Create` has centred the pivot since upstream 2021, and EpicLoot also calls it (1 call site).
+
 - Native fix: EAQS sets `pivot = (0,1)` together with the anchors, and parents its cells under the panel instead of an `m_gridRoot`-relative root.
 - Changing `Panel_Create`'s pivot globally would break other consumers.
 
@@ -79,6 +82,7 @@ The other half of "one interface layered over another" in the inventory is the m
 ### 2.1 Integration pattern today
 
 Auga was written for Valheim 0.21x. It works in three ways:
+
 - **Replace:** destroy the vanilla GameObject, instantiate a bundle prefab, then re-point vanilla fields by `Find(path)` (`Extensions.Replace`, `SetupHelper.DirectObjectReplace`, `IndirectTwoObjectReplace`).
 - **Skip:** prefixes that `return false` so the vanilla update never touches the replaced objects.
 - **Pass through:** vanilla objects that have no Auga equivalent stay where the game put them.
@@ -86,7 +90,7 @@ Auga was written for Valheim 0.21x. It works in three ways:
 Since 1.0.x, the game's UI components have gained many fields that the 0.21x prefabs do not have. Each gap was patched with a dummy, a guard, or by passing the vanilla object through. That is where the dead refs, invisible menus, and overlaps come from.
 
 | Screen / patch | File | Integration | Breaks in 1.0.12 |
-|---|---|---|---|
+| --- | --- | --- | --- |
 | Pause menu | `PauseMenu_Setup.cs:259-399` | Replace whole `Menu` GO with `AugaMenu`; wire 1.0.7 fields by path; adopt vanilla invite/gamepad/cloud/lastSave/quit/logout | Loses vanilla Canvas + raycaster (§1.1); `UpdateNavigation` fully replaced by transpiler + try/catch (`:132-257`) |
 | TextsDialog | `PauseMenu_Setup.cs:30-130,415-460` | `Update` and `ShowText` replaced by transpiler; `AddActiveEffects`/`AddLog` skipped | Vanilla texts features lost (active effects, log) |
 | Settings | `Settings_Setup.cs:11-33` | Vanilla window, `AugaPanelBase` inserted behind, wood image disabled | Inner vanilla backgrounds stay (layered look) |
@@ -111,6 +115,7 @@ Since 1.0.x, the game's UI components have gained many fields that the 0.21x pre
 ### 2.2 Crutch list (35)
 
 Dummies and fake targets:
+
 1. `PlayerInventory_Setup.cs:76-80`: `DummyDialogs` container parks replaced Variant/Skills dialogs inactive.
 2. `PlayerInventory_Setup.cs:115-123`: 9 vanilla crafting fields pointed at `CraftingPanel.Dummy*` objects.
 3. `PlayerInventory_Setup.cs:161-168`: `AugaInfoGroupDummy` UIGroupHandler fallback.
@@ -182,6 +187,7 @@ Diagnostics and hazards to remove:
 - **C. Hybrid per screen.** A everywhere, except inventory/crafting, where Auga's layout and the public API require Auga structure. There, Auga panels are built around the vanilla `InventoryGui` objects: the grids, crafting fields and upgrade panel stay vanilla and are restyled and moved, and Auga's crafting controls wrap vanilla operations.
 
 Codex (GPT peer, full text `E:\Temp\cx\b7b98c03bfc24486ae5b866eaa81ab86.out.md`) agrees: "Choose C, with A as the default".
+
 - B is poor value because extracted scenes are not a maintainable authoring source.
 - Keep vanilla `Menu` with its Canvas.
 - EAQS must set the pivot itself; do not change `Panel_Create` defaults.
@@ -192,7 +198,7 @@ Codex (GPT peer, full text `E:\Temp\cx\b7b98c03bfc24486ae5b866eaa81ab86.out.md`)
 ### Per screen
 
 | Screen | Choice | Evidence |
-|---|---|---|
+| --- | --- | --- |
 | Pause menu | A | Vanilla `Menu` owns Canvas order 1700 (scene dump). All logic is in `Menu.cs:221-403` and reads its own fields. Compendium button becomes an extra child in `MenuEntries`. |
 | Settings | A | Already vanilla. Restyle sprites and fonts per tab instead of stacking a panel. |
 | Main menu, char select/create, start/join | A | Vanilla since the earlier decision. Extend from font-only to sprites and fonts (see D1). |
@@ -213,12 +219,14 @@ Codex (GPT peer, full text `E:\Temp\cx\b7b98c03bfc24486ae5b866eaa81ab86.out.md`)
 ## 4. Phased plan
 
 Every phase ends with the steps below. The phase is not done until all of them pass.
+
 - `pwsh -File E:\DEV\Valheim\tools\autotest.ps1`: build, patches, hash, and smoke must all PASS.
 - A new world-smoke layer (Phase 0) must report zero Auga warnings or errors.
 - An in-game checklist run by the user; the log is attached to the handoff.
 - One commit per logical change.
 
 **Phase 0: instrumentation (no UI change).**
+
 - Add a dev-only console command `auga_audit` that dumps, for each open screen:
   - missing scripts
   - dead Unity refs on vanilla UI components
@@ -229,6 +237,7 @@ Every phase ends with the steps below. The phase is not done until all of them p
 - Verify: audit output reproduces §1.1 (AugaMenu without Canvas) and §1.2 (EAQS offset).
 
 **Phase 1: pause menu and Settings (A).**
+
 - Delete the Menu replace, `WireMenu`, the `UpdateNavigation` transpiler and `TraceEsc`.
 - Restyle vanilla `Menu`: panel sprites and darken with Auga art, button sprites and TMP fonts from the bundle.
 - Add Auga's Compendium as an extra `MenuEntries` button (its controller is the only Auga-only part).
@@ -236,11 +245,13 @@ Every phase ends with the steps below. The phase is not done until all of them p
 - Verify: Esc opens, the menu is visible and clickable, and gamepad navigation works. Settings opens from the pause and main menus and saves. No overlap per `auga_audit`.
 
 **Phase 2: pre-world menus (A).** Needs D1.
+
 - Replace the font-only postfix with a restyle of `FejdStartup` panels (menu, character select/create, start game, join) using Auga sprites and fonts.
 - Hide the cinematics button through the vanilla list setup, not `SetActive` on a found button, if a native hook exists. Otherwise keep it (explicit user request).
 - Verify: autotest smoke, screenshots of each panel, Cyrillic renders.
 
 **Phase 3: HUD (A).**
+
 - Revert all Hud replaces. Restyle the vanilla bars, food, status effects, crosshair, ship HUD and KeyHints.
 - Port the `AugaHealthBar` config (text mode and position, ticks, fixed size) as a component added to the vanilla bars.
   - Done in the follow-up (`AugaStatBars.cs`): the vanilla bars and food icons are re-laid out into Auga's lower-left cluster and skinned with the bundle bar art; length scale, fixed length and ticks restored, text mode/position dropped (vanilla writes the text every frame). Shield (no vanilla bar) and adrenaline (vanilla bar re-parented as a strip) are drawn on the health and stamina bars. See HANDOFF.
@@ -250,10 +261,12 @@ Every phase ends with the steps below. The phase is not done until all of them p
 - Verify: health/stamina/eitr/food/status effects update, the ship HUD works, the map works with pings, building works, and no dead refs.
 
 **Phase 4: small screens (A).**
+
 - Chat, MessageHud, TextInput, TextViewer, Barber, EnemyHud, DamageText, Store, ZNet dialogs, Skills, Texts: restyle vanilla. Delete the Replace prefixes, the duplicate StoreGui and the TextsDialog/Skills skips.
 - Verify: chat sends once, signs and portals accept text input, the trader buys and sells, the barber works, the password prompt appears, skills and texts show vanilla content.
 
 **Phase 5: inventory and crafting (C).**
+
 - Keep the vanilla `root/Player`, `root/Container` and `root/Crafting` objects and their `InventoryGrid`/crafting fields, including the upgrade/quality panel.
 - Rearrange them into Auga's layout with anchors and layout groups at setup time. Restyle the element prefab.
 - Re-home the Auga crafting controls and workbench tabs as wrappers over the vanilla buttons, keeping the API return types.
@@ -262,6 +275,7 @@ Every phase ends with the steps below. The phase is not done until all of them p
 - Verify: drag/drop, split, take-all/stack-all, craft/upgrade/repair, the weight label updates, and EpicLoot, EAQS, VNEI and AdventureBackpacks panels are aligned. Also check `auga_audit` overlap, screenshots at 1080p/1440p and UI scale extremes.
 
 **Phase 6: bundle cleanup.**
+
 - In the Unity 6 project, strip replaced or unused prefabs (AugaMenu, MainMenu, HUD parts, BuildHud...) and remove the `Fishlabs.GuiInputField` references. Keep the `AugaAssets` public fields for API compat, or document the removal.
 - Delete `Thread.Sleep` failure paths.
 - Verify: zero missing-script warnings at plugin load and on world load.
@@ -280,5 +294,6 @@ Every phase ends with the steps below. The phase is not done until all of them p
 ### Phase list after D0/D0a
 
 Phases 0-4 and 6 as in §4. Phase 5 changes, and a rename phase comes before it:
+
 - **Phase 4b: GUID and assembly rename.** First decompile the installed EpicLoot 0.14.2, VNEI 0.17.6, EAQS 3.1.1 and AdventureBackpacks (fork) with ilspycmd and record exactly how each detects Auga (assembly name, type `Auga.API`, GUID `randyknapp.mods.auga`, `Chainloader.PluginInfos`). Then rename the GUID and assembly, delete `API.cs`, `API.Common.cs`, `API.External.cs` and `APIManagerPatcher.cs`, and check that every consumer logs its non-Auga path.
 - **Phase 5: inventory and crafting (A, was C).** Restyle vanilla `root/Player`, `root/Container`, `root/Crafting`, `root/Info` and the upgrade/quality panel in place. Delete the Auga inventory layout, `RightPanel`, `CraftingPanel.Dummy*`, `FitPlayerPanel`, the grid hand-wiring and the `UpdateCharacterStats` skip. No EAQS patch.
