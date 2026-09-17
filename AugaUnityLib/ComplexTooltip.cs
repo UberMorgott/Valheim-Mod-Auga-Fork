@@ -119,13 +119,7 @@ namespace AugaUnity
         [CanBeNull] public TooltipTextBox UpgradeTwoColumnTextBoxPrefab;
         [CanBeNull] public TooltipTextBox CheckBoxTextBoxPrefab;
 
-        public static event Action<ComplexTooltip, ItemDrop.ItemData> OnComplexTooltipGeneratedForItem;
-        public static event Action<ComplexTooltip, Player.Food> OnComplexTooltipGeneratedForFood;
-        public static event Action<ComplexTooltip, StatusEffect> OnComplexTooltipGeneratedForStatusEffect;
-        public static event Action<ComplexTooltip, Skills.Skill> OnComplexTooltipGeneratedForSkill;
-
         protected static readonly StringBuilder _stringBuilder = new StringBuilder();
-        protected static List<Func<ItemDrop.ItemData, string, string, Tuple<string, string>>> _itemStatPreprocessors = new List<Func<ItemDrop.ItemData, string, string, Tuple<string, string>>>();
 
         protected readonly List<GameObject> _textBoxes = new List<GameObject>();
         protected ItemDrop.ItemData _item;
@@ -256,8 +250,6 @@ namespace AugaUnity
             SetItemBaseData(item, quality, variant);
             GenerateItemTextBoxes(item, quality);
             Localization.instance.Localize(transform);
-
-            OnComplexTooltipGeneratedForItem?.Invoke(this, item);
         }
 
         public virtual void SetItemNoTextBoxes(ItemDrop.ItemData item, int quality = -1, int variant = -1)
@@ -267,8 +259,6 @@ namespace AugaUnity
 
             SetItemBaseData(item, quality, variant);
             Localization.instance.Localize(transform);
-
-            OnComplexTooltipGeneratedForItem?.Invoke(this, item);
         }
 
         public virtual void EnableObjectBackground(ObjectBackgroundType type)
@@ -756,7 +746,6 @@ namespace AugaUnity
             AddFoodTextBox(food.m_item);
 
             Localization.instance.Localize(transform);
-            OnComplexTooltipGeneratedForFood?.Invoke(this, food);
         }
 
         public virtual void SetStatusEffect(StatusEffect statusEffect)
@@ -789,7 +778,6 @@ namespace AugaUnity
             }
 
             Localization.instance.Localize(transform);
-            OnComplexTooltipGeneratedForStatusEffect?.Invoke(this, statusEffect);
         }
 
         public virtual void SetDefault(UITooltip tooltip)
@@ -873,47 +861,22 @@ namespace AugaUnity
             var textBox2 = AddTextBox(CenteredTextBoxPrefab);
             textBox2.AddLine(skill.m_info.m_description);
 
-            // TODO: Advanced tooltip for skills
-
             Localization.instance.Localize(transform);
-            OnComplexTooltipGeneratedForSkill?.Invoke(this, skill);
-        }
-
-        public static void AddItemStatPreprocessor(Func<ItemDrop.ItemData, string, string, Tuple<string, string>> itemStatPreprocessor)
-        {
-            _itemStatPreprocessors.Add(itemStatPreprocessor);
-        }
-
-        private static Tuple<string, string> ItemStatPreprocess(ItemDrop.ItemData item, string label, string value)
-        {
-            var result = new Tuple<string, string>(label, value);
-            foreach (var itemStatPreprocessor in _itemStatPreprocessors)
-            {
-                result = itemStatPreprocessor(item, result.Item1, result.Item2);
-            }
-
-            return result;
         }
 
         protected virtual void TextBoxAddPreprocessedLine(TooltipTextBox textBox, ItemDrop.ItemData item, object label, bool localize = true)
         {
-            var result = ItemStatPreprocess(item, label.ToString(), null);
-            if (result != null)
-                textBox.AddLine(result.Item1, localize);
+            textBox.AddLine(label.ToString(), localize);
         }
 
         protected virtual void TextBoxAddPreprocessedLine(TooltipTextBox textBox, ItemDrop.ItemData item, object label, object value, bool localize = true)
         {
-            var result = ItemStatPreprocess(item, label.ToString(), value.ToString());
-            if (result != null)
-                textBox.AddLine(result.Item1, result.Item2, localize);
+            textBox.AddLine(label.ToString(), value.ToString(), localize);
         }
 
         protected virtual void TextBoxAddPreprocessedLine(TooltipTextBox textBox, ItemDrop.ItemData item, object label, object value, object parenthetical, bool localize = true)
         {
-            var result = ItemStatPreprocess(item, label.ToString(), textBox.GenerateParenthetical(value, parenthetical));
-            if (result != null)
-                textBox.AddLine(result.Item1, result.Item2, localize);
+            textBox.AddLine(label.ToString(), textBox.GenerateParenthetical(value, parenthetical), localize);
         }
     }
 }

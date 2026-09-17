@@ -116,7 +116,6 @@ namespace AugaUnity
         protected readonly Dictionary<LogType, List<ILogData>> _logsByType = new Dictionary<LogType, List<ILogData>>();
 
         public event Action<ILogData> OnLogAdded;
-        public event Action<GroupedLogData> OnLogUpdated;
 
         public void Awake()
         {
@@ -146,7 +145,6 @@ namespace AugaUnity
                     olderGroupedLog.AddValues(groupedLogData.Values);
                     _allLogs.Remove(olderGroupedLog);
                     _allLogs.Add(olderGroupedLog);
-                    OnLogUpdated?.Invoke(olderGroupedLog);
                     return;
                 }
             }
