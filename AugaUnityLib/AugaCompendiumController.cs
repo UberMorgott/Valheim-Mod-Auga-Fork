@@ -45,9 +45,9 @@ namespace AugaUnity
             var allResist = resist.Concat(veryResist).ToArray();
             var immune = GetDamageTypes(humanoid, HitData.DamageModifier.Immune);
 
-            Weakness.text = !allWeak.Any() ? "-" : string.Join("\n", allWeak.Select(x => $"$inventory_{x.ToString().ToLowerInvariant()}"));
-            Resistance.text = !allResist.Any() ? "-" : string.Join("\n", allResist.Select(x => $"$inventory_{x.ToString().ToLowerInvariant()}"));
-            Immune.text = !immune.Any() ? "-" : string.Join("\n", immune.Select(x => $"$inventory_{x.ToString().ToLowerInvariant()}"));
+            Weakness.text = allWeak.Length == 0 ? "-" : string.Join("\n", allWeak.Select(x => $"$inventory_{x.ToString().ToLowerInvariant()}"));
+            Resistance.text = allResist.Length == 0 ? "-" : string.Join("\n", allResist.Select(x => $"$inventory_{x.ToString().ToLowerInvariant()}"));
+            Immune.text = immune.Count == 0 ? "-" : string.Join("\n", immune.Select(x => $"$inventory_{x.ToString().ToLowerInvariant()}"));
         }
 
         public static float GetMaxHealth(Humanoid humanoid, int level)
@@ -97,7 +97,7 @@ namespace AugaUnity
             if (_trophyToMonsterCache != null)
                 return;
 
-            if (!ZNetScene.instance.m_namedPrefabs.Values.Any())
+            if (ZNetScene.instance.m_namedPrefabs.Count == 0)
                 return;
 
             _trophyToMonsterCache = new Dictionary<string, Humanoid>();
@@ -106,7 +106,7 @@ namespace AugaUnity
             {
                 var humanoid = prefab.GetComponent<Humanoid>();
                 var characterDrop = prefab.GetComponent<CharacterDrop>();
-                if (characterDrop == null || humanoid == null || characterDrop.m_drops == null || !characterDrop.m_drops.Any())
+                if (characterDrop == null || humanoid == null || characterDrop.m_drops == null || characterDrop.m_drops.Count == 0)
                 {
                     continue;
                 }
@@ -178,7 +178,7 @@ namespace AugaUnity
                 Destroy(bestiaryItem.Value);
             }
             _bestiaryItems.Clear();
-            
+
             var trophies = player.GetTrophies();
             var tempList = new List<Tuple<int, string, GameObject>>();
 

@@ -48,7 +48,7 @@ namespace AugaUnity
                 return;
             }
 
-            if (!string.IsNullOrEmpty(t.text)  && !overwrite)
+            if (!string.IsNullOrEmpty(t.text) && !overwrite)
             {
                 t.text += "\n";
             }
@@ -327,7 +327,7 @@ namespace AugaUnity
                 _stringBuilder.Append(", $item_food");
             }
 
-            if ((item.m_shared.m_itemType == ItemDrop.ItemData.ItemType.OneHandedWeapon 
+            if ((item.m_shared.m_itemType == ItemDrop.ItemData.ItemType.OneHandedWeapon
                 || item.m_shared.m_itemType == ItemDrop.ItemData.ItemType.TwoHandedWeapon
                 || item.m_shared.m_itemType == ItemDrop.ItemData.ItemType.TwoHandedWeaponLeft
                 || item.m_shared.m_itemType == ItemDrop.ItemData.ItemType.Torch)
@@ -422,7 +422,7 @@ namespace AugaUnity
                 {
                     TextBoxAddPreprocessedLine(textBox, item, "$item_value", item.GetValue(), item.m_shared.m_value);
                 }
-                
+
                 if (item.m_shared.m_maxQuality > 1)
                 {
                     TextBoxAddPreprocessedLine(textBox, item, "$item_quality", quality, upgrade);
@@ -510,7 +510,7 @@ namespace AugaUnity
                 string line;
                 bool foundWeight = false;
                 bool foundFirstColor = false;
-                
+
                 while ((line = reader.ReadLine()) != null)
                 {
                     if ((line.Contains("$item_") || line.Contains("$inventory_")) && !foundWeight)
@@ -524,17 +524,17 @@ namespace AugaUnity
                         {
                             if ((line.StartsWith("<color") || (!line.StartsWith("$item_") && !line.StartsWith("$inventory_"))) && !foundFirstColor)
                                 foundFirstColor = true;
-                            
+
                             if (!foundFirstColor)
                                 continue;
-                            
+
                             if (!string.IsNullOrEmpty(line.Trim()))
                                 outputString.AppendLine(line);
                         }
                     }
                 }
             }
-            
+
             return outputString.ToString();
         }
 
@@ -655,7 +655,7 @@ namespace AugaUnity
                 TextBoxAddPreprocessedLine(textBox, item, "$item_parrybonus", $"{item.m_shared.m_timedBlockBonus}x");
             }
 
-            var modifiersTooltipString = SE_Stats.GetDamageModifiersTooltipString(item.m_shared.m_damageModifiers).Split(new [] { '\n' }, StringSplitOptions.RemoveEmptyEntries);
+            var modifiersTooltipString = SE_Stats.GetDamageModifiersTooltipString(item.m_shared.m_damageModifiers).Split(new[] { '\n' }, StringSplitOptions.RemoveEmptyEntries);
             foreach (var damageModifier in modifiersTooltipString)
             {
                 var fullString = damageModifier.Replace("<color=orange>", "").Replace("$inventory_dmgmod: ", "").Replace("</color>", "");
@@ -698,7 +698,7 @@ namespace AugaUnity
                 TextBoxAddPreprocessedLine(textBox, item, "$item_armor", armor);
             }
 
-            var modifiersTooltipString = SE_Stats.GetDamageModifiersTooltipString(item.m_shared.m_damageModifiers).Split(new [] { '\n' }, StringSplitOptions.RemoveEmptyEntries);
+            var modifiersTooltipString = SE_Stats.GetDamageModifiersTooltipString(item.m_shared.m_damageModifiers).Split(new[] { '\n' }, StringSplitOptions.RemoveEmptyEntries);
             foreach (var damageModifier in modifiersTooltipString)
             {
                 var fullString = damageModifier.Replace("<color=orange>", "").Replace("$inventory_dmgmod: ", "").Replace("</color>", "");
@@ -741,10 +741,10 @@ namespace AugaUnity
         {
             if (_food == food)
                 return;
-            
+
             ClearData();
             _food = food;
-            
+
             EnableObjectBackground(ObjectBackgroundType.Diamond);
 
             SetIcon(food.m_item.GetIcon());
@@ -766,7 +766,7 @@ namespace AugaUnity
 
             ClearData();
             _statusEffect = statusEffect;
-            
+
             EnableObjectBackground(ObjectBackgroundType.Diamond);
 
             SetIcon(statusEffect.m_icon);
@@ -776,7 +776,7 @@ namespace AugaUnity
 
             ClearTextBoxes();
             var tooltipString = statusEffect.GetTooltipString();
-            var parts = tooltipString.Split(new []{ "\n" }, StringSplitOptions.RemoveEmptyEntries);
+            var parts = tooltipString.Split(new[] { "\n" }, StringSplitOptions.RemoveEmptyEntries);
             if (parts.Length > 1)
             {
                 var textBox = AddTextBox(CenteredTextBoxPrefab);
@@ -803,20 +803,20 @@ namespace AugaUnity
             if (icon != null)
             {
                 EnableObjectBackground(ObjectBackgroundType.Diamond);
-                SetIcon(icon.sprite);                
+                SetIcon(icon.sprite);
             }
-            
+
             SetTopic(Localization.instance.Localize(tooltip.m_topic));
             SetDescription("");
             SetSubtitle("");
-            
+
             var outputString = new StringBuilder();
             var foundSubtitle = false;
 
             using (StringReader reader = new StringReader(tooltip.m_text))
             {
                 string line;
-                
+
                 while ((line = reader.ReadLine()) != null)
                 {
                     if (!string.IsNullOrEmpty(line.Trim()))
@@ -838,10 +838,10 @@ namespace AugaUnity
             var textBox = AddTextBox(LeftAlignedTextBoxPrefab);
             textBox.Text.text = Localization.instance.Localize(outputString.ToString());
         }
-        
+
         public virtual void SetSkill(Skills.Skill skill)
         {
-            SetSkill(skill,null);
+            SetSkill(skill, null);
         }
         public virtual void SetSkill(Skills.Skill skill, UITooltip tooltip)
         {
@@ -851,17 +851,17 @@ namespace AugaUnity
             var extendedLevel = string.Empty;
             if (tooltip != null)
             {
-                extendedLevel = tooltip.m_topic;                
+                extendedLevel = tooltip.m_topic;
             }
-            
+
             ClearData();
             _skill = skill;
-            
+
             EnableObjectBackground(ObjectBackgroundType.Skill);
             EnableDescription(false);
 
             SetIcon(skill.m_info.m_icon);
-            SetTopic(Localization.instance.Localize("$skill_" + skill.m_info.m_skill.ToString().ToLower()));
+            SetTopic(Localization.instance.Localize("$skill_" + skill.m_info.m_skill.ToString().ToLowerInvariant()));
             SetSubtitle("$skill");
 
             ClearTextBoxes();

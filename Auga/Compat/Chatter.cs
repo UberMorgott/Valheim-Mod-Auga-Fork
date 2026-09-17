@@ -27,7 +27,7 @@ public static class Chatter
 
     public static TextMeshProUGUI CreateChildLabel_Patch(GameObject cell)
     {
-        return cell.GetComponentInChildren<TextMeshProUGUI>();;
+        return cell.GetComponentInChildren<TextMeshProUGUI>();
     }
 
     public static IEnumerable<CodeInstruction> CreateChildLabel_Transpiler(IEnumerable<CodeInstruction> instructions)
@@ -43,28 +43,28 @@ public static class Chatter
             //Debug.LogWarning($"IL_{counter}: Opcode: {instruction.opcode} Operand: {instruction.operand}");
             return instruction;
         }
-        
+
         yield return LogMessage(new CodeInstruction(OpCodes.Ldarg_0));
         counter++;
 
-        yield return LogMessage(new CodeInstruction(OpCodes.Call,cell));
+        yield return LogMessage(new CodeInstruction(OpCodes.Call, cell));
         counter++;
 
-        yield return LogMessage(new CodeInstruction(OpCodes.Call,AccessTools.DeclaredMethod(typeof(Chatter), nameof(CreateChildLabel_Patch))));
+        yield return LogMessage(new CodeInstruction(OpCodes.Call, AccessTools.DeclaredMethod(typeof(Chatter), nameof(CreateChildLabel_Patch))));
         counter++;
 
         yield return LogMessage(new CodeInstruction(OpCodes.Ret));
         counter++;
     }
 
-    
+
     public static void OnToggleValueChanged_Patch(bool isOn, GameObject cell, Image background, TextMeshProUGUI label)
     {
         var colors = cell.GetComponent<ColorButtonTextValues>();
         background.color = isOn ? colors.TextColors.normalColor : colors.TextColors.disabledColor;
         label.color = isOn ? colors.TextColors.normalColor : colors.TextColors.disabledColor;
     }
-    
+
     public static IEnumerable<CodeInstruction> OnToggleValueChanged_Transpiler(IEnumerable<CodeInstruction> instructions)
     {
         var instrs = instructions.ToList();
@@ -72,7 +72,7 @@ public static class Chatter
         var cell = AccessTools.PropertyGetter(ToggleCell, "Cell");
         var background = AccessTools.PropertyGetter(ToggleCell, "Background");
         var label = AccessTools.PropertyGetter(ToggleCell, "Label");
-        
+
 
         var counter = 0;
 
@@ -81,29 +81,29 @@ public static class Chatter
             //Debug.LogWarning($"IL_{counter}: Opcode: {instruction.opcode} Operand: {instruction.operand}");
             return instruction;
         }
-        
+
         yield return LogMessage(new CodeInstruction(OpCodes.Ldarg_1));
         counter++;
 
         yield return LogMessage(new CodeInstruction(OpCodes.Ldarg_0));
         counter++;
 
-        yield return LogMessage(new CodeInstruction(OpCodes.Call,cell));
+        yield return LogMessage(new CodeInstruction(OpCodes.Call, cell));
         counter++;
 
         yield return LogMessage(new CodeInstruction(OpCodes.Ldarg_0));
         counter++;
 
-        yield return LogMessage(new CodeInstruction(OpCodes.Call,background));
+        yield return LogMessage(new CodeInstruction(OpCodes.Call, background));
         counter++;
 
         yield return LogMessage(new CodeInstruction(OpCodes.Ldarg_0));
         counter++;
 
-        yield return LogMessage(new CodeInstruction(OpCodes.Call,label));
+        yield return LogMessage(new CodeInstruction(OpCodes.Call, label));
         counter++;
 
-        yield return LogMessage(new CodeInstruction(OpCodes.Call,AccessTools.DeclaredMethod(typeof(Chatter), nameof(OnToggleValueChanged_Patch))));
+        yield return LogMessage(new CodeInstruction(OpCodes.Call, AccessTools.DeclaredMethod(typeof(Chatter), nameof(OnToggleValueChanged_Patch))));
         counter++;
 
         yield return LogMessage(new CodeInstruction(OpCodes.Ret));

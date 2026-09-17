@@ -53,10 +53,10 @@ namespace AugaUnity
 
             switch (PlayerStat)
             {
-                case Stat.Health:   return Mathf.CeilToInt(player.GetHealth());
-                case Stat.Stamina:  return Mathf.CeilToInt(player.GetStamina());
-                case Stat.Eitr:     return Mathf.CeilToInt(player.GetEitr());
-                default: throw new ArgumentOutOfRangeException();
+                case Stat.Health: return Mathf.CeilToInt(player.GetHealth());
+                case Stat.Stamina: return Mathf.CeilToInt(player.GetStamina());
+                case Stat.Eitr: return Mathf.CeilToInt(player.GetEitr());
+                default: throw new InvalidOperationException($"Unknown stat {PlayerStat}");
             }
         }
 
@@ -71,7 +71,7 @@ namespace AugaUnity
                 case Stat.Health: return Mathf.CeilToInt(player.GetMaxHealth());
                 case Stat.Stamina: return Mathf.CeilToInt(player.GetMaxStamina());
                 case Stat.Eitr: return Mathf.CeilToInt(player.GetMaxEitr());
-                default: throw new ArgumentOutOfRangeException();
+                default: throw new InvalidOperationException($"Unknown stat {PlayerStat}");
             }
         }
 
@@ -87,7 +87,7 @@ namespace AugaUnity
                 case Stat.Health: return Mathf.CeilToInt(hp - baseValue);
                 case Stat.Stamina: return Mathf.CeilToInt(stamina - baseValue);
                 case Stat.Eitr: return Mathf.CeilToInt(eitr - baseValue);
-                default: throw new ArgumentOutOfRangeException();
+                default: throw new InvalidOperationException($"Unknown stat {PlayerStat}");
             }
         }
 
@@ -102,7 +102,7 @@ namespace AugaUnity
                 case Stat.Health: return player.m_baseHP;
                 case Stat.Stamina: return player.m_baseStamina;
                 case Stat.Eitr: return 0;
-                default: throw new ArgumentOutOfRangeException();
+                default: throw new InvalidOperationException($"Unknown stat {PlayerStat}");
             }
         }
     }

@@ -18,7 +18,7 @@ namespace AugaUnity
         public ContentSizeFitter TabContentFitter;
         public Hud hud;
         public int maximumVisibleTabs;
-        
+
         private Hud _hud => hud;
         private int currentStartIndex = 0;
         private Player _player = null;
@@ -26,7 +26,7 @@ namespace AugaUnity
         private int currentMaxVisible;
         private int lastCategory = -1;
         private bool lastActiveState = false;
-        private Dictionary<int,KeyValuePair<int,GameObject>> _visibleObjects = new Dictionary<int,KeyValuePair<int,GameObject>>();
+        private Dictionary<int, KeyValuePair<int, GameObject>> _visibleObjects = new Dictionary<int, KeyValuePair<int, GameObject>>();
         private int _visibleObjectCount = 0;
         private void Awake()
         {
@@ -36,14 +36,14 @@ namespace AugaUnity
         private void Start()
         {
             currentMinVisible = 0;
-            currentMaxVisible = maximumVisibleTabs-1;
+            currentMaxVisible = maximumVisibleTabs - 1;
             _player = null;
             lastCategory = -1;
         }
 
         private void Update()
         {
-            
+
             if (_player is null)
             {
                 _player = Player.m_localPlayer;
@@ -62,7 +62,7 @@ namespace AugaUnity
 
                     currentStartIndex = (int)_player.m_buildPieces.m_selectedCategory;
                     if ((buildMenu.activeSelf && lastActiveState) && currentStartIndex == lastCategory)
-                        if (!(_visibleObjectCount > maximumVisibleTabs)) 
+                        if (!(_visibleObjectCount > maximumVisibleTabs))
                             return;
 
                     ToggleBuildMenuTabs(currentStartIndex);
@@ -84,7 +84,7 @@ namespace AugaUnity
         {
             _player.m_buildPieces.NextCategory();
         }
-        
+
         private void UpdatePagination()
         {
             TabContentFitter.enabled = true;
@@ -103,18 +103,16 @@ namespace AugaUnity
 
         private void RefreshVisibleObjects()
         {
-            _visibleObjects = new Dictionary<int,KeyValuePair<int,GameObject>>();
+            _visibleObjects = new Dictionary<int, KeyValuePair<int, GameObject>>();
             for (var i = 0; i < _hud.m_pieceCategoryTabs.Length; i++)
             {
                 var category = _hud.m_pieceCategoryTabs[i];
                 var buildPieces = _player.m_buildPieces.GetAvailablePiecesInCategory((Piece.PieceCategory)i);
 
                 if (!category.name.EndsWith("(HiddenCategory)") && buildPieces > 0)
-                    _visibleObjects[category.GetInstanceID()] = new KeyValuePair<int, GameObject>(i,category);
-                else if (_visibleObjects.ContainsKey(category.GetInstanceID()))
-                {
+                    _visibleObjects[category.GetInstanceID()] = new KeyValuePair<int, GameObject>(i, category);
+                else
                     _visibleObjects.Remove(category.GetInstanceID());
-                }
 
                 if (buildPieces == 0)
                 {
@@ -135,7 +133,7 @@ namespace AugaUnity
 
             rightPageArrow.gameObject.SetActive(true);
             leftPageArrow.gameObject.SetActive(true);
-            
+
             if (!(startIndex >= currentMinVisible && startIndex <= currentMaxVisible) || startIndex == 0 ||
                 startIndex == _visibleObjectCount - 1)
             {
@@ -155,7 +153,7 @@ namespace AugaUnity
                 {
                     leftPageArrow.gameObject.SetActive(false);
                     currentMinVisible = 0;
-                    currentMaxVisible = ( _visibleObjectCount < maximumVisibleTabs ? _visibleObjectCount -1 : maximumVisibleTabs - 1);
+                    currentMaxVisible = (_visibleObjectCount < maximumVisibleTabs ? _visibleObjectCount - 1 : maximumVisibleTabs - 1);
                 }
 
                 if (currentMaxVisible > _visibleObjectCount - 1 ||
@@ -163,13 +161,14 @@ namespace AugaUnity
                 {
                     rightPageArrow.gameObject.SetActive(false);
                     currentMaxVisible = _visibleObjectCount - 1;
-                    currentMinVisible = currentMaxVisible - ( _visibleObjectCount < maximumVisibleTabs ? _visibleObjectCount -1 : maximumVisibleTabs - 1);
+                    currentMinVisible = currentMaxVisible - (_visibleObjectCount < maximumVisibleTabs ? _visibleObjectCount - 1 : maximumVisibleTabs - 1);
                 }
 
                 if (currentMinVisible < maximumVisibleTabs)
                 {
                     TabLayoutGroup.childAlignment = TextAnchor.MiddleRight;
-                } else if (startIndex > maximumVisibleTabs)
+                }
+                else if (startIndex > maximumVisibleTabs)
                 {
                     TabLayoutGroup.childAlignment = TextAnchor.MiddleLeft;
                 }
@@ -185,10 +184,10 @@ namespace AugaUnity
                 var categoryKey = categoryKeys[i];
                 var categoryInfo = _visibleObjects[categoryKey];
                 var category = _hud.m_pieceCategoryTabs[categoryInfo.Key];
-                
+
                 if (i >= currentMinVisible && i <= currentMaxVisible)
                 {
-                    
+
                     category.SetActive(true);
                 }
                 else

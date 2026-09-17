@@ -111,9 +111,9 @@ namespace Auga
             {
                 var bar = i;
                 _lengthScale[i] = config.Bind("StatBars", $"{Names[i]}BarLengthScale", AugaLengthScale,
-                    $"Length of the {Names[i].ToLower()} bar relative to vanilla (32 px per 25 points); the default is Auga's length. The bar grows with the max value.");
+                    $"Length of the {Names[i].ToLowerInvariant()} bar relative to vanilla (32 px per 25 points); the default is Auga's length. The bar grows with the max value.");
                 _fixedLength[i] = config.Bind("StatBars", $"{Names[i]}BarFixedLength", 0,
-                    $"If greater than 0, the {Names[i].ToLower()} bar is this many pixels long regardless of the max value (ticks are then hidden).");
+                    $"If greater than 0, the {Names[i].ToLowerInvariant()} bar is this many pixels long regardless of the max value (ticks are then hidden).");
                 _showTicks[i] = config.Bind("StatBars", $"{Names[i]}BarShowTicks", true, "Show a faint line on the bar every 25 points.");
                 _lengthScale[i].SettingChanged += (s, e) => ApplyTicks(bar);
                 _fixedLength[i].SettingChanged += (s, e) => ApplyTicks(bar);

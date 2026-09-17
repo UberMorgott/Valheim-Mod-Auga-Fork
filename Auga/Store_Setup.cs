@@ -14,7 +14,7 @@ namespace Auga
         public StoreGui SetupAugaStoreGui(StoreGui instance)
         {
             if (instance.name.StartsWith("Auga")) return instance;
-            
+
             try
             {
                 var originalTransform = instance.transform;
@@ -23,7 +23,7 @@ namespace Auga
                 var newStoreGui = GetAugaStoreGui(parent);
                 newStoreGui.transform.SetAsLastSibling();
 
-                if (instance.transform.name.Equals("Store_Screen") && instance.m_rootPanel.name.Equals("Store"))
+                if (string.Equals(instance.transform.name, "Store_Screen", StringComparison.Ordinal) && string.Equals(instance.m_rootPanel.name, "Store", StringComparison.Ordinal))
                 {
                     originalTransform.gameObject.SetActive(false);
                     instance = newStoreGui;
@@ -42,15 +42,15 @@ namespace Auga
         {
             var newStore = Object.Instantiate(Auga.Assets.StoreGui, parent, false);
             var newStoreGui = newStore.GetComponent<StoreGui>();
-            
+
             newStoreGui.m_coinPrefab = ObjectDB.instance.GetItemPrefab("Coins").GetComponent<ItemDrop>();
             newStoreGui.transform.Find("Store").gameObject.AddComponent<MovableHudElement>().Init(TextAnchor.UpperLeft, 140, -180);
 
             return newStoreGui;
         }
-        
+
     }
-    
+
     [HarmonyPatch]
     public class Store_Setup
     {
@@ -75,18 +75,18 @@ namespace Auga
                 {
                     yield return LogMessage(new CodeInstruction(OpCodes.Ldarg_0));
                     counter++;
-                    
+
                     yield return LogMessage(new CodeInstruction(OpCodes.Ldarg_0));
                     counter++;
-                    
+
                     yield return LogMessage(new CodeInstruction(OpCodes.Call, AccessTools.DeclaredMethod(typeof(StoreMethods), nameof(StoreMethods.SetupAugaStoreGui))));
                     counter++;
-                    
+
                     //skip next this;
                     i++;
 
                 }
-                
+
                 yield return LogMessage(instrs[i]);
                 counter++;
             }

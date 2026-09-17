@@ -18,7 +18,7 @@ namespace JoshH.UI
         [Tooltip("How the gradient color will be blended with the graphics color.")]
         [SerializeField] private UIGradientBlendMode blendMode;
 
-        [SerializeField] [Range(0, 1)] private float intensity = 1f;
+        [SerializeField][Range(0, 1)] private float intensity = 1f;
 
         [SerializeField] private UIGradientType gradientType;
 
@@ -35,7 +35,7 @@ namespace JoshH.UI
         //Complex Linear
         [SerializeField] private Gradient linearGradient;
 
-        [SerializeField] [Range(0, 360)] private float angle;
+        [SerializeField][Range(0, 360)] private float angle;
 
         private RectTransform _rectTransform;
 
@@ -308,7 +308,7 @@ namespace JoshH.UI
         Vector2 GetCutDirection()
         {
             var v = Vector2.up.Rotate(-angle);
-            v = new Vector2(v.x / this.rectTransform.rect.size.x,v.y / this.rectTransform.rect.size.y);
+            v = new Vector2(v.x / this.rectTransform.rect.size.x, v.y / this.rectTransform.rect.size.y);
             return v.Rotate(90);
         }
 
@@ -382,19 +382,19 @@ namespace JoshH.UI
         {
             var v = Vector2.up.Rotate(-angle);
 
-            v = new Vector2(v.x / this.rectTransform.rect.size.x,v.y / this.rectTransform.rect.size.y);
+            v = new Vector2(v.x / this.rectTransform.rect.size.x, v.y / this.rectTransform.rect.size.y);
 
             Vector3 p1, p2;
 
             if (angle % 180 < 90)
             {
                 p1 = Vector3.Project(Vector2.Scale(rectTransform.rect.size, (Vector2.down + Vector2.left)) * 0.5f, v);
-                p2 = Vector3.Project(Vector2.Scale(rectTransform.rect.size,(Vector2.up + Vector2.right)) * 0.5f, v);
+                p2 = Vector3.Project(Vector2.Scale(rectTransform.rect.size, (Vector2.up + Vector2.right)) * 0.5f, v);
             }
             else
             {
-                p1 = Vector3.Project(Vector2.Scale(rectTransform.rect.size,(Vector2.up + Vector2.left)) * 0.5f, v);
-                p2 = Vector3.Project(Vector2.Scale(rectTransform.rect.size,(Vector2.down + Vector2.right)) * 0.5f, v);
+                p1 = Vector3.Project(Vector2.Scale(rectTransform.rect.size, (Vector2.up + Vector2.left)) * 0.5f, v);
+                p2 = Vector3.Project(Vector2.Scale(rectTransform.rect.size, (Vector2.down + Vector2.right)) * 0.5f, v);
             }
             if (angle % 360 >= 180)
             {
@@ -459,7 +459,7 @@ namespace JoshH.UI
         /// <returns>interpolated color</returns>
         private Color GetColorInGradient(Color ul, Color ur, Color lr, Color ll, Vector2 normalizedPosition)
         {
-            return Color.Lerp(Color.Lerp(ll, lr, normalizedPosition.x), Color.Lerp(ul, ur, normalizedPosition.x), normalizedPosition.y); ;
+            return Color.Lerp(Color.Lerp(ll, lr, normalizedPosition.x), Color.Lerp(ul, ur, normalizedPosition.x), normalizedPosition.y);
         }
 
         public enum UIGradientBlendMode

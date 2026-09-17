@@ -35,7 +35,7 @@ namespace AugaUnity
                 _skillTooltip.Skill = skillData;
 
                 Icon.sprite = skillData.m_info.m_icon;
-                NameText.text = Localization.instance.Localize("$skill_" + SkillType.ToString().ToLower());
+                NameText.text = Localization.instance.Localize("$skill_" + SkillType.ToString().ToLowerInvariant());
                 LevelText.text = $"$level {skillData.m_level:0}";
                 ProgressBarLevel.fillAmount = Mathf.Lerp(StartFill, EndFill, skillData.m_level / 100f);
                 ProgressBarAccumulator.fillAmount = Mathf.Lerp(StartFill, EndFill, skillData.GetLevelPercentage());
