@@ -25,8 +25,6 @@ Auga/
 ├── AugaUnity/             — Unity-проект (UI prefabs, AssetBundle)
 │   └── Assets/            — исходники Unity-сцены и ассетов
 │
-├── AugaApiExample/        — пример использования Auga API
-│
 ├── Libs/                  — локальные зависимости
 │   ├── fastJSON.dll
 │   └── APIManager.dll     — (нужно добавить вручную, см. ниже)
@@ -122,16 +120,6 @@ Valheim assemblies, помеченные `<Publicize>true</Publicize>` в `.cspr
 | Equipment & Quick Slots | ✓ |
 
 Auga кардинально меняет UI Valheim — скорее всего несовместим с другими UI-модами.
-
----
-
-## API для моддеров
-
-Auga предоставляет публичный API для создания UI в стиле Auga из других модов.
-
-- [Документация API](https://github.com/RandyKnapp/Auga/wiki/Auga-API)
-- Пример использования: [`AugaApiExample/`](AugaApiExample/)
-- Собери конфигурацию `API` → получишь `AugaAPI.dll`
 
 ---
 
