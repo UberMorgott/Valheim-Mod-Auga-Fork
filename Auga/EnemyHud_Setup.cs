@@ -1,5 +1,8 @@
-﻿using System.Linq;
+using System.Collections.Generic;
+using System.Reflection.Emit;
+using System.Runtime.CompilerServices;
 using HarmonyLib;
+using JetBrains.Annotations;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -9,50 +12,74 @@ namespace Auga
     [HarmonyPatch]
     public static class EnemyHud_Setup
     {
+        // Auga's extra level displays of one HUD (level_4..level_6, level_X), found once when the HUD is made, like
+        // vanilla caches level_2/level_3 in ShowHud (EnemyHud.cs:149-150).
+        private sealed class ExtraLevels
+        {
+            public GameObject[] Stars;
+            public GameObject Many;
+            public TMP_Text ManyText;
+        }
+
+        private const int FirstExtraLevel = 4;
+        private const int LastExtraLevel = 6;
+
+        private static readonly ConditionalWeakTable<EnemyHud.HudData, ExtraLevels> ExtraLevelDisplays = new();
+
+        // The vanilla EnemyHud object stays: its root Canvas, GuiScaler, component and Awake (EnemyHud.cs:66-73) are
+        // untouched. Only its templates change: before Awake hides them, the vanilla HudRoot (m_hudRoot) is swapped for
+        // Auga's and the five template fields point into it. Every Awake patch of other mods (e.g. StarLevelSystem,
+        // which clones "level_2/star" and looks up "HudRoot") then runs on this live instance and sees Auga's templates.
         [HarmonyPatch(typeof(EnemyHud), nameof(EnemyHud.Awake))]
         public static class EnemyHud_Awake_Patch
         {
-            public static bool Prefix(EnemyHud __instance)
+            [HarmonyPriority(Priority.First), UsedImplicitly]
+            public static void Prefix(EnemyHud __instance)
             {
-                MirrorVanillaPrefab(Auga.Assets.EnemyHud);
-                return !SetupHelper.DirectObjectReplace(__instance.transform, Auga.Assets.EnemyHud, "EnemyHud");
+                ReplaceTemplates(__instance, Auga.Assets.EnemyHud.GetComponent<EnemyHud>());
             }
         }
 
-        private static bool _prefabMirrored;
-
-        // Brings the Auga prefab to the vanilla EnemyHud shape once, before its first instance wakes up.
-        private static void MirrorVanillaPrefab(GameObject prefab)
+        private static void ReplaceTemplates(EnemyHud hud, EnemyHud auga)
         {
-            if (_prefabMirrored || prefab == null)
+            var oldRoot = hud.m_hudRoot;
+            var oldTemplates = new[] { hud.m_baseHud, hud.m_baseHudBoss, hud.m_baseHudPlayer, hud.m_baseHudMount };
+
+            var newRoot = Object.Instantiate(auga.m_hudRoot, oldRoot.transform.parent, false);
+            newRoot.name = oldRoot.name;
+            newRoot.transform.SetSiblingIndex(oldRoot.transform.GetSiblingIndex());
+            hud.m_hudRoot = newRoot;
+            hud.m_baseHud = Counterpart(auga.m_baseHud, auga.m_hudRoot, newRoot);
+            hud.m_baseHudBoss = Counterpart(auga.m_baseHudBoss, auga.m_hudRoot, newRoot);
+            hud.m_baseHudPlayer = Counterpart(auga.m_baseHudPlayer, auga.m_hudRoot, newRoot);
+            hud.m_baseHudMount = Counterpart(auga.m_baseHudMount, auga.m_hudRoot, newRoot);
+            hud.m_maxShowDistance = auga.m_maxShowDistance;
+            hud.m_maxShowDistanceBoss = auga.m_maxShowDistanceBoss;
+            hud.m_hoverShowDuration = auga.m_hoverShowDuration;
+
+            foreach (var template in oldTemplates)
             {
-                return;
+                if (template != null && !template.transform.IsChildOf(oldRoot.transform))
+                {
+                    Object.DestroyImmediate(template);
+                }
             }
 
-            _prefabMirrored = true;
-            MirrorVanillaCanvas(prefab);
-            MirrorVanillaStars(prefab);
+            Object.DestroyImmediate(oldRoot);
+
+            MirrorVanillaStars(newRoot);
         }
 
-        // Vanilla EnemyHud root (SoftRef bundle d59cfac) is its own Canvas: ScreenSpaceOverlay, sorting order 200, with a
-        // CanvasScaler (ConstantPixelSize, 50 px/unit) driven by GuiScaler (assembly_guiutils GuiScaler.cs:48-58).
-        // EnemyHud.UpdateHuds places every HUD at mainCamera.WorldToScreenPointScaled (EnemyHud.cs:238-241, Utils.cs:1360),
-        // i.e. in screen pixels, which is only right inside an overlay canvas. The Auga root has no Canvas, so its HUDs
-        // inherited the parent GUI canvas and were placed off screen.
-        private static void MirrorVanillaCanvas(GameObject prefab)
+        // The same object inside the instantiated copy of Auga's HudRoot.
+        private static GameObject Counterpart(GameObject template, GameObject prefabRoot, GameObject copyRoot)
         {
-            if (prefab.GetComponent<Canvas>() != null)
+            var path = template.name;
+            for (var t = template.transform.parent; t != prefabRoot.transform; t = t.parent)
             {
-                return;
+                path = t.name + "/" + path;
             }
 
-            var canvas = prefab.AddComponent<Canvas>();
-            canvas.renderMode = RenderMode.ScreenSpaceOverlay;
-            canvas.sortingOrder = 200;
-            var scaler = prefab.AddComponent<CanvasScaler>();
-            scaler.uiScaleMode = CanvasScaler.ScaleMode.ConstantPixelSize;
-            scaler.referencePixelsPerUnit = 50f;
-            prefab.AddComponent<GuiScaler>();
+            return copyRoot.transform.Find(path).gameObject;
         }
 
         // Vanilla EnemyHud (SoftRef bundle d59cfac, HudBase/HudMount "level_2", "level_3"): every level star is an Image
@@ -60,12 +87,12 @@ namespace Auga
         // "level_2"/"level_3", but level mods build on the star itself: StarLevelSystem clones "level_2/star" in its
         // EnemyHud.Awake postfix and reads "star(Clone)" and "star(Clone)/star (1)" as back/front Images; MonsterModifiers
         // recolours each "star*" Image and hides its first child. Auga's stars are an Image-less layout holder with an
-        // Image child "star" (HudBase/HudMount) or a single Image (HudBaseBoss), so give them the vanilla shape once,
-        // before the prefab is instantiated: holder gets the black back Image, the gold front becomes child "star (1)".
+        // Image child "star" (HudBase/HudMount) or a single Image (HudBaseBoss), so give them the vanilla shape:
+        // holder gets the black back Image, the gold front becomes child "star (1)".
         // The back has the front's size, so the Auga look does not change.
-        private static void MirrorVanillaStars(GameObject prefab)
+        private static void MirrorVanillaStars(GameObject root)
         {
-            foreach (var star in prefab.GetComponentsInChildren<RectTransform>(true))
+            foreach (var star in root.GetComponentsInChildren<RectTransform>(true))
             {
                 if (!star.name.StartsWith("star") || star.parent == null || !star.parent.name.StartsWith("level_"))
                 {
@@ -105,54 +132,104 @@ namespace Auga
             }
         }
 
+        // Caches the extra level displays of a new HUD. Vanilla ShowHud adds the HUD only when it is new
+        // (EnemyHud.cs:128-157), so the prefix tells the postfix whether this call made it.
         [HarmonyPatch(typeof(EnemyHud), nameof(EnemyHud.ShowHud))]
         public static class EnemyHud_ShowHud_Patch
         {
-            public static void Postfix(EnemyHud __instance, Character c)
+            [UsedImplicitly]
+            public static void Prefix(EnemyHud __instance, Character c, out bool __state)
             {
-                if (c == null || __instance.m_huds.TryGetValue(c, out EnemyHud.HudData _))
+                __state = !__instance.m_huds.ContainsKey(c);
+            }
+
+            [UsedImplicitly]
+            public static void Postfix(EnemyHud __instance, Character c, bool __state)
+            {
+                if (!__state)
                 {
                     return;
                 }
 
-                var hud = __instance.m_huds.LastOrDefault();
-                if (hud.Key != null && hud.Value != null)
+                var hud = __instance.m_huds[c];
+                var gui = hud.m_gui.transform;
+                var stars = new GameObject[LastExtraLevel - FirstExtraLevel + 1];
+                for (var level = FirstExtraLevel; level <= LastExtraLevel; level++)
                 {
-                    const int maxLevelForStarDisplays = 6;
-                    const int firstStarDisplayLevel = 2;
-                    const int lastStarDisplayLevel = 3;
+                    stars[level - FirstExtraLevel] = gui.Find($"level_{level}")?.gameObject;
+                }
 
-                    var level = c.GetLevel();
-                    if (level > lastStarDisplayLevel)
+                var many = gui.Find("level_X");
+                ExtraLevelDisplays.Add(hud, new ExtraLevels
+                {
+                    Stars = stars,
+                    Many = many?.gameObject,
+                    ManyText = many != null ? many.GetComponentInChildren<TMP_Text>(true) : null,
+                });
+            }
+        }
+
+        // Vanilla shows a HUD's level with level_2/level_3 in UpdateHuds (EnemyHud.cs:191-199). Auga's extra displays
+        // extend exactly that code: this call goes right after it, so they follow the same rules (shown HUDs only,
+        // every frame). A level mod that replaces the vanilla level display (e.g. StarLevelSystem's UpdateHuds
+        // transpiler removes it) also owns the levels above 3, so without the vanilla code there is nothing to extend
+        // and Auga's extra displays stay hidden instead of doubling that mod's stars. Priority.Last: runs on the other
+        // transpilers' result.
+        [HarmonyPatch(typeof(EnemyHud), nameof(EnemyHud.UpdateHuds))]
+        public static class EnemyHud_UpdateHuds_Transpiler
+        {
+            [HarmonyTranspiler, HarmonyPriority(Priority.Last), UsedImplicitly]
+            public static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions)
+            {
+                var matcher = new CodeMatcher(instructions).MatchForward(true,
+                    new CodeMatch(ci => ci.IsLdloc()),
+                    new CodeMatch(OpCodes.Ldfld, AccessTools.Field(typeof(EnemyHud.HudData), nameof(EnemyHud.HudData.m_level3))),
+                    new CodeMatch(OpCodes.Callvirt, AccessTools.PropertyGetter(typeof(Component), nameof(Component.gameObject))),
+                    new CodeMatch(ci => ci.IsLdloc()),
+                    new CodeMatch(OpCodes.Ldc_I4_3),
+                    new CodeMatch(OpCodes.Ceq),
+                    new CodeMatch(OpCodes.Callvirt, AccessTools.Method(typeof(GameObject), nameof(GameObject.SetActive))));
+                if (matcher.IsInvalid)
+                {
+                    Auga.Log("EnemyHud.UpdateHuds: the vanilla level display is replaced by another mod, Auga's level_4..level_X stay hidden");
+                    return instructions;
+                }
+
+                var loadHud = new CodeInstruction(matcher.InstructionAt(-6).opcode, matcher.InstructionAt(-6).operand);
+                var loadLevel = new CodeInstruction(matcher.InstructionAt(-3).opcode, matcher.InstructionAt(-3).operand);
+                matcher.Advance(1);
+                // Both paths of the level_3 null check (EnemyHud.cs:196) join here; the call takes over their label.
+                loadHud.MoveLabelsFrom(matcher.Instruction);
+                matcher.Insert(loadHud, loadLevel, new CodeInstruction(OpCodes.Call, AccessTools.Method(typeof(EnemyHud_Setup), nameof(UpdateExtraLevels))));
+                return matcher.InstructionEnumeration();
+            }
+        }
+
+        private static void UpdateExtraLevels(EnemyHud.HudData hud, int level)
+        {
+            if (!ExtraLevelDisplays.TryGetValue(hud, out var displays))
+            {
+                return;
+            }
+
+            for (var i = 0; i < displays.Stars.Length; i++)
+            {
+                if (displays.Stars[i] != null)
+                {
+                    displays.Stars[i].SetActive(level == FirstExtraLevel + i);
+                }
+            }
+
+            if (displays.Many != null)
+            {
+                var many = level > LastExtraLevel;
+                displays.Many.SetActive(many);
+                if (many && displays.ManyText != null)
+                {
+                    var text = $"x {level - 1}";
+                    if (displays.ManyText.text != text)
                     {
-                        var hudGui = hud.Value.m_gui;
-                        for (var i = firstStarDisplayLevel; i <= maxLevelForStarDisplays; i++)
-                        {
-                            var levelDisplay = hudGui.transform.Find($"level_{level}");
-                            if (levelDisplay != null)
-                            {
-                                levelDisplay.gameObject.SetActive(i == level);
-                            }
-                        }
-
-                        var levelDisplayX = hudGui.transform.Find("level_X");
-                        if (levelDisplayX)
-                        {
-                            var useExtendedLevel = level > maxLevelForStarDisplays;
-                            if (useExtendedLevel)
-                            {
-                                var levelXDisplayName = $"level_{level}";
-                                var newLevelXDisplay = hudGui.transform.Find(levelXDisplayName);
-                                if (newLevelXDisplay == null)
-                                {
-                                    newLevelXDisplay = Object.Instantiate(levelDisplayX, levelDisplayX.parent, false);
-                                    newLevelXDisplay.name = levelXDisplayName;
-                                }
-
-                                var text = levelDisplayX.GetComponentInChildren<TMP_Text>();
-                                if (text != null) text.text = $"x {level - 1}";
-                            }
-                        }
+                        displays.ManyText.text = text;
                     }
                 }
             }
