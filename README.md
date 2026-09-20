@@ -1,6 +1,6 @@
 # Project Auga
 
-Форк [Auga](https://github.com/RandyKnapp/Auga) от **RandyKnapp**, поддерживает **Morgott** ([UberMorgott](https://github.com/UberMorgott)). Лицензия и копирайт оригинала сохранены.
+Форк [Auga](https://github.com/RandyKnapp/Auga) от **RandyKnapp**, поддерживает **Morgott** ([UberMorgott](https://github.com/UberMorgott)).
 
 Auga — полный UI-оверхол для Valheim. Переработан каждый элемент интерфейса: инвентарь, HUD, крафтинг, экран персонажа, загрузочные экраны и многое другое.
 
@@ -127,3 +127,8 @@ Auga кардинально меняет UI Valheim — скорее всего 
 ## Скриншоты
 
 [Смотреть скриншоты](Auga/Screenshots/)
+
+## Contributor licensing
+
+- Original contributions by Morgott are offered under CC BY-NC 4.0; see [LICENSE](LICENSE) and [full license text](CC-BY-NC-4.0.txt).
+- Inherited Auga code and assets, game material and third-party components are excluded; their existing notices and terms remain unchanged. This does not establish permission to relicense upstream material.
