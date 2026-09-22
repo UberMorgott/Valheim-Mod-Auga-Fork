@@ -250,7 +250,7 @@ namespace AugaUnity
     /// which in Unity 6 defines ReadOnlySpan&lt;byte&gt; overloads that break .NET Framework builds (CS1705/CS7069).
     /// At runtime Unity always loads the module, so reflection is safe.
     /// </summary>
-    internal static class ImageConversionReflection
+    public static class ImageConversionReflection
     {
         private static MethodInfo _encodeToPng;
         private static MethodInfo _loadImage;

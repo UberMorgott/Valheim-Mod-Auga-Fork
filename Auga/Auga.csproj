@@ -148,6 +148,8 @@
     <EmbeddedResource Include="..\Libs\fastJSON.dll">
       <Link>fastJSON.dll</Link>
     </EmbeddedResource>
+    <!-- EAQS empty-slot silhouettes (EaqsSlotPanel), resource names Auga.Assets.SlotIcons.<name>.png -->
+    <EmbeddedResource Include="Assets\SlotIcons\*.png" />
   </ItemGroup>
 
   <ItemGroup>

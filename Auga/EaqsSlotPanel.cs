@@ -23,7 +23,7 @@ namespace Auga
     // - fits each background around its cells with the vanilla player-grid background padding;
     // - disables the name label on equipment and custom cells like vanilla disables the binding text of non-hotbar
     //   cells (InventoryGrid.cs:293); quick slots keep their hotkey text;
-    // - draws a dark silhouette of a representative item behind empty equipment cells.
+    // - draws a faint silhouette of the expected item type (embedded icon) in empty equipment cells.
     // EAQS is a soft dependency: absent or changed, nothing here runs.
     public static class EaqsSlotPanel
     {
@@ -40,21 +40,22 @@ namespace Auga
         private const int Equipment = 0, Quick = 1, Custom = 2;
         private static readonly string[] Backgrounds = { "EaqsEquipmentBkg", "EaqsQuickSlotBkg", "EaqsCustomSlotBkg" };
 
-        // Representative vanilla item per EAQS equipment slot ID (Slots.cs:987-994), icon drawn as the empty-slot silhouette.
-        private static readonly Dictionary<string, string> SilhouettePrefabs = new Dictionary<string, string>
+        // Embedded silhouette icon (Assets/SlotIcons, white on transparent) per EAQS equipment slot ID (Slots.cs:987-994).
+        private static readonly Dictionary<string, string> SilhouetteIcons = new Dictionary<string, string>
         {
-            { "Helmet", "HelmetLeather" },
-            { "Chest", "ArmorLeatherChest" },
-            { "Legs", "ArmorLeatherLegs" },
-            { "Shoulder", "CapeDeerHide" },
-            { "Utility", "BeltStrength" },
-            { "Utility2", "BeltStrength" },
-            { "Utility3", "BeltStrength" },
-            { "Trinket", "TrinketBronzeHealth" },
+            { "Helmet", "helmet" },
+            { "Chest", "chest" },
+            { "Legs", "legs" },
+            { "Shoulder", "cape" },
+            { "Utility", "utility" },
+            { "Utility2", "utility" },
+            { "Utility3", "utility" },
+            { "Trinket", "trinket" },
         };
 
         private const string SilhouetteName = "AugaSlotSilhouette";
-        private static readonly Color SilhouetteColor = new Color(0f, 0f, 0f, 0.35f);
+        // Faint white: reads as an engraving on the dark cell, clearly empty.
+        private static readonly Color SilhouetteColor = new Color(1f, 1f, 1f, 0.04f);
         private static readonly Dictionary<string, Sprite> SilhouetteSprites = new Dictionary<string, Sprite>();
 
         private static bool? _available;
@@ -282,17 +283,36 @@ namespace Auga
 
         private static Sprite SilhouetteSprite(string slotId)
         {
-            if (SilhouetteSprites.TryGetValue(slotId, out var sprite))
-                return sprite;
-            if (!SilhouettePrefabs.TryGetValue(slotId, out var prefabName) || !ObjectDB.instance)
+            if (!SilhouetteIcons.TryGetValue(slotId, out var icon))
                 return null;
+            if (SilhouetteSprites.TryGetValue(icon, out var sprite))
+                return sprite;
 
-            var prefab = ObjectDB.instance.GetItemPrefab(prefabName);
-            sprite = prefab && prefab.TryGetComponent<ItemDrop>(out var itemDrop) ? itemDrop.m_itemData.GetIcon() : null;
+            sprite = LoadEmbeddedSprite($"Auga.Assets.SlotIcons.{icon}.png");
             if (!sprite)
-                Auga.LogWarning($"EAQS slot panel: no icon for silhouette prefab {prefabName} (slot {slotId})");
-            SilhouetteSprites[slotId] = sprite;
+                Auga.LogWarning($"EAQS slot panel: silhouette icon {icon}.png missing (slot {slotId})");
+            SilhouetteSprites[icon] = sprite;
             return sprite;
+        }
+
+        private static Sprite LoadEmbeddedSprite(string resourceName)
+        {
+            using (var stream = Assembly.GetExecutingAssembly().GetManifestResourceStream(resourceName))
+            {
+                if (stream == null)
+                    return null;
+                var data = new byte[stream.Length];
+                int read = 0, n;
+                while (read < data.Length && (n = stream.Read(data, read, data.Length - read)) > 0)
+                    read += n;
+
+                // Same PNG path as AugaCharacterSelect: net472 cannot bind ImageConversion.LoadImage at compile time.
+                var texture = new Texture2D(2, 2, TextureFormat.RGBA32, false) { name = resourceName };
+                AugaUnity.ImageConversionReflection.LoadImage(texture, data);
+                if (texture.width <= 2)
+                    return null;
+                return Sprite.Create(texture, new Rect(0, 0, texture.width, texture.height), new Vector2(0.5f, 0.5f));
+            }
         }
     }
 }
