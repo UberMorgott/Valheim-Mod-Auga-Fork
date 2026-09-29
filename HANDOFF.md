@@ -12,8 +12,10 @@ Target: Valheim 1.0.12 (Unity 6, network 40), BepInEx 5.4.23.5. Personal build.
 - Autotest `20260929-192859` (`-Mod Auga -Shots 27a-damage-text,27b-text-viewer,27c-barber,27d-store-canvas`, tools
   `8315cc1`): all layers PASS, 4 checks PASS with vanilla orders; screenshots show "42", rune text panel, barber panel.
   Store check is canvas-only (no trader spawned).
-- Open: `AddInworldText_Postfix` colours mySelf TooHard/Bonus as player damage and Bonus white; vanilla limits mySelf
-  to `type <= Immune` and has Bonus orange (`DamageText.AddInworldText`, 1.0.16).
+- Fixed `06c0b6a`: `AddInworldText_Postfix` now mirrors `DamageText.cs:105-115` (1.0.16) — own-damage red/grey only
+  for `type <= Immune`, Heal/TooHard/Bonus keep type colour, Bonus orange `(1, 0.63, 0.24)`. Autotest
+  `-Mod Auga -Shots 27a-damage-text` (tools `5ae183d`, adds own Normal/TooHard/Bonus colour checks): all PASS.
+  Deployed + published (client pack) AugaSkin.dll `779BC6A4…`.
 
 ## Post-2.0.5: message HUD canvases, audit false positives (2026-09-29 evening)
 
