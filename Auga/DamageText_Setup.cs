@@ -10,7 +10,7 @@ namespace Auga
         [HarmonyPatch(typeof(DamageText), nameof(DamageText.Awake))]
         public static class DamageText_Awake_Patch
         {
-            public static bool Prefix(TextInput __instance)
+            public static bool Prefix(DamageText __instance)
             {
                 return !SetupHelper.DirectObjectReplace(__instance.transform, Auga.Assets.DamageText, "DamageText");
             }

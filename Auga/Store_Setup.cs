@@ -22,6 +22,7 @@ namespace Auga
                 var siblingIndex = parent.GetSiblingIndex();
                 var newStoreGui = GetAugaStoreGui(parent);
                 newStoreGui.transform.SetAsLastSibling();
+                SetupHelper.WrapInRootCanvasOf(newStoreGui.transform, instance.gameObject);
 
                 if (string.Equals(instance.transform.name, "Store_Screen", StringComparison.Ordinal) && string.Equals(instance.m_rootPanel.name, "Store", StringComparison.Ordinal))
                 {

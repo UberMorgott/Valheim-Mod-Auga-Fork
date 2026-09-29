@@ -23,11 +23,22 @@ namespace Auga
 
             var parent = original.parent;
             var siblingIndex = original.GetSiblingIndex();
+            var rootCanvas = RootCanvas.Capture(original.gameObject);
             Object.DestroyImmediate(original.gameObject);
 
             newObject = Object.Instantiate(prefab, parent, false);
             newObject.transform.SetSiblingIndex(siblingIndex);
+            rootCanvas?.Wrap(newObject.transform);
             return true;
+        }
+
+        /// <summary>
+        /// Puts an Auga replacement that sits next to <paramref name="vanilla"/> (instead of destroying it) into a root
+        /// canvas set up like the vanilla object's own, if it has one.
+        /// </summary>
+        public static void WrapInRootCanvasOf(Transform replacement, GameObject vanilla)
+        {
+            RootCanvas.Capture(vanilla)?.Wrap(replacement);
         }
 
         /// <summary>
@@ -94,11 +105,12 @@ namespace Auga
         }
 
         /// <summary>
-        /// Root canvas set-up of a vanilla object. In 1.0.x the HUD message objects ("HudMessage", "TopLeftMessage",
-        /// siblings under IngameGui, which has no Canvas) are root canvases of their own; the Auga prefab parts were
-        /// authored as children of one shared canvas and carry none, so without this they never render (MessageHud's
-        /// centre text reported canvas=none in the 21b-build-message autotest). Mirrors upstream RandyKnapp/Auga
-        /// 79b71af SetupHelper.CaptureRootCanvas/ApplyRootCanvas (wrap mode).
+        /// Root canvas set-up of a vanilla object. In 1.0.x every screen under IngameGui (which has no Canvas) is a root
+        /// canvas of its own (scene bundle 17245031: DamageText order 100, TopLeftMessage 500, Store_Screen 700,
+        /// BarberGui 800, HudMessage 1000, TextViewer 1200); the Auga prefabs were authored as children of one shared
+        /// canvas and carry none, so without this they never render (MessageHud's centre text reported canvas=none in
+        /// the 21b-build-message autotest). Mirrors upstream RandyKnapp/Auga 79b71af
+        /// SetupHelper.CaptureRootCanvas/ApplyRootCanvas; always wrap mode, so each part keeps its authored rect.
         /// </summary>
         private sealed class RootCanvas
         {
