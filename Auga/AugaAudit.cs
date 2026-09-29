@@ -138,11 +138,77 @@ namespace Auga
         {
             var corners = new Vector3[4];
             rt.GetWorldCorners(corners);
-            var canvas = rt.GetComponentInParent<Canvas>();
+            return ScreenBounds(rt, corners);
+        }
+
+        // Screen-space bounds of all given world points (all corners: a rotated rect, e.g. the minimap's
+        // wind_marker, has its extremes on any corner).
+        private static Rect ScreenBounds(Transform t, IEnumerable<Vector3> worldPoints)
+        {
+            var canvas = t.GetComponentInParent<Canvas>();
             var cam = canvas && canvas.renderMode != RenderMode.ScreenSpaceOverlay ? canvas.worldCamera : null;
-            Vector2 a = RectTransformUtility.WorldToScreenPoint(cam, corners[0]);
-            Vector2 b = RectTransformUtility.WorldToScreenPoint(cam, corners[2]);
-            return Rect.MinMaxRect(Mathf.Min(a.x, b.x), Mathf.Min(a.y, b.y), Mathf.Max(a.x, b.x), Mathf.Max(a.y, b.y));
+            float xMin = float.MaxValue, yMin = float.MaxValue, xMax = float.MinValue, yMax = float.MinValue;
+            foreach (var p in worldPoints)
+            {
+                Vector2 s = RectTransformUtility.WorldToScreenPoint(cam, p);
+                xMin = Mathf.Min(xMin, s.x);
+                yMin = Mathf.Min(yMin, s.y);
+                xMax = Mathf.Max(xMax, s.x);
+                yMax = Mathf.Max(yMax, s.y);
+            }
+            return xMin > xMax ? Rect.zero : Rect.MinMaxRect(xMin, yMin, xMax, yMax);
+        }
+
+        // A text box is often much larger than its glyphs (StarLevelSystem's minimap level indicator: a 200x44
+        // lower-right aligned Text over the bottom of the small map, beside vanilla's wind_marker). For a panel that
+        // is a lone text, the glyphs are what can overlap: legacy Text through a TextGenerator with the component's
+        // own settings (what Text.OnPopulateMesh draws), TMP through its visible characters. Empty text -> zero rect.
+        // Null when the geometry cannot be read (the rect is used then).
+        private static Rect? GlyphRect(RectTransform rt)
+        {
+            var graphics = rt.GetComponentsInChildren<Graphic>();
+            if (graphics.Length != 1 || graphics[0].transform != rt)
+                return null;
+
+            var points = new List<Vector3>();
+            switch (graphics[0])
+            {
+                case Text text:
+                    var generator = new TextGenerator();
+                    if (!generator.PopulateWithErrors(text.text, text.GetGenerationSettings(rt.rect.size), text.gameObject))
+                        return null;
+                    var unitsPerPixel = 1f / text.pixelsPerUnit;
+                    // The generator emits an empty quad per space/line break; only quads with area are drawn glyphs.
+                    for (var i = 0; i + 3 < generator.vertexCount; i += 4)
+                    {
+                        var min = Vector3.Min(generator.verts[i].position, generator.verts[i + 2].position);
+                        var max = Vector3.Max(generator.verts[i].position, generator.verts[i + 2].position);
+                        if (max.x - min.x <= 0f || max.y - min.y <= 0f)
+                            continue;
+                        points.Add(rt.TransformPoint(min * unitsPerPixel));
+                        points.Add(rt.TransformPoint(max * unitsPerPixel));
+                        points.Add(rt.TransformPoint(new Vector3(min.x, max.y) * unitsPerPixel));
+                        points.Add(rt.TransformPoint(new Vector3(max.x, min.y) * unitsPerPixel));
+                    }
+                    break;
+                case TMPro.TMP_Text tmp:
+                    tmp.ForceMeshUpdate();
+                    var info = tmp.textInfo;
+                    for (var i = 0; i < info.characterCount; i++)
+                    {
+                        var c = info.characterInfo[i];
+                        if (!c.isVisible)
+                            continue;
+                        points.Add(rt.TransformPoint(c.bottomLeft));
+                        points.Add(rt.TransformPoint(c.topRight));
+                        points.Add(rt.TransformPoint(new Vector3(c.bottomLeft.x, c.topRight.y)));
+                        points.Add(rt.TransformPoint(new Vector3(c.topRight.x, c.bottomLeft.y)));
+                    }
+                    break;
+                default:
+                    return null;
+            }
+            return ScreenBounds(rt, points);
         }
 
         // Sibling panels (active, visible content, not a stretched backdrop) whose screen rects overlap by
@@ -160,7 +226,7 @@ namespace Auga
                     continue;
                 if (child.GetComponentInChildren<Graphic>() == null)
                     continue;
-                var rect = ScreenRect(rt);
+                var rect = GlyphRect(rt) ?? ScreenRect(rt);
                 var area = rect.width * rect.height;
                 if (area < 1f || (parentArea > 0f && area >= 0.95f * parentArea))
                     continue;
