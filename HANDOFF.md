@@ -3,6 +3,18 @@
 Repo: <https://github.com/UberMorgott/Valheim-Mod-Auga-Fork> (fork of RandyKnapp/Auga), local `E:\DEV\Valheim\Auga-Fork`.
 Target: Valheim 1.0.12 (Unity 6, network 40), BepInEx 5.4.23.5. Personal build.
 
+## Replaced screens keep the vanilla root canvas (2026-09-29 night)
+
+- `378512a`: vanilla DamageText (order 100), Store_Screen (700), BarberGui (800), TextViewer (1200) are root canvases
+  under canvas-less IngameGui (UnityPy scan of scene bundle 17245031); the bundle replacements had none, so damage
+  numbers, rune/raven texts, barber and trader store drew nothing. `DirectObjectReplace` now captures + wraps like
+  `IndirectTwoObjectReplace`; `StoreMethods` uses `SetupHelper.WrapInRootCanvasOf`. DamageText prefix param type fixed.
+- Autotest `20260929-192859` (`-Mod Auga -Shots 27a-damage-text,27b-text-viewer,27c-barber,27d-store-canvas`, tools
+  `8315cc1`): all layers PASS, 4 checks PASS with vanilla orders; screenshots show "42", rune text panel, barber panel.
+  Store check is canvas-only (no trader spawned).
+- Open: `AddInworldText_Postfix` colours mySelf TooHard/Bonus as player damage and Bonus white; vanilla limits mySelf
+  to `type <= Immune` and has Bonus orange (`DamageText.AddInworldText`, 1.0.16).
+
 ## Post-2.0.5: message HUD canvases, audit false positives (2026-09-29 evening)
 
 - DEPLOYED (`92c15a4`): `AugaSkin.dll` SHA256 `6D4739F966C37029E7D7F2CD748CE6A419A88ECC693C67977475009714E1695E`.
