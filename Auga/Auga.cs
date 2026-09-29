@@ -72,6 +72,7 @@ namespace Auga
         public Color WeakDamage = new Color(1f, 1f, 0.0f, 1f);
         public Color ImmuneDamage = new Color(0.6f, 0.6f, 0.6f, 1f);
         public Color TooHard = new Color(0.8f, 0.7f, 0.7f, 1f);
+        public Color Bonus = new Color(1f, 0.63f, 0.24f, 1f);
     }
 
     // New GUID and assembly name AugaSkin (spec 2026-09-11-auga-native-rework, D0a, Phase 4b). Mods that detect Auga

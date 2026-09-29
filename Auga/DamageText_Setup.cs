@@ -31,12 +31,10 @@ namespace Auga
             var dmg = float.TryParse(text, System.Globalization.NumberStyles.Float,
                 System.Globalization.CultureInfo.InvariantCulture, out var parsed) ? parsed : 0f;
 
+            // Mirrors vanilla DamageText.AddInworldText (DamageText.cs:105): only damage types up to
+            // Immune use the own-damage colours; Heal, TooHard, Blocked and Bonus keep their type colour.
             Color color;
-            if (type == DamageText.TextType.Heal)
-            {
-                color = Auga.Colors.Healing;
-            }
-            else if (mySelf)
+            if (mySelf && type <= DamageText.TextType.Immune)
             {
                 color = dmg != 0.0f ? Auga.Colors.PlayerDamage : Auga.Colors.PlayerNoDamage;
             }
@@ -44,6 +42,12 @@ namespace Auga
             {
                 switch (type)
                 {
+                    case DamageText.TextType.Heal:
+                        color = Auga.Colors.Healing;
+                        break;
+                    case DamageText.TextType.Bonus:
+                        color = Auga.Colors.Bonus;
+                        break;
                     case DamageText.TextType.Normal:
                         color = Auga.Colors.NormalDamage;
                         break;
