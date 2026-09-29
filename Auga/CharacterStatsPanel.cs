@@ -23,6 +23,8 @@ namespace Auga
     // the incoming hit (EpicLoot.MagicItemEffects.ModifyResistance / Shards.DamageReductionAtNight .ModifyIncoming,
     // called from its Character.RPC_Damage patch), not through GetDamageModifiers, so those public static methods are
     // looked up by name and run on the probe hit when Epic Loot is loaded (soft dependency, no assembly reference).
+    // Likewise MorgottTweaks [Armor] wraps the resistance call of Character.RPC_Damage (MorgottTweaks.ArmorResistance
+    // .ApplyResistance, which pools resistant types on its armor curve); when loaded, the probe runs that same step.
     public class CharacterStatsPanel : MonoBehaviour
     {
         private static ConfigEntry<bool> _enabled;
@@ -57,7 +59,7 @@ namespace Auga
             (HitData.DamageType.Spirit, "$inventory_spirit"),
         };
 
-        private static MethodInfo _epicLootResistance, _epicLootNight;
+        private static MethodInfo _epicLootResistance, _epicLootNight, _armorResistance;
         private static bool _epicLootLookedUp;
 
         private TMP_Text _labels, _values;
@@ -422,7 +424,11 @@ namespace Auga
             var args = new object[] { player, hit };
             _epicLootResistance?.Invoke(null, args);
             _epicLootNight?.Invoke(null, args);
-            hit.ApplyResistance(player.GetDamageModifiers(), out _);
+            var modifiers = player.GetDamageModifiers();
+            if (_armorResistance != null)
+                _armorResistance.Invoke(null, new object[] { hit, modifiers, HitData.DamageModifier.Normal, player });
+            else
+                hit.ApplyResistance(modifiers, out _);
             hit.ApplyArmor(player.GetBodyArmor());
             return 1f - hit.m_damage.GetTotalDamage() / probe;
         }
@@ -437,6 +443,11 @@ namespace Auga
             _epicLootResistance = resistance == null ? null : AccessTools.Method(resistance, "ModifyIncoming", args);
             var night = AccessTools.TypeByName("EpicLoot.MagicItemEffects.Shards.DamageReductionAtNight");
             _epicLootNight = night == null ? null : AccessTools.Method(night, "ModifyIncoming", args);
+            // MorgottTweaks.ArmorResistance.ApplyResistance(HitData, DamageModifiers, out DamageModifier, Character).
+            _armorResistance = AccessTools.Method("MorgottTweaks.ArmorResistance:ApplyResistance", new[]
+            {
+                typeof(HitData), typeof(HitData.DamageModifiers), typeof(HitData.DamageModifier).MakeByRefType(), typeof(Character),
+            });
         }
     }
     [HarmonyPatch]
