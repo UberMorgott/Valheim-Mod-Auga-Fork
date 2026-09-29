@@ -30,7 +30,7 @@ namespace Auga
         private static ConfigEntry<float> _refreshInterval;
 
         public const string ButtonName = "CharacterStats", WindowName = "CharacterStatsDialog";
-        private const string TitleToken = "auga_characterstats";
+        private const string TitleToken = "auga_characterstats", DamageReductionToken = "auga_damagereduction";
         private const float Padding = 16f, FontSize = 20f;
         private const float FoodRegenPeriod = 10f; // Player.UpdateFood heals once per 10 s (Player.cs:2449-2454)
 
@@ -81,6 +81,7 @@ namespace Auga
             }
             var russian = Localization.instance.GetSelectedLanguage() == "Russian";
             Localization.instance.AddWord(TitleToken, russian ? "Характеристики" : "Character stats");
+            Localization.instance.AddWord(DamageReductionToken, russian ? "Снижение урона" : "Damage reduction");
 
             Instance = CreateWindow(gui, skills, nameTemplate);
             _button = CreateButton(achievements, trophies);
@@ -191,7 +192,7 @@ namespace Auga
             _enabled = config.Bind("CharacterStats", "Enabled", true,
                 "Show the character stats button in the inventory's Info panel; it opens a window with health, stamina and eitr with regeneration, armor, damage taken per type, speed, weight, block and rest.");
             _referenceHit = config.Bind("CharacterStats", "ReferenceHit", 100f,
-                "Armor row: damage of the example hit shown as \"hit -> damage taken\" after armor (HitData.DamageTypes.ApplyArmor).");
+                "Damage reduction row: armor's reduction is shown in percent for a hit of this size (HitData.DamageTypes.ApplyArmor).");
             _refreshInterval = config.Bind("CharacterStats", "RefreshSeconds", 0.25f, "Seconds between window updates while it is open.");
             _enabled.SettingChanged += (s, e) =>
             {
@@ -295,11 +296,12 @@ namespace Auga
                 Row("$se_eitrregen", Rate(EitrRegen(player, maxEitr)));
             }
 
-            // Armor: Player.GetBodyArmor (Player.cs:6832, gear GetArmor + SEMan.ApplyArmorMods) applied to a player's hit
-            // by HitData.DamageTypes.ApplyArmor (Character.cs:2382-2383, HitData.cs:414-422).
+            // Damage reduction: Player.GetBodyArmor (Player.cs:6832, gear GetArmor + SEMan.ApplyArmorMods) applied to a
+            // reference hit by HitData.DamageTypes.ApplyArmor (Character.cs:2382-2383, HitData.cs:414-422), in percent.
             var armor = player.GetBodyArmor();
             var hit = Mathf.Max(1f, _referenceHit.Value);
-            Row("$item_armor", $"{armor:0}   {hit:0} → {HitData.DamageTypes.ApplyArmor(hit, armor):0.#}");
+            var reduction = (1f - HitData.DamageTypes.ApplyArmor(hit, armor) / hit) * 100f;
+            Row($"${DamageReductionToken}", reduction < 10f ? $"{reduction:0.#}%" : $"{reduction:0}%");
 
             // Damage taken per type, in percent: resistances from Character.GetDamageModifiers (body + armor + status
             // effects, Character.cs:2409-2415) applied like Character.RPC_Damage does (Character.cs:2378-2379).
