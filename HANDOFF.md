@@ -3,6 +3,19 @@
 Repo: <https://github.com/UberMorgott/Valheim-Mod-Auga-Fork> (fork of RandyKnapp/Auga), local `E:\DEV\Valheim\Auga-Fork`.
 Target: Valheim 1.0.12 (Unity 6, network 40), BepInEx 5.4.23.5. Personal build.
 
+## Post-2.0.5: message HUD canvases, audit false positives (2026-09-29 evening)
+
+- DEPLOYED (`92c15a4`): `AugaSkin.dll` SHA256 `6D4739F966C37029E7D7F2CD748CE6A419A88ECC693C67977475009714E1695E`.
+- `92c15a4`: centre + top-left messages never rendered (vanilla `HudMessage`/`TopLeftMessage` are root canvases,
+  bundle replacements had none). `SetupHelper.RootCanvas` wraps them like upstream 79b71af; stray
+  `AugaTopLeftMessage` on the TopLeftMessage root removed; entry text no-wrap (amount glyph was truncated).
+  Autotest `21b-build-message` PASS + PNG shows centre and "x5" pickup line.
+- `e878a94` + `514f4ae`: audit overlap measures lone texts by glyphs (StarLevelSystem minimap "Ring/Zone" Text box
+  vs wind_marker was a rect-only overlap) and skips map pins/pin names (stacked death pins at spawn).
+- Upstream 1141e73 (Compendium Achievements tab) skipped: vanilla `InventoryGui.m_achievementsPanel` is live and
+  restyled in our vanilla inventory; the port needs Auga's Compendium prefab + bundle rebuild we don't use.
+- Suspect, unchecked: `DirectObjectReplace` (Barber, DamageText, TextViewer) may drop vanilla root canvases too.
+
 ## 2.0.5: minimap frame fix + character stats panel (2026-09-29)
 
 - DEPLOYED (pre-bump build of `99e0428`): `AugaSkin.dll` SHA256
