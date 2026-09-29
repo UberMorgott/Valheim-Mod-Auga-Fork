@@ -17,6 +17,9 @@ m_canBeReparied = "m_canBeReparied"         # ItemDrop.cs:298
 m_continousMusic = "m_continousMusic"       # Valheim.SettingsGui/AudioSettings.cs:31
 m_equiped = "m_equiped"                     # InventoryElement field, HotkeyBar.cs:128
 equiped = "equiped"                         # vanilla child path Find("equiped"), HotkeyBar.cs:128, VisEquipment.cs:1428
+# Valheim 1.0.15 API (ValheimDecompiled-1.0.15/assembly_valheim):
+GetRemaningTime = "GetRemaningTime"         # StatusEffect.cs:204
+m_eiterRegen = "m_eiterRegen"               # Player.cs:252
 # Serialized field keys in AugaSettings.prefab (Unity YAML; stale, script no longer declares them, rewritten only by the Unity editor).
 ConsoleAccessabilityTab = "ConsoleAccessabilityTab"
 ConsoleAccessabilityPage = "ConsoleAccessabilityPage"

@@ -20,6 +20,7 @@ namespace Auga
             "HeaderLine", // vanilla Settings: thin rule across the top of TabButtons/TabContent
             "AugaCorner", // AugaStyle.Panel corner ornaments, drawn over the panel's corners by design
             "small_biome", // vanilla minimap: biome name drawn over the top of the small map
+            "AugaCharacterStats", // CharacterStatsPanel: first child of the minimap root, the open large map covers it
             "iconhints",   // vanilla large map: mouse-button hints beside the pin icon column
             // vanilla 1.0.12 large map: the centred KeyHints row runs under the Quests/Treasure toggles without Auga
             // too (baseline run with Auga disabled, tools\out\20260911-184749\shots\23-map.png)
