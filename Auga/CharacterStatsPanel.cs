@@ -303,9 +303,11 @@ namespace Auga
             {
                 var left = ReductionLayout[i * 2];
                 var right = ReductionLayout[i * 2 + 1];
-                _labelText.Append('\n').Append(ReductionCell(player, left)).Append("<pos=50%>").Append(ReductionCell(player, right));
-                _valueText.Append('\n');
+                _labelText.Append('\n').Append(TypeName(left)).Append("<pos=40%>").Append(ReductionValue(player, left))
+                    .Append("<pos=55%>").Append(TypeName(right));
+                _valueText.Append('\n').Append(ReductionValue(player, right));
             }
+
             // Movement: jog speed factor (Player.GetJogSpeedFactor = 1 + equipment modifier, Player.cs:7109-7112) and
             // status-effect speed mods, as Character.UpdateWalking combines them (Character.cs:1624, 1682).
             var speed = player.m_speed * player.GetJogSpeedFactor();
@@ -373,22 +375,19 @@ namespace Auga
             return rate * multiplier;
         }
 
-        // "  Blunt   66%" with the percent at a fixed column: the pairs share one label line, so both halves are laid
-        // out with TMP <pos> inside the label text.
-        private static string ReductionCell(Player player, HitData.DamageType type)
+        // A line holds two types: left name, its percent at a fixed column inside the label text (TMP <pos>), right
+        // name, and the right percent in the value column like every other row.
+        private static string TypeName(HitData.DamageType type) =>
+            Localization.instance.Localize(Array.Find(DamageTypes, t => t.Type == type).Token);
+
+        private static string ReductionValue(Player player, HitData.DamageType type)
         {
-            var token = Array.Find(DamageTypes, t => t.Type == type).Token;
             var reduction = Reduction(player, type) * 100f;
             var value = $"{reduction:0}%";
             if (reduction >= 0.5f)
-                value = Colored(value, Good);
-            else if (reduction <= -0.5f)
-                value = Colored(value, Bad);
-            var column = type == HitData.DamageType.Blunt || type == HitData.DamageType.Slash ||
-                         type == HitData.DamageType.Pierce || type == HitData.DamageType.Poison ? "33%" : "83%";
-            return $"  {Localization.instance.Localize(token)}<pos={column}><color=#FFFFFF>{value}</color>";
+                return Colored(value, Good);
+            return reduction <= -0.5f ? Colored(value, Bad) : $"<color=#FFFFFF>{value}</color>";
         }
-
         // Pairs per line: physical | elemental, then poison | spirit.
         private static readonly HitData.DamageType[] ReductionLayout =
         {
