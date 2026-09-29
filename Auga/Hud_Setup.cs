@@ -81,10 +81,8 @@ namespace Auga
     [HarmonyPatch(typeof(Hud), nameof(Hud.UpdateBuild))]
     public static class Hud_UpdateBuild_Patch
     {
-        private static void Postfix(Hud __instance, Player player)
-        {
-            MessageHud.instance.m_messageCenterText.gameObject.SetActive(!player.InPlaceMode());
-        }
+        // No centre-message hiding in place mode (the old Auga build menu covered that spot; the restyled vanilla
+        // menu does not): vanilla reports snap point cycling and placement errors there (Player.cs:4056, 3037-3074).
 
         [UsedImplicitly]
         private static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions)
