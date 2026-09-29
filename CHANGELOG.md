@@ -1,3 +1,13 @@
+### 2.0.6 - Character stats and HUD fixes
+
+* New: character stats window behind a 5th inventory Info button; shows the real damage reduction per damage type (replaces the armor row), using MorgottTweaks' pooled resistance step when that mod is loaded.
+* Fix: own TooHard/Bonus damage numbers use the vanilla damage-text colours.
+* Fix: every replaced screen and the message HUD keep the vanilla root canvases.
+* Fix: centre messages stay visible in build mode.
+* Fix: tooltip extra lines join with \n so $token localization works.
+* Fix: game Averia fonts added as Source Sans Pro fallbacks.
+* Audit: lone texts measured by glyphs, rotated rects by all corners.
+
 ### 1.3.12 - Hud Improvements
 
 * MessageCenter Text no longer blocks Build Menu.
