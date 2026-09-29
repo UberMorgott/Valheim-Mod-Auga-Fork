@@ -3,6 +3,19 @@
 Repo: <https://github.com/UberMorgott/Valheim-Mod-Auga-Fork> (fork of RandyKnapp/Auga), local `E:\DEV\Valheim\Auga-Fork`.
 Target: Valheim 1.0.12 (Unity 6, network 40), BepInEx 5.4.23.5. Personal build.
 
+## Character stats window behind a 5th Info button (2026-09-29 night)
+
+- `277425b`: stats panel left the minimap (user). `CharacterStatsPanel.Create(InventoryGui)` from
+  `PlayerInventory_Setup` after the restyle: clone of `root/Info/Achievements` at x 200 (free slot = vanilla's inactive
+  PVP toggle, pos (200,-12)), icon = Auga bundle `PlayerPanel` rune (cropped `Sprite.Create` 29,20,22x40 of the 80x80
+  texture, colour (0.92,0.81,0.59) -> lit like siblings), tooltip `$auga_characterstats` RU/EN in code. Window = clone of
+  `root/Skills` (`CharacterStatsDialog`, SkillsDialog component + list removed, columns cloned from the skill row `name`
+  TMP -> no LiberationSans warning). Open like `OnOpenSkills`; Esc/B closes it (`InventoryGui.Update` prefix skips that
+  frame); `Hide` postfix closes it. `[HudLayout] CharacterStatsOffset` gone; `[CharacterStats] Enabled` = button.
+- Autotest `-Mod Auga -Shots 40-inventory,40b-charstats` (tools `0ce6214`): all layers PASS, 5 buttons PASS,
+  window rows=10 font SourceSansPro, closes with inventory. DEPLOYED + published client pack: `AugaSkin.dll`
+  `BFA2E55658DDDC43582B2B47D3528477710921D187308ECA0B1969CE1479A319` (VPS client manifest v20).
+
 ## Replaced screens keep the vanilla root canvas (2026-09-29 night)
 
 - `378512a`: vanilla DamageText (order 100), Store_Screen (700), BarberGui (800), TextViewer (1200) are root canvases
