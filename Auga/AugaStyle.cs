@@ -119,6 +119,13 @@ namespace Auga
                     continue;
                 var selectable = image.GetComponentInParent<Selectable>(true);
                 var owns = selectable && selectable.targetGraphic == image;
+                // Vanilla also uses the input sprites as a plain frame: the minimap (hudroot/MiniMap/small and large),
+                // bar "darken" overlays and the inventory lists (requirements, skills, trophies, texts). Auga's input
+                // art has chevron ends, so on the minimap it peeked out behind the map like a second map. Only an
+                // input field's own graphic is an input; any other use is a backdrop, as in Auga's bundle HUD
+                // (MiniMap/small/MapBG = TextBackdrop).
+                if (role == Role.Input && !(owns && (selectable is TMP_InputField || selectable is InputField)))
+                    role = Role.Backdrop;
                 switch (role.Value)
                 {
                     case Role.Panel: Panel(image); break;
@@ -213,6 +220,13 @@ namespace Auga
             image.color = color;
             image.material = null;
             image.pixelsPerUnitMultiplier = ppu;
+        }
+
+        // Auga's HUD backdrop (bundle HUD MiniMap/small/MapBG: TextBackdrop, black 50%, sliced).
+        public static void Backdrop(Image image)
+        {
+            Load();
+            SetSprite(image, "TextBackdrop", BackdropColor, Image.Type.Sliced);
         }
 
         // Rendered size of a sliced border, in local units per texture pixel (Image.pixelsPerUnit already divides by
