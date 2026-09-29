@@ -10,24 +10,40 @@ using UnityEngine.UI;
 
 namespace Auga
 {
-    // Compact character stats under the small minimap (top right), in Auga's HUD look: the bundle minimap backdrop
-    // (TextBackdrop, black 50%) and Auga's body font. Every value is read from the live game objects the way vanilla
-    // computes it (Player/Character/Humanoid/SEMan, cited per row), so status effects and mods that patch those
-    // methods (Epic Loot included) are counted without referencing them. Epic Loot's percentage resistances are the
-    // one exception: it applies them to the incoming hit (EpicLoot.MagicItemEffects.ModifyResistance.ModifyIncoming,
-    // called from its Character.RPC_Damage patch), not through GetDamageModifiers, so that public static method is
-    // looked up by name and run on a probe hit when Epic Loot is loaded (soft dependency, no assembly reference).
+    // Character stats window, opened by a 5th button in the inventory's Info panel (InventoryGui.m_infoPanel, beside
+    // Texts/Skills/Trophies/Achievements). Both are clones of vanilla objects that are already restyled
+    // (PlayerInventory_Setup): the button of the Achievements button, the window of the Skills dialog (root/Skills:
+    // blur, darken, click-outside Closebutton, SkillsFrame with topic and Close button), whose skill list is replaced by
+    // two text columns cloned from the skill row's name text. It opens like InventoryGui.OnOpenSkills
+    // (InventoryGui.cs:2325-2333), closes on its Close buttons, Escape/B (InventoryGui.Update :520-542) and with the
+    // inventory (InventoryGui.Hide :1055-1066).
+    // Every value is read from the live game objects the way vanilla computes it (Player/Character/Humanoid/SEMan,
+    // cited per row), so status effects and mods that patch those methods (Epic Loot included) are counted without
+    // referencing them. Epic Loot's percentage resistances are the one exception: it applies them to the incoming hit
+    // (EpicLoot.MagicItemEffects.ModifyResistance.ModifyIncoming, called from its Character.RPC_Damage patch), not
+    // through GetDamageModifiers, so that public static method is looked up by name and run on a probe hit when Epic
+    // Loot is loaded (soft dependency, no assembly reference).
     public class CharacterStatsPanel : MonoBehaviour
     {
         private static ConfigEntry<bool> _enabled;
         private static ConfigEntry<float> _referenceHit;
         private static ConfigEntry<float> _refreshInterval;
 
-        private const float MinWidth = 260f, Padding = 8f, Gap = 8f, FontSize = 14f;
+        public const string ButtonName = "CharacterStats", WindowName = "CharacterStatsDialog";
+        private const string TitleToken = "auga_characterstats";
+        private const float Padding = 16f, FontSize = 20f;
         private const float FoodRegenPeriod = 10f; // Player.UpdateFood heals once per 10 s (Player.cs:2449-2454)
 
         private static readonly Color LabelColor = new Color(0.82f, 0.79f, 0.76f); // AugaStyle.Light
         private const string Good = "#80FF80", Bad = "#FFD24D";
+        // The Auga icon is white. The lithud material renders a colour about as c^2.2 (measured: (0.87, 0.67, 0.33) drew
+        // as (0.76, 0.44, 0.07)); this input lands on the bright tone of the vanilla Info icons, about (0.83, 0.63, 0.31).
+        private static readonly Color IconColor = new Color(0.92f, 0.81f, 0.59f);
+        // Visible glyph height of the vanilla Info icons in their 64 px box (trophies, texts_button: about 60 px).
+        private const float IconGlyphHeight = 60f;
+
+        public static CharacterStatsPanel Instance { get; private set; }
+        private static GameObject _button;
 
         private static readonly (HitData.DamageType Type, string Token)[] DamageTypes =
         {
@@ -44,45 +60,127 @@ namespace Auga
         private static MethodInfo _epicLootResistance;
         private static bool _epicLootLookedUp;
 
-        private Image _background;
         private TMP_Text _labels, _values;
         private float _nextRefresh;
         private readonly StringBuilder _labelText = new StringBuilder();
         private readonly StringBuilder _valueText = new StringBuilder();
 
-        // Minimap.Start postfix (Minimap_Setup): the small map's rect is final there and its Movable offset applied.
-        public static void Create(Minimap minimap)
+        // InventoryGui.Awake postfix (PlayerInventory_Setup), after the restyle, so both clones carry the Auga look.
+        public static void Create(InventoryGui gui)
         {
             Bind();
-            var small = (RectTransform)minimap.m_smallRoot.transform;
-            var parent = (RectTransform)minimap.transform;
+            var achievements = gui.m_infoPanel ? gui.m_infoPanel.Find("Achievements") as RectTransform : null;
+            var trophies = gui.m_infoPanel ? gui.m_infoPanel.Find("Trophies") as RectTransform : null;
+            var skills = gui.m_skillsDialog;
+            var nameTemplate = skills && skills.m_elementPrefab ? Utils.FindChild(skills.m_elementPrefab.transform, "name") : null;
+            if (!achievements || !trophies || !skills || !nameTemplate)
+            {
+                Debug.LogError($"[Auga] character stats: vanilla objects missing (Achievements={(bool)achievements} " +
+                               $"Trophies={(bool)trophies} Skills={(bool)skills} name={(bool)nameTemplate})");
+                return;
+            }
+            var russian = Localization.instance.GetSelectedLanguage() == "Russian";
+            Localization.instance.AddWord(TitleToken, russian ? "Характеристики" : "Character stats");
 
-            var go = new GameObject("AugaCharacterStats", typeof(RectTransform));
+            Instance = CreateWindow(gui, skills, nameTemplate);
+            _button = CreateButton(achievements, trophies);
+            _button.SetActive(_enabled.Value);
+        }
+
+        // Next free slot of the Info row: the vanilla buttons sit 100 px apart (Texts -200 ... Achievements 100).
+        private static GameObject CreateButton(RectTransform achievements, RectTransform trophies)
+        {
+            var go = Instantiate(achievements.gameObject, achievements.parent, false);
+            go.name = ButtonName;
             var rt = (RectTransform)go.transform;
-            rt.SetParent(parent, false);
-            // First child of the minimap root: the small and large maps draw over it, so the open large map hides it.
-            rt.SetAsFirstSibling();
-            rt.anchorMin = rt.anchorMax = rt.pivot = Vector2.one;
-            // Below the small map's bottom-right corner, right edges aligned.
-            var corners = new Vector3[4];
-            small.GetWorldCorners(corners);
-            Vector2 bottomRight = parent.InverseTransformPoint(corners[3]);
-            Vector2 bottomLeft = parent.InverseTransformPoint(corners[0]);
-            var area = parent.rect;
-            rt.anchoredPosition = new Vector2(bottomRight.x - area.xMax, bottomRight.y - area.yMax - Gap);
-            rt.sizeDelta = new Vector2(Mathf.Max(MinWidth, bottomRight.x - bottomLeft.x), 0f);
+            rt.anchoredPosition = achievements.anchoredPosition + (achievements.anchoredPosition - trophies.anchoredPosition);
+            rt.SetSiblingIndex(achievements.GetSiblingIndex() + 1);
+
+            // The prefab wires OnOpenAchievements as a persistent call; the clone gets its own event.
+            var button = go.GetComponent<Button>();
+            button.onClick = new Button.ButtonClickedEvent();
+            button.onClick.AddListener(() => Instance?.Open());
+
+            if (go.TryGetComponent<UITooltip>(out var tooltip))
+            {
+                tooltip.m_topic = "";
+                tooltip.m_text = "$" + TitleToken;
+            }
+            var icon = go.transform.Find("Image") ? go.transform.Find("Image").GetComponent<Image>() : null;
+            // Auga's own player-panel tab icon (bundle Inventory_screen right panel), white, lit like its siblings.
+            var augaIcon = AugaStyle.FromPrefab<Image>(Auga.Assets.InventoryScreen,
+                "root/RightPanel/DefaultContent/TabButtonContainer/Tabs/TabButton_PlayerPanel/Icon");
+            if (icon && augaIcon)
+            {
+                icon.sprite = RuneSprite(augaIcon.sprite);
+                icon.color = IconColor;
+                icon.preserveAspect = true;
+                var rect = icon.sprite.rect;
+                icon.rectTransform.sizeDelta = new Vector2(IconGlyphHeight * rect.width / rect.height, IconGlyphHeight);
+            }
+            return go;
+        }
+
+        // The bundle's PlayerPanel sprite is the whole 80x80 texture with the rune in its middle (alpha bounds x 29-51,
+        // y 20-59 from the bottom, read from the bundle with UnityPy), so at the siblings' size the rune came out half
+        // their height. A sprite over just the rune lets the box be the glyph, like the vanilla Info icons.
+        private static Sprite RuneSprite(Sprite full)
+        {
+            if (_rune)
+                return _rune;
+            var tex = full.texture;
+            if (full.packed || tex.width != 80 || tex.height != 80)
+                return full;
+            _rune = Sprite.Create(tex, new Rect(29f, 20f, 22f, 40f), new Vector2(0.5f, 0.5f), full.pixelsPerUnit);
+            _rune.name = "PlayerPanelRune";
+            return _rune;
+        }
+
+        private static Sprite _rune;
+
+        private static CharacterStatsPanel CreateWindow(InventoryGui gui, SkillsDialog skills, Transform nameTemplate)
+        {
+            var go = Instantiate(skills.gameObject, skills.transform.parent, false);
+            go.SetActive(false);
+            go.name = WindowName;
+            go.transform.SetSiblingIndex(skills.transform.GetSiblingIndex() + 1);
+            DestroyImmediate(go.GetComponent<SkillsDialog>());
+
+            var frame = go.transform.Find("SkillsFrame");
+            foreach (var path in new[] { "totalskills_topic", "totalskills", "Skills/SkillListScroll", "Skills/SkillList" })
+            {
+                var child = frame ? frame.Find(path) : null;
+                if (child)
+                    DestroyImmediate(child.gameObject);
+            }
+
+            var topic = frame ? frame.Find("topic") : null;
+            if (topic && topic.TryGetComponent<TMP_Text>(out var title))
+            {
+                if (topic.TryGetComponent<Localize>(out var localize))
+                    DestroyImmediate(localize);
+                title.text = Localization.instance.Localize("$" + TitleToken);
+            }
 
             var panel = go.AddComponent<CharacterStatsPanel>();
-            panel._background = go.AddComponent<Image>();
-            AugaStyle.Backdrop(panel._background);
-            panel._background.raycastTarget = false;
-            // The small map's biome label is already on Auga's body font with the vanilla font as glyph fallback.
-            panel._labels = Column(rt, minimap.m_biomeNameSmall, TextAlignmentOptions.TopLeft, LabelColor);
-            panel._values = Column(rt, minimap.m_biomeNameSmall, TextAlignmentOptions.TopRight, Color.white);
-            panel.Show(false);
+            foreach (var path in new[] { "Closebutton", "SkillsFrame/Closebutton" })
+            {
+                var close = go.transform.Find(path);
+                if (close && close.TryGetComponent<Button>(out var button))
+                {
+                    button.onClick = new Button.ButtonClickedEvent();
+                    button.onClick.AddListener(panel.Close);
+                }
+            }
 
-            Hud_Setup.Movable(rt, "CharacterStats");
-            go.SetActive(_enabled.Value);
+            // The skill list's backdrop (SkillsFrame/Skills, TextBackdrop) holds the two columns.
+            var area = frame ? frame.Find("Skills") as RectTransform : null;
+            if (!area)
+                area = (RectTransform)go.transform;
+            area.name = "Stats";
+            panel._labels = Column(area, nameTemplate, TextAlignmentOptions.TopLeft, LabelColor);
+            panel._values = Column(area, nameTemplate, TextAlignmentOptions.TopRight, Color.white);
+            return panel;
         }
 
         private static void Bind()
@@ -91,30 +189,34 @@ namespace Auga
                 return;
             var config = Auga.instance.Config;
             _enabled = config.Bind("CharacterStats", "Enabled", true,
-                "Show the character stats panel under the minimap (health, stamina and eitr with regeneration, armor, damage taken per type, speed, weight, block, rest).");
+                "Show the character stats button in the inventory's Info panel; it opens a window with health, stamina and eitr with regeneration, armor, damage taken per type, speed, weight, block and rest.");
             _referenceHit = config.Bind("CharacterStats", "ReferenceHit", 100f,
                 "Armor row: damage of the example hit shown as \"hit -> damage taken\" after armor (HitData.DamageTypes.ApplyArmor).");
-            _refreshInterval = config.Bind("CharacterStats", "RefreshSeconds", 0.25f, "Seconds between panel updates.");
+            _refreshInterval = config.Bind("CharacterStats", "RefreshSeconds", 0.25f, "Seconds between window updates while it is open.");
             _enabled.SettingChanged += (s, e) =>
             {
-                var panel = Minimap.instance ? Minimap.instance.GetComponentInChildren<CharacterStatsPanel>(true) : null;
-                if (panel)
-                    panel.gameObject.SetActive(_enabled.Value);
+                if (_button)
+                    _button.SetActive(_enabled.Value);
+                if (!_enabled.Value && Instance)
+                    Instance.Close();
             };
         }
 
-        private static TMP_Text Column(RectTransform parent, TMP_Text fontSource, TextAlignmentOptions alignment, Color color)
+        // A copy of the vanilla skill row's name text (already on Auga's body font), so the TMP component wakes up with
+        // a font assigned, as every vanilla list text does (SkillsDialog.cs:119 instantiates its row prefab).
+        private static TMP_Text Column(RectTransform parent, Transform template, TextAlignmentOptions alignment, Color color)
         {
-            var go = new GameObject(alignment == TextAlignmentOptions.TopLeft ? "Labels" : "Values", typeof(RectTransform));
+            var go = Instantiate(template.gameObject, parent, false);
+            go.name = alignment == TextAlignmentOptions.TopLeft ? "Labels" : "Values";
+            go.SetActive(true);
             var rt = (RectTransform)go.transform;
-            rt.SetParent(parent, false);
             rt.anchorMin = Vector2.zero;
             rt.anchorMax = Vector2.one;
+            rt.pivot = new Vector2(0.5f, 0.5f);
             rt.offsetMin = new Vector2(Padding, Padding);
             rt.offsetMax = new Vector2(-Padding, -Padding);
-            var text = go.AddComponent<TextMeshProUGUI>();
-            text.font = fontSource.font;
-            text.fontSharedMaterial = fontSource.fontSharedMaterial;
+            var text = go.GetComponent<TMP_Text>();
+            text.enableAutoSizing = false;
             text.fontSize = FontSize;
             text.alignment = alignment;
             text.color = color;
@@ -122,45 +224,43 @@ namespace Auga
             text.textWrappingMode = TextWrappingModes.NoWrap;
             text.overflowMode = TextOverflowModes.Overflow;
             text.raycastTarget = false;
+            text.text = "";
             return text;
         }
 
-        private void Show(bool show)
+        public bool IsOpen => gameObject.activeSelf;
+
+        // InventoryGui.OnOpenSkills (InventoryGui.cs:2325-2333): focus the Info group, show the dialog.
+        public void Open()
         {
-            _background.enabled = show;
-            _labels.enabled = show;
-            _values.enabled = show;
+            if (!Player.m_localPlayer || !InventoryGui.instance)
+                return;
+            InventoryGui.instance.SetActiveGroup(InventoryGui.instance.m_uiGroups[2]);
+            gameObject.SetActive(true);
+            _nextRefresh = 0f;
+            Refresh();
         }
+
+        public void Close() => gameObject.SetActive(false);
 
         [UsedImplicitly]
         private void Update()
         {
-            // The large map does not cover the whole screen (hudroot/MiniMap/large is inset), so the panel would peek
-            // out beside it; it goes with the small map, which Minimap.SetMapMode hides in Large mode (Minimap.cs:1233-1236).
-            if (Minimap.instance && Minimap.instance.m_mode == Minimap.MapMode.Large)
-            {
-                Show(false);
-                _nextRefresh = 0f;
-                return;
-            }
-            if (Time.unscaledTime < _nextRefresh)
-                return;
-            _nextRefresh = Time.unscaledTime + Mathf.Max(0.05f, _refreshInterval.Value);
+            if (Time.unscaledTime >= _nextRefresh)
+                Refresh();
+        }
 
+        private void Refresh()
+        {
+            _nextRefresh = Time.unscaledTime + Mathf.Max(0.05f, _refreshInterval.Value);
             var player = Player.m_localPlayer;
             if (!player || player.IsDead())
-            {
-                Show(false);
                 return;
-            }
             _labelText.Clear();
             _valueText.Clear();
             Fill(player);
             _labels.text = _labelText.ToString();
             _values.text = _valueText.ToString();
-            var rt = (RectTransform)transform;
-            rt.sizeDelta = new Vector2(rt.sizeDelta.x, _labels.preferredHeight + 2f * Padding);
-            Show(true);
         }
 
         private void Row(string token, string value)
@@ -307,6 +407,44 @@ namespace Auga
             var type = AccessTools.TypeByName("EpicLoot.MagicItemEffects.ModifyResistance");
             _epicLootResistance = type == null ? null : AccessTools.Method(type, "ModifyIncoming", new[] { typeof(Character), typeof(HitData) });
             return _epicLootResistance;
+        }
+    }
+
+    [HarmonyPatch]
+    public static class CharacterStatsPanel_InventoryGui_Patches
+    {
+        // Escape/B closes the window, not the inventory, like the vanilla dialogs in InventoryGui.Update
+        // (InventoryGui.cs:513-542, same guards). The frame's Update is skipped so its "else hide the inventory"
+        // branch (:551-560) does not see the same key press; the next frame runs as usual.
+        [HarmonyPrefix]
+        [HarmonyPatch(typeof(InventoryGui), nameof(InventoryGui.Update))]
+        [UsedImplicitly]
+        private static bool UpdatePrefix(InventoryGui __instance)
+        {
+            var panel = CharacterStatsPanel.Instance;
+            if (!panel || !panel.IsOpen)
+                return true;
+            var player = Player.m_localPlayer;
+            if (!player || player.IsDead() || player.InCutscene() || player.IsTeleporting())
+                return true;
+            if (__instance.m_craftTimer >= 0f || (Chat.instance && Chat.instance.HasFocus()) || Console.IsVisible() ||
+                Menu.IsVisible() || !TextViewer.instance || TextViewer.instance.IsVisible() || GameCamera.InFreeFly() ||
+                Minimap.IsOpen())
+                return true;
+            if (!ZInput.GetButtonDown("JoyButtonB") && !ZInput.GetKeyDown(KeyCode.Escape))
+                return true;
+            panel.Close();
+            return false;
+        }
+
+        // InventoryGui.Hide closes every Info dialog with the inventory (InventoryGui.cs:1055-1066).
+        [HarmonyPostfix]
+        [HarmonyPatch(typeof(InventoryGui), nameof(InventoryGui.Hide))]
+        [UsedImplicitly]
+        private static void HidePostfix()
+        {
+            if (CharacterStatsPanel.Instance)
+                CharacterStatsPanel.Instance.Close();
         }
     }
 

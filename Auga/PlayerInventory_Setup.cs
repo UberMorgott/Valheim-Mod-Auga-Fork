@@ -34,6 +34,9 @@ namespace Auga
                      })
                 if (template)
                     AugaStyle.Restyle(template.transform);
+
+            // 5th Info button + character stats window, cloned from the restyled vanilla ones.
+            CharacterStatsPanel.Create(__instance);
         }
 
         private static void AddItemIconMaterialFrom(InventoryGui gui)
