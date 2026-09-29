@@ -314,5 +314,44 @@ namespace Auga
             text.font = font;
             text.fontSharedMaterial = font.material;
         }
+
+        private static bool _gameFontsLinked;
+
+        // Source Sans Pro lacks some symbols other mods put into text (EpicLoot's set bonus bullet) and TMP draws a
+        // box. SetFont only links the font a text had before, so bundle texts that start on Source Sans Pro never get
+        // one. The game's body fonts (Noto fallback chain) go onto every Source Sans Pro asset. No-op until the game's
+        // fonts are loaded, so it is called from the main menu and again from the in-game Hud.
+        public static void LinkGameFontFallbacks()
+        {
+            if (_gameFontsLinked)
+                return;
+            TMP_FontAsset serif = null, sans = null;
+            var augaFonts = new List<TMP_FontAsset>();
+            foreach (var font in Resources.FindObjectsOfTypeAll<TMP_FontAsset>())
+            {
+                if (!font)
+                    continue;
+                if (font.name == "Valheim-AveriaSerifLibre")
+                    serif = font;
+                else if (font.name == "Valheim-AveriaSansLibre")
+                    sans = font;
+                else if (font.name.StartsWith("SourceSansPro"))
+                    augaFonts.Add(font);
+            }
+            var gameFonts = new List<TMP_FontAsset>();
+            if (serif) gameFonts.Add(serif);
+            if (sans) gameFonts.Add(sans);
+            if (gameFonts.Count == 0)
+                return;
+            _gameFontsLinked = true;
+            foreach (var font in augaFonts)
+            {
+                font.fallbackFontAssetTable ??= new List<TMP_FontAsset>();
+                foreach (var gameFont in gameFonts)
+                    if (!font.fallbackFontAssetTable.Contains(gameFont))
+                        font.fallbackFontAssetTable.Add(gameFont);
+            }
+            Auga.Log($"Fonts: {string.Join(", ", gameFonts.ConvertAll(f => f.name))} added as fallbacks of {augaFonts.Count} Source Sans Pro assets.");
+        }
     }
 }

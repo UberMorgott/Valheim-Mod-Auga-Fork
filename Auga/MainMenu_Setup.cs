@@ -12,6 +12,7 @@ namespace Auga
         public static void Postfix(FejdStartup __instance)
         {
             HideCinematicsButton(__instance);
+            AugaStyle.LinkGameFontFallbacks();
             AugaStyle.Restyle(__instance.transform);
             // World rows are instantiated from this template (FejdStartup.cs:1319); restyle the template once.
             AugaStyle.Restyle(__instance.m_worldListElement.transform);

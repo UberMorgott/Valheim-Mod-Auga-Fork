@@ -14,6 +14,7 @@ namespace Auga
         [UsedImplicitly]
         public static void Postfix(Hud __instance)
         {
+            AugaStyle.LinkGameFontFallbacks(); // no-op once linked from the main menu
             // hudroot holds the bars, food, status effects, hotkey bar, ship HUD, minimap and the build HUD.
             AugaStyle.Restyle(__instance.m_rootObject.transform);
             // Build-menu icons are instantiated from this template (Hud.cs:1210 UpdatePieceList).
