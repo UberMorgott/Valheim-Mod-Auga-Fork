@@ -19,10 +19,10 @@ namespace Auga
     // inventory (InventoryGui.Hide :1055-1066).
     // Every value is read from the live game objects the way vanilla computes it (Player/Character/Humanoid/SEMan,
     // cited per row), so status effects and mods that patch those methods (Epic Loot included) are counted without
-    // referencing them. Epic Loot's percentage resistances are the one exception: it applies them to the incoming hit
-    // (EpicLoot.MagicItemEffects.ModifyResistance.ModifyIncoming, called from its Character.RPC_Damage patch), not
-    // through GetDamageModifiers, so that public static method is looked up by name and run on a probe hit when Epic
-    // Loot is loaded (soft dependency, no assembly reference).
+    // referencing them. Epic Loot's percentage resistances and night reduction are the one exception: it applies them to
+    // the incoming hit (EpicLoot.MagicItemEffects.ModifyResistance / Shards.DamageReductionAtNight .ModifyIncoming,
+    // called from its Character.RPC_Damage patch), not through GetDamageModifiers, so those public static methods are
+    // looked up by name and run on the probe hit when Epic Loot is loaded (soft dependency, no assembly reference).
     public class CharacterStatsPanel : MonoBehaviour
     {
         private static ConfigEntry<bool> _enabled;
@@ -57,7 +57,7 @@ namespace Auga
             (HitData.DamageType.Spirit, "$inventory_spirit"),
         };
 
-        private static MethodInfo _epicLootResistance;
+        private static MethodInfo _epicLootResistance, _epicLootNight;
         private static bool _epicLootLookedUp;
 
         private TMP_Text _labels, _values;
@@ -192,7 +192,7 @@ namespace Auga
             _enabled = config.Bind("CharacterStats", "Enabled", true,
                 "Show the character stats button in the inventory's Info panel; it opens a window with health, stamina and eitr with regeneration, armor, damage taken per type, speed, weight, block and rest.");
             _referenceHit = config.Bind("CharacterStats", "ReferenceHit", 100f,
-                "Damage reduction row: armor's reduction is shown in percent for a hit of this size (HitData.DamageTypes.ApplyArmor).");
+                "Damage reduction rows: the share of a hit of this size, per damage type, that armor, resistances and Epic Loot remove (the game's own damage steps run on it).");
             _refreshInterval = config.Bind("CharacterStats", "RefreshSeconds", 0.25f, "Seconds between window updates while it is open.");
             _enabled.SettingChanged += (s, e) =>
             {
@@ -296,24 +296,16 @@ namespace Auga
                 Row("$se_eitrregen", Rate(EitrRegen(player, maxEitr)));
             }
 
-            // Damage reduction: Player.GetBodyArmor (Player.cs:6832, gear GetArmor + SEMan.ApplyArmorMods) applied to a
-            // reference hit by HitData.DamageTypes.ApplyArmor (Character.cs:2382-2383, HitData.cs:414-422), in percent.
-            var armor = player.GetBodyArmor();
-            var hit = Mathf.Max(1f, _referenceHit.Value);
-            var reduction = (1f - HitData.DamageTypes.ApplyArmor(hit, armor) / hit) * 100f;
-            Row($"${DamageReductionToken}", reduction < 10f ? $"{reduction:0.#}%" : $"{reduction:0}%");
-
-            // Damage taken per type, in percent: resistances from Character.GetDamageModifiers (body + armor + status
-            // effects, Character.cs:2409-2415) applied like Character.RPC_Damage does (Character.cs:2378-2379).
-            var mods = player.GetDamageModifiers();
-            foreach (var (type, token) in DamageTypes)
+            // Damage reduction per type: the share of a reference hit of that type the damage pipeline removes right
+            // now (armor, resistances, Epic Loot), see Reduction. Physical left, elemental right, poison and spirit last.
+            Row($"${DamageReductionToken}", "");
+            for (var i = 0; i < 4; i++)
             {
-                var taken = DamageTaken(player, mods, type);
-                if (Mathf.Abs(taken - 100f) < 0.5f)
-                    continue;
-                Row(token, Colored($"{taken:0}%", taken < 100f ? Good : Bad));
+                var left = ReductionLayout[i * 2];
+                var right = ReductionLayout[i * 2 + 1];
+                _labelText.Append('\n').Append(ReductionCell(player, left)).Append("<pos=50%>").Append(ReductionCell(player, right));
+                _valueText.Append('\n');
             }
-
             // Movement: jog speed factor (Player.GetJogSpeedFactor = 1 + equipment modifier, Player.cs:7109-7112) and
             // status-effect speed mods, as Character.UpdateWalking combines them (Character.cs:1624, 1682).
             var speed = player.m_speed * player.GetJogSpeedFactor();
@@ -381,9 +373,40 @@ namespace Auga
             return rate * multiplier;
         }
 
-        private static float DamageTaken(Player player, HitData.DamageModifiers mods, HitData.DamageType type)
+        // "  Blunt   66%" with the percent at a fixed column: the pairs share one label line, so both halves are laid
+        // out with TMP <pos> inside the label text.
+        private static string ReductionCell(Player player, HitData.DamageType type)
         {
-            const float probe = 100f;
+            var token = Array.Find(DamageTypes, t => t.Type == type).Token;
+            var reduction = Reduction(player, type) * 100f;
+            var value = $"{reduction:0}%";
+            if (reduction >= 0.5f)
+                value = Colored(value, Good);
+            else if (reduction <= -0.5f)
+                value = Colored(value, Bad);
+            var column = type == HitData.DamageType.Blunt || type == HitData.DamageType.Slash ||
+                         type == HitData.DamageType.Pierce || type == HitData.DamageType.Poison ? "33%" : "83%";
+            return $"  {Localization.instance.Localize(token)}<pos={column}><color=#FFFFFF>{value}</color>";
+        }
+
+        // Pairs per line: physical | elemental, then poison | spirit.
+        private static readonly HitData.DamageType[] ReductionLayout =
+        {
+            HitData.DamageType.Slash, HitData.DamageType.Fire,
+            HitData.DamageType.Blunt, HitData.DamageType.Frost,
+            HitData.DamageType.Pierce, HitData.DamageType.Lightning,
+            HitData.DamageType.Poison, HitData.DamageType.Spirit,
+        };
+
+        // Share of a ReferenceHit of one damage type the player would not take right now, 0..1 (negative when weak),
+        // by the steps Character.RPC_Damage runs, in its order: Epic Loot's prefix (SharedCharacterRpcDamagePatch:
+        // ModifyResistance.ModifyIncoming, then DamageReductionAtNight.ModifyIncoming, looked up by name when Epic Loot
+        // is loaded; mods that patch those, e.g. MorgottTweaks [Armor], are included), then the resistances from
+        // Character.GetDamageModifiers (body + armor + status effects, Character.cs:2378-2379, 2409-2415), then armor
+        // (Player.GetBodyArmor into HitData.ApplyArmor, Character.cs:2380-2383, i.e. HitData.DamageTypes.ApplyArmor).
+        public static float Reduction(Player player, HitData.DamageType type)
+        {
+            var probe = Mathf.Max(1f, _referenceHit?.Value ?? 100f);
             var hit = new HitData();
             switch (type)
             {
@@ -396,22 +419,27 @@ namespace Auga
                 case HitData.DamageType.Poison: hit.m_damage.m_poison = probe; break;
                 case HitData.DamageType.Spirit: hit.m_damage.m_spirit = probe; break;
             }
-            hit.ApplyResistance(mods, out _);
-            EpicLootResistance()?.Invoke(null, new object[] { player, hit });
-            return hit.m_damage.GetTotalDamage() / probe * 100f;
+            LookUpEpicLoot();
+            var args = new object[] { player, hit };
+            _epicLootResistance?.Invoke(null, args);
+            _epicLootNight?.Invoke(null, args);
+            hit.ApplyResistance(player.GetDamageModifiers(), out _);
+            hit.ApplyArmor(player.GetBodyArmor());
+            return 1f - hit.m_damage.GetTotalDamage() / probe;
         }
 
-        private static MethodInfo EpicLootResistance()
+        private static void LookUpEpicLoot()
         {
             if (_epicLootLookedUp)
-                return _epicLootResistance;
+                return;
             _epicLootLookedUp = true;
-            var type = AccessTools.TypeByName("EpicLoot.MagicItemEffects.ModifyResistance");
-            _epicLootResistance = type == null ? null : AccessTools.Method(type, "ModifyIncoming", new[] { typeof(Character), typeof(HitData) });
-            return _epicLootResistance;
+            var args = new[] { typeof(Character), typeof(HitData) };
+            var resistance = AccessTools.TypeByName("EpicLoot.MagicItemEffects.ModifyResistance");
+            _epicLootResistance = resistance == null ? null : AccessTools.Method(resistance, "ModifyIncoming", args);
+            var night = AccessTools.TypeByName("EpicLoot.MagicItemEffects.Shards.DamageReductionAtNight");
+            _epicLootNight = night == null ? null : AccessTools.Method(night, "ModifyIncoming", args);
         }
     }
-
     [HarmonyPatch]
     public static class CharacterStatsPanel_InventoryGui_Patches
     {
