@@ -74,7 +74,7 @@ namespace Auga
                 MissingScripts(root, findings);
                 DeadRefs(owner, root, findings);
                 CanvasLess(root, findings);
-                Overlaps(root, 2, MapPinElements(), findings);
+                Overlaps(root, 2, findings);
                 foreach (var f in findings)
                     Debug.LogWarning($"[Auga] audit {name}: {f}");
                 total += findings.Count;
@@ -145,27 +145,9 @@ namespace Auga
             return Rect.MinMaxRect(Mathf.Min(a.x, b.x), Mathf.Min(a.y, b.y), Mathf.Max(a.x, b.x), Mathf.Max(a.y, b.y));
         }
 
-        // Map pins and their name labels are map content, not layout: Minimap.UpdatePins puts them at the pins' world
-        // positions (Minimap.cs:1620-1658), and CreateMapNamePin reparents the name text straight onto the pin name
-        // root next to the map's markers (Minimap.cs:874-878), so a pin near the player covers the wind marker.
-        private static HashSet<Transform> MapPinElements()
-        {
-            var elements = new HashSet<Transform>();
-            if (!Minimap.instance)
-                return elements;
-            foreach (var pin in Minimap.instance.m_pins)
-            {
-                if (pin.m_uiElement)
-                    elements.Add(pin.m_uiElement);
-                if (pin.m_NamePinData != null && pin.m_NamePinData.PinNameRectTransform)
-                    elements.Add(pin.m_NamePinData.PinNameRectTransform);
-            }
-            return elements;
-        }
-
-        // Sibling panels (active, visible content, not a stretched backdrop, not a map pin) whose screen rects overlap
-        // by more than a quarter of the smaller one. Checked at `depth` levels below the screen root.
-        private static void Overlaps(Transform parent, int depth, HashSet<Transform> skip, List<string> findings)
+        // Sibling panels (active, visible content, not a stretched backdrop) whose screen rects overlap by
+        // more than a quarter of the smaller one. Checked at `depth` levels below the screen root.
+        private static void Overlaps(Transform parent, int depth, List<string> findings)
         {
             if (depth <= 0 || !(parent is RectTransform parentRt))
                 return;
@@ -174,8 +156,7 @@ namespace Auga
             var panels = new List<(RectTransform Rt, Rect Rect)>();
             foreach (Transform child in parent)
             {
-                if (!child.gameObject.activeInHierarchy || !(child is RectTransform rt) || OverlapAllow.Contains(child.name) ||
-                    skip.Contains(child))
+                if (!child.gameObject.activeInHierarchy || !(child is RectTransform rt) || OverlapAllow.Contains(child.name))
                     continue;
                 if (child.GetComponentInChildren<Graphic>() == null)
                     continue;
@@ -202,7 +183,7 @@ namespace Auga
 
             foreach (Transform child in parent)
                 if (child.gameObject.activeInHierarchy)
-                    Overlaps(child, depth - 1, skip, findings);
+                    Overlaps(child, depth - 1, findings);
         }
     }
 }
