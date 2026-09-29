@@ -1,7 +1,24 @@
 # Auga fork — handoff (2026-09-11 night session)
 
-Repo: <https://github.com/UberMorgott/Valheim-Mod-AugaFork> (fork of RandyKnapp/Auga), local `E:\DEV\Valheim\Auga-Fork`.
+Repo: <https://github.com/UberMorgott/Valheim-Mod-Auga-Fork> (fork of RandyKnapp/Auga), local `E:\DEV\Valheim\Auga-Fork`.
 Target: Valheim 1.0.12 (Unity 6, network 40), BepInEx 5.4.23.5. Personal build.
+
+## 2.0.5: minimap frame fix + character stats panel (2026-09-29)
+
+- DEPLOYED (pre-bump build of `99e0428`): `AugaSkin.dll` SHA256
+  `14F5DCAC29DCA52A501E4B0EDD20F41CFCD03FB716972F11150894736029DB3F`.
+- Minimap double frame (`c39e6bd`, `AugaStyle.cs`): vanilla reuses `text_field`/`InputFieldBackground` sprites as plain
+  frames (small/large minimap, bar darken, inventory lists); Restyle gave them Auga input chevron art, which showed
+  behind the small map like a second minimap. Only an input field's own target graphic keeps `Role.Input`; the rest
+  become `TextBackdrop` (like bundle HUD `MiniMap/MapBG`).
+- Character stats panel (`99e0428`, `Auga/CharacterStatsPanel.cs`): under the minimap; health/stamina/eitr with live
+  regen, armor with an example hit (`HitData.DamageTypes.ApplyArmor`), damage taken per type
+  (`GetDamageModifiers` + Epic Loot `ModifyIncoming`, soft by name), jog speed, weight, block/parry, rest. Hidden in
+  large-map mode. Config `[CharacterStats] Enabled` (true) / `ReferenceHit` (100) / `RefreshSeconds` (0.25); movable
+  via `[HudLayout] CharacterStatsOffset`.
+- V+ overlap check: ValheimPlus has no stats/armor/resist HUD panel (`[Hud]`: required items, XP notifications,
+  damage flash, bow ammo); its Minimap patches (`Awake`/`UpdateMap`/`OnDestroy`) are map sharing/explore, not frames.
+- Open: panel stays visible in no-map worlds (intentional; it is anchored under the minimap slot, not tied to it).
 
 ## User report 2 fixes (2026-09-11 21:15, deployed 21:31)
 
