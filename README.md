@@ -1,5 +1,19 @@
 # Project Auga
 
+## Credits
+
+- **Original mod:** [Project Auga](https://github.com/RandyKnapp/Auga) by **RandyKnapp** (code). Upstream credits: "by RandyKnapp / n4"; Nexus Mods ([mod 1413](https://www.nexusmods.com/valheim/mods/1413)): "Code: RandyKnapp, Design: n4".
+- **UI art and design:** **n4**.
+- **Upstream co-maintenance:** **Vapok** ([Vapok/Auga](https://github.com/Vapok/Auga)).
+- **Unity 6 community port:** **mrcook1e-ai** ([mrcook1e-ai/Auga](https://github.com/mrcook1e-ai/Auga)).
+- **AugaSkin fork maintenance:** **Morgott** ([UberMorgott](https://github.com/UberMorgott)).
+
+> **Unofficial fork.** AugaSkin is not affiliated with or endorsed by RandyKnapp or the Project Auga team.
+> Upstream Auga code and assets remain the property of their authors (all rights reserved); this fork claims no license over them.
+> Permission from the original author has been requested; see [LICENSING.md](LICENSING.md).
+
+---
+
 Форк [Auga](https://github.com/RandyKnapp/Auga) от **RandyKnapp**, поддерживает **Morgott** ([UberMorgott](https://github.com/UberMorgott)).
 
 Auga — полный UI-оверхол для Valheim. Переработан каждый элемент интерфейса: инвентарь, HUD, крафтинг, экран персонажа, загрузочные экраны и многое другое.

@@ -2,6 +2,9 @@
 
 By RandyKnapp / n4 / Vapok.
 
+> **AugaSkin — unofficial fork.** Original Auga by [RandyKnapp](https://github.com/RandyKnapp/Auga) (code) and n4 (design), co-maintained by Vapok; Unity 6 community port by [mrcook1e-ai](https://github.com/mrcook1e-ai/Auga); AugaSkin fork maintained by Morgott ([UberMorgott](https://github.com/UberMorgott/Valheim-Mod-Auga-Fork)).
+> Not affiliated with or endorsed by RandyKnapp or the Project Auga team. Upstream code and assets remain the property of their authors (all rights reserved); permission has been requested (see LICENSING.md in the source repo).
+
 Project Auga is a completely re-imagined, modder-friendly UI-overhaul for Valheim. Every last piece of UI was considered and reworked from the ground-up to create a more helpful and immersive player experience, all while remaining familiar to Valheim veterans.
 
 Join the Discord: [Project Auga Discord](https://discord.gg/randyknappmods)

@@ -2,7 +2,7 @@
   "name": "AugaSkin",
   "version_number": "2.0.6",
   "website_url": "https://github.com/UberMorgott/Valheim-Mod-Auga-Fork",
-  "description": "Auga's look on the vanilla Valheim UI (fork of RandyKnapp/Auga)",
+  "description": "Unofficial fork of RandyKnapp's Auga (design by n4): Auga's look on the vanilla Valheim UI. Not affiliated with or endorsed by RandyKnapp.",
   "dependencies": [
     "denikson-BepInExPack_Valheim-5.4.2202"
   ]
