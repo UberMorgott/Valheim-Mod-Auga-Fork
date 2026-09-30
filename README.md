@@ -10,7 +10,7 @@
 
 > **Unofficial fork.** AugaSkin is not affiliated with or endorsed by RandyKnapp or the Project Auga team.
 > Upstream Auga code and assets remain the property of their authors (all rights reserved); this fork claims no license over them.
-> Permission from the original author has been requested; see [LICENSING.md](LICENSING.md).
+> Used with the author's written permission (2026-09-30); see [LICENSING.md](LICENSING.md).
 
 ---
 

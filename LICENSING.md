@@ -27,7 +27,36 @@ Checked 2026-09-30. Summary for the whole pack: `E:\DEV\Valheim\Yggdrasil\docs\m
 
 ## Status
 
-NOT FOUND — and Nexus terms explicitly forbid modification. Assets: PARTLY (credit-only reuse, but not in sold mods). Highest risk of the pack.
+PERMITTED (written, e-mail 2026-09-30). The author's written permission overrides the Nexus terms above for this fork.
+
+Previous status (before 2026-09-30): NOT FOUND; Nexus terms forbid modification; assets only credit-only reuse, not in sold mods.
+
+## Written permission (2026-09-30)
+
+- Channel: e-mail, Gmail thread "Permission request for AugaSkin and possible upstream contributions" (thread `1a0f182804c7d74c`).
+- Request: msg `1a0f1dc309fd003f`, 2026-09-30 10:28 UTC, ubermorgott@gmail.com → randy.bravo2@gmail.com. Key text:
+  > Would you give written permission for me to modify Auga, host AugaSkin's source on GitHub, and distribute free builds containing its UI assets, including in my Yggdrasil modpack?
+  >
+  > For clarity, the mod itself is free; Yggdrasil includes a paid launcher/update service. I'm asking whether that distribution arrangement is acceptable too.
+  >
+  > I'll clearly identify AugaSkin as an unofficial fork and credit you for the code, n4 for the design, and the community port. Please let me know whether anyone else's approval is needed for the included artwork.
+- Reply: msg `1a0f20d7c848e503`, 2026-09-30 11:22 UTC, randy.bravo2@gmail.com (verbatim):
+  > I don't have any problems with this. Right now I'm working through a few compatibility issues with Auga before relaunching it.
+  >
+  > I should have it done in the next few weeks, butt I'm out of town for a bit.
+  >
+  > Also if you find any bug fixes, please make some PRs on the original GitHub!
+  >
+  > Thanks!
+  > +Randy
+- Scope granted: modify Auga; host AugaSkin source on GitHub; distribute free builds including its UI assets, including in the Yggdrasil modpack with its paid launcher/update service.
+
+## Open points
+
+- n4 (design) artwork approval: the reply does not address it explicitly; Randy did not say anyone else must approve. Keep crediting n4 for the design.
+- Randy asked for bug fixes as PRs to https://github.com/RandyKnapp/Auga.
+- Randy plans an Auga relaunch "in the next few weeks" — re-evaluate AugaSkin vs the official build then.
+- Keep the "unofficial fork" notice and credits (code RandyKnapp, design n4, community Unity 6 port by mrcook1e-ai), as promised in the request.
 
 ## Author activity and contact
 
@@ -41,5 +70,4 @@ NOT FOUND — and Nexus terms explicitly forbid modification. Assets: PARTLY (cr
 
 ## Next step
 
-- Send the permission request drafted in `Yggdrasil\docs\mod-licenses.md` (section "Draft: RandyKnapp") by e-mail or Discord DM.
-- Until explicit written permission: owner decides whether to keep shipping AugaSkin; the Nexus terms say no modification under any circumstances.
+- Send AugaSkin bug fixes upstream as PRs (author's request).
