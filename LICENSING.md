@@ -71,3 +71,4 @@ Previous status (before 2026-09-30): NOT FOUND; Nexus terms forbid modification;
 ## Next step
 
 - Send AugaSkin bug fixes upstream as PRs (author's request).
+- Follow-up sent 2026-09-30 (same thread, msg `1a0f2190cb23aba9`): thanks, PRs after the relaunch, and a request to mirror unmodified Epic Loot and Equipment & Quick Slots in Yggdrasil — awaiting reply.
