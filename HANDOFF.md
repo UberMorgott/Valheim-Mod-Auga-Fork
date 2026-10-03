@@ -5,6 +5,11 @@ Target: Valheim 1.0.12 (Unity 6, network 40), BepInEx 5.4.23.5. Personal build.
 
 ## Published 2026-10-03
 
+- `dedb1fa` (`9a8dce4` password/connecting dialogs wrapped in root canvases 3000/3100 -- were never drawn, black
+  screen on password servers; `dedb1fa` guardian power moved left of the food column, hudroot pivot (1,0) at (100,86)):
+  DEPLOYED + published client pack: `AugaSkin.dll` `01CE24B035F941EFE79A94ABBB83958C91CAAE9CC368D8A1E41C74D8FB1470BB`
+  (VPS client manifest v28). Autotest shots `20b-hud-guardian`, `27e-password-dialog`, `27f-connecting-canvas`
+  (tools `a35fbbd`): FAIL before (`tools\out\20261003-230204`), PASS after (`20261003-230328`).
 - `2516cff` (block power label + armor row): DEPLOYED + published client pack (`valheim-pack.ps1 -Only AugaSkin
   -Upload`): `AugaSkin.dll` `6E2A283D0A72FEC2381576BE3B7B04E526E0FC256268BBD6346D9DD23CCF221B` (VPS client manifest v27).
 
