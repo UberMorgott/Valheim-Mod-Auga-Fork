@@ -32,7 +32,8 @@ namespace Auga
         private static ConfigEntry<float> _refreshInterval;
 
         public const string ButtonName = "CharacterStats", WindowName = "CharacterStatsDialog";
-        private const string TitleToken = "auga_characterstats", DamageReductionToken = "auga_damagereduction";
+        private const string TitleToken = "auga_characterstats", DamageReductionToken = "auga_damagereduction",
+            BlockPowerToken = "auga_blockpower", ParryPowerToken = "auga_parrypower";
         private const float Padding = 16f, FontSize = 20f;
         private const float FoodRegenPeriod = 10f; // Player.UpdateFood heals once per 10 s (Player.cs:2449-2454)
 
@@ -84,6 +85,8 @@ namespace Auga
             var russian = Localization.instance.GetSelectedLanguage() == "Russian";
             Localization.instance.AddWord(TitleToken, russian ? "Характеристики" : "Character stats");
             Localization.instance.AddWord(DamageReductionToken, russian ? "Снижение урона" : "Damage reduction");
+            Localization.instance.AddWord(BlockPowerToken, russian ? "Сила блока" : "Block power");
+            Localization.instance.AddWord(ParryPowerToken, russian ? "Сила парирования" : "Parry power");
 
             Instance = CreateWindow(gui, skills, nameTemplate);
             _button = CreateButton(achievements, trophies);
@@ -323,18 +326,23 @@ namespace Auga
             var maxWeight = player.GetMaxCarryWeight();
             Row("$item_weight", weight > maxWeight ? Colored($"{weight:0} / {maxWeight:0}", Bad) : $"{weight:0} / {maxWeight:0}");
 
+            // Armor: the raw body armor sum the damage pipeline (and MorgottTweaks' armor formula) consumes
+            // (Player.GetBodyArmor, Player.cs:6831; the inventory armor figure, InventoryGui.cs:652).
+            Row("$item_armor", $"{player.GetBodyArmor():0}");
+
             // Block: the item Humanoid.BlockAttack blocks with and its power at the current Blocking skill; a parry
             // multiplies it by m_timedBlockBonus plus status-effect bonuses (Humanoid.cs BlockAttack, :1760-1769).
+            // Own tokens: vanilla $item_blockarmor reads like armor in Russian ("Сопротивление урону").
             var blocker = player.GetCurrentBlocker();
             if (blocker != null)
             {
                 var block = blocker.GetBlockPower(player.GetSkillFactor(Skills.SkillType.Blocking));
-                Row("$item_blockarmor", $"{block:0}");
+                Row($"${BlockPowerToken}", $"{block:0}");
                 if (blocker.m_shared.m_timedBlockBonus > 1f)
                 {
                     var parry = block * blocker.m_shared.m_timedBlockBonus;
                     player.GetSEMan().ModifyTimedBlockBonus(ref parry);
-                    Row("$item_parrybonus", $"{parry:0}");
+                    Row($"${ParryPowerToken}", $"{parry:0}");
                 }
             }
 
