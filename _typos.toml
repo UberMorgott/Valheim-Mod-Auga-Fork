@@ -45,6 +45,8 @@ ps4pnFriends = "ps4pnFriends"
 ps4pnGameCustomData = "ps4pnGameCustomData"
 # Name quoted in upstream CHANGELOG entry (RandyKnapp/Auga commit 36e0f0e); historical record.
 AugaTextsDialogeLore = "AugaTextsDialogeLore"
+# BossAwakening GameObject name (E:\DEV\Valheim\BossAwakening UI\BossBarHud.cs), referenced in TASKS.md.
+BA_WorldBossBar = "BA_WorldBossBar"
 
 [default.extend-words]
 # Surname in the Iron Gate credits list (AugaUnity/Assets/Prefabs/Credits.prefab).

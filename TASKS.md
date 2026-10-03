@@ -1,9 +1,12 @@
 # Auga-everywhere backlog (scope rule: every UI, vanilla + pack mods, Auga-styled)
 
-Phase 1 audit 2026-10-04. Order = player visibility/impact. Size S/M/L = approach estimate, not time.
+Phase 1 audit 2026-10-04; full inventory merged 2026-10-04 (AugaSkin vs decompile comparison, code-verified, in-game
+unverified unless stated). Order = visibility (high first), then size. Size S/M/L = approach estimate, not time.
 Shot = autotest `-Shots` name (`tools\AutotestDriver`); "new" = still to write. Decompiles used:
 `E:\Temp\claude\E--DEV-Valheim-Auga-Fork\c742cfb3-f750-4393-bdf4-89d49021f3f0\scratchpad\decomp\<mod>` (temporary).
 Status "verify" = mod has UI code, AugaSkin has no code for it, look not yet checked in game.
+Root cause of vanilla gaps: `AugaStyle.Restyle` only maps known sprites + fonts; runtime-instantiated prefabs miss restyle.
+NO = no Auga styling; PARTIAL = partly styled.
 
 ## Cross-cutting levers (do first: one fix covers many surfaces)
 
@@ -18,40 +21,83 @@ Status "verify" = mod has UI code, AugaSkin has no code for it, look not yet che
   StarLevelSystem (6 CreateWoodpanel, 5 CreateText, 3 CreateButton, 2 CreateInputField, toggle, slider, scroll view),
   VNEI (ApplyWoodpanel/Button/Text/InputField/Toggle/ScrollRect), EpicLoot (CreateButton, CreateScrollView),
   Jotunn's own windows (mod-compat/version mismatch dialog, keybind/settings). Shot: new `67-jotunn-gui`.
-- [ ] (c) ConfigurationManager (IMGUI) -- M. No uGUI to restyle. Its look is 14 `ConfigEntry<Color>` (window/header/
-  entry/tooltip/widget backgrounds, font colours; `ConfigurationManager.cs` ~757) + 1x1 `Texture2D` backgrounds
-  (`:892-902`, `:2141`). Feasible: Auga palette via those colours in the pack config (pack/VPS side, never local
-  BepInEx\config) + AugaSkin prefix on its `OnGUI` swapping `GUI.skin.font` to Auga's legacy SourceSansPro and window
-  texture to an Auga backdrop. Full Auga frame art not feasible in IMGUI. Shot: new `68-configmanager` (F1).
+- [ ] (c) ConfigurationManager (IMGUI) -- M. No uGUI to restyle. Styles static in `ConfigurationManagerStyles.cs:59-95`,
+  rebuilt in `CreateStyles` -> postfix can set font/background. Cheap path = 14 `ConfigEntry<Color>` colour settings
+  (`ConfigurationManager.cs` ~757; 1x1 `Texture2D` backgrounds `:892-902`, `:2141`) in the pack config (pack/VPS side,
+  never local BepInEx\config). IMGUI needs standalone textures (Auga sprites are in atlases). Full Auga frame art not
+  feasible. Also covers embedded ItemManager/PieceManager/CreatureManager config tables and EL config drawers.
+  Shot: new `68-configmanager` (F1).
 
 ## Surfaces
 
-| # | Mod | Surface | Open | Est | Shot |
-|---|-----|---------|------|-----|------|
-| [x] 1 | Epic Loot | Haldor MerchantPanel (stash/gamble/maps/bounties) | Haldor -> trade | S | `65c-haldor-merchant` |
-| [x] 2 | Epic Loot | Hildir TemperPanel | Hildir -> trade | S | `65b-hildir-temper` |
-| [ ] 3 | Epic Loot | Enchanting table UI (sacrifice/enchant/augment/convert tabs) | use enchanting table | L | new `65d-el-enchant` |
-| [ ] 4 | Epic Loot | magic item tooltip + crafting-tab MagicSearchField | hover magic item / workbench | M | new `65e-el-tooltip` |
-| [ ] 5 | Epic Loot | bounty/treasure-map HUD, Compendium pages (ExplainPage, SetInfos ...) | accept bounty / Compendium | M | `12-compendium` + new |
-| [ ] 6 | StarLevelSystem | in-game config/level UI (Jotunn woodpanels) + EnemyHud stars | its hotkey / any creature | M (via b) | `60-creature-levels` + new |
-| [ ] 7 | VNEI | item browser panel + crafting tab | inventory | M (via b) | new `47-vnei` |
-| [ ] 8 | ConfigurationManager | settings window (IMGUI) | F1 | M (via c) | new `68-configmanager` |
-| [ ] 9 | EquipmentAndQuickSlots | equipment + quick-slot panels, hotbar | inventory / HUD | S verify (Auga has 26 refs) | `45-inventory-worn`, `20-hud` |
-| [ ] 10 | AdventureBackpacks | backpack container panel, durability bar | open backpack | S verify | `46b-backpack-hotkey` + PNG |
-| [ ] 11 | Almanac (fork) | Almanac panel (bundle UI) | its button/hotkey | L | new `69-almanac` |
-| [ ] 12 | BossAwakening | boss HP bar -- **pending user decision (own design vs Auga)** | boss fight | S-M | `77-boss-bar` |
-| [ ] 13 | MonsterModifiers | modifier icons on EnemyHud (Jotunn) | creature with modifiers | S verify | `60-creature-levels` |
-| [ ] 14 | CurrencyPocket | coin pocket UI element (Jotunn + image) | inventory | S verify | `40-inventory` |
-| [ ] 15 | MorgottTweaks | module UI (tames hover, meads HUD, hildir) | per module | S verify | `66-meads-hud` |
-| [ ] 16 | Skidbladnir | network/graphics HUD or menu entries | settings / HUD | S verify | new |
-| [ ] 17 | ValheimPlus | enabled HUD features (required items, XP notes, bow ammo) | per cfg | S verify | `20-hud` |
-| [ ] 18 | MultiUserChest | in-use message / chest UI | shared chest | S verify | `42-container` |
-| [ ] 19 | Seasonality | config drawer (GUILayout) + season HUD image | CM / HUD | S verify | new |
-| [ ] 20 | ValheimBuildCamera | IMGUI overlay | F6 in build | S (IMGUI) | `21c-buildcamera` |
-| [ ] 21 | Vanilla | Ship HUD, piece health bar, F2 connection panel, loading indicator, changelog/feedback | sail / hammer hover / F2 | S each, verify | new `28-vanilla-misc` |
-| [ ] 22 | Armory/Wizardry/Warfare/OreMines/BalrondSecondChance/SeedBed/SmoothRegen | config drawers / messages only (likely) | CM | S verify | - |
+| # | Mod | Surface | Status | Vis | Est | Shot |
+|---|-----|---------|--------|-----|-----|------|
+| [x] 1 | Epic Loot | Haldor MerchantPanel (stash/gamble/maps/bounties) | done | high | S | `65c-haldor-merchant` |
+| [x] 2 | Epic Loot | Hildir TemperPanel | done | high | S | `65b-hildir-temper` |
+| [ ] 3 | Vanilla | PieceHealth bar (`bar_monster_hp_5`) | PARTIAL | high | S | new `28-vanilla-misc` |
+| [ ] 4 | AdventureBackpacks | backpack panel inherits Auga, but >~8 columns overflow (its `HANDOFF.md:361`) | PARTIAL | high | S | `46b-backpack-hotkey` |
+| [ ] 5 | Almanac (fork) | Trophies button icon | NO | high | S | new `69-almanac` |
+| [ ] 6 | StarLevelSystem | stacked boss bars | PARTIAL | high | S | new |
+| [ ] 7 | MonsterModifiers | modifier icons on EnemyHud (own sprites) | PARTIAL | high | S | `60-creature-levels` |
+| [ ] 8 | Epic Loot | tooltip text colours | NO | high | S | new `65e-el-tooltip` |
+| [ ] 9 | Epic Loot | rarity backgrounds on slots | NO | high | S | `40-inventory` |
+| [ ] 10 | Epic Loot | AbilityBar (Hud.Awake order) | NO | high | S | `20-hud` |
+| [ ] 11 | Vanilla | loading/sleep/teleport screen (`Hud.m_loadingScreen`, `m_sleepingProgress`, `m_teleportingProgress`, `Hud.cs:219-231`, outside hudroot) | NO | high | M | new |
+| [ ] 12 | Vanilla | ShipHud art (`ship_circle`, `rudder_arrow`, `windicon`; only made movable `Hud_Setup.cs:40`) | NO | high | M | new |
+| [ ] 13 | Vanilla | hover text [E] yellow tags (only UpdateBuild recoloured `Hud_Setup.cs:89-99`) | PARTIAL | high | M | `20-hud` |
+| [ ] 14 | VNEI | main window (`BaseUI.cs`, `Styling.cs`; Jotunn-built) | NO | high | M (via b) | new `47-vnei` |
+| [ ] 15 | Almanac (fork) | main window (bundle AlmanacUI); partial by accident (`UI_Patches.cs:71-220` copies vanilla sprites, order-dependent) | PARTIAL | high | L | new `69-almanac` |
+| [ ] 16 | Epic Loot | enchanting table window; borrows StoreGui `border (1)` material -> null with Auga store | NO | high | L | new `65d-el-enchant` |
+| [ ] 17 | Almanac (fork) | quest tracker HUD | NO | med-high | S | new |
+| [ ] 18 | Vanilla | AchievementUnlockPopup (`Achievements.cs:165`) | NO | med | S | new |
+| [ ] 19 | Vanilla | ConnectPanel F2 (`ConnectPanel.cs:8,166`) | NO | med | S | new `28-vanilla-misc` |
+| [ ] 20 | Vanilla | MountHud bars (`bar_gradient_40`) | PARTIAL | med | S | new |
+| [ ] 21 | Vanilla | stagger / action_progress bar (`bar_stagger`) | PARTIAL | med | S | new |
+| [ ] 22 | Vanilla | KeyHints `key_base` x47 | PARTIAL | med | S | `20-hud` |
+| [ ] 23 | Vanilla | EventBar (`point3`) | PARTIAL | med | S | new |
+| [ ] 24 | StarLevelSystem | level text on minimap/no-map (`NoMapLevelIndicator.cs:31`, `MinimapLevelIndicator.cs:34`) | PARTIAL | med | S | new |
+| [ ] 25 | DisplayBepInExInfo | main menu text Arial (`DisplayInfoPlugin.cs:34-69`, created at FejdStartup.Start after Auga restyle) | NO | med | S | new |
+| [ ] 26 | Epic Loot | recipe rarity tint | NO | med | S | new |
+| [ ] 27 | Epic Loot | Welcome/ConfigMessage popups at FejdStartup.Start | NO | med | S | new |
+| [ ] 28 | Epic Loot | map pin filter / adventure pins | NO | med | S | new |
+| [ ] 29 | Almanac (fork) | NPC dialogue panel | NO | med | M | new |
+| [ ] 30 | Jotunn | ModCompatibility window (`ModCompatibility.cs:219-233`) | NO | med | M (via b) | new `67-jotunn-gui` |
+| [ ] 31 | ValheimBuildCamera | IMGUI labels (`DismantlePreview.cs:560-647`) | NO | med | M | `21c-buildcamera` |
+| [ ] 32 | Epic Loot | AugmentChoiceDialog | NO | med | M | new `65d-el-enchant` |
+| [ ] 33 | Epic Loot | Compendium MagicPages rows (created after Auga restyle; `PauseMenu_Setup.cs:91-95`) | NO | med | M | `12-compendium` |
+| [ ] 34 | Epic Loot | socket break / chisel prompts | NO | low-med | S | new |
+| [ ] 35 | Vanilla | Console F5 (Terminal) | NO | low | S | new |
+| [ ] 36 | Vanilla | Feedback (`Menu.cs:582`) | NO | low | S | new |
+| [ ] 37 | Vanilla | ResolutionSwitchDialog | NO | low | S | new |
+| [ ] 38 | Vanilla | EndCredits | NO | low | S | new |
+| [ ] 39 | Vanilla | JoinCode / SessionPlayerList / ClosedCaptions | NO | low | S | new |
+| [ ] 40 | Vanilla | ManageSavesMenu rows (saveElement `ManageSavesMenu.cs:657`) | PARTIAL | low | S | new |
+| [ ] 41 | Vanilla | Save / BadConnection icons | PARTIAL | low | S | new |
+| [ ] 42 | ValheimPlus | version label font/pos override | NO | low | S | new |
+| [ ] 43 | Epic Loot | DebugText | NO | low | S | new |
+| [ ] 44 | Epic Loot | extra skill levels | NO | low | S | new |
+| [ ] 45 | Vanilla | ValheimRadial | PARTIAL | low | M | new |
+| [ ] 46 | Almanac (fork) | form modal | NO | low | M | new |
+| [ ] 47 | Almanac (fork) | NPC customization | NO | low | M | new |
+| [ ] 48 | Jotunn | color/gradient pickers | NO | low | ? (via b) | new `67-jotunn-gui` |
+| [ ] 49 | Epic Loot | config drawers (IMGUI) | NO | low | (via c) | `68-configmanager` |
+| [ ] 50 | StarLevelSystem | QuickConfigureTool + Mod Config button + startup popups (`ConfigUI.cs`, `QuickConfigBroker.cs:172-215`; Jotunn-built) | NO | ? | (via b) | `60-creature-levels` + new |
+| [ ] 51 | StarLevelSystem | zone-level map overlay panel (`ZoneScaleSystem.cs:190`; Jotunn-built) | NO | ? | (via b) | new |
+| [ ] 52 | ConfigurationManager | settings window (IMGUI) | NO | ? | M (via c) | `68-configmanager` |
+| [ ] 53 | Epic Loot | comparison tooltip | verify | ? | S | new `65e-el-tooltip` |
+| [ ] 54 | Epic Loot | scrollbar handles faint (item_background -> backdrop on backdrop track; from item 1) | PARTIAL | ? | ? | `65c-haldor-merchant` |
+| [ ] 55 | BossAwakening | world boss bar `BA_WorldBossBar` (own art `BossBarAssets.cs:11`; font copied `BossBarHud.cs:334`) -- **PENDING USER DECISION (own design vs Auga)** | - | ? | S-M | `77-boss-bar` |
+
+## Verify only (likely inherit Auga)
+
+- BalrondSecondChance downed popup; Warfare build tab; V+ mute toggle; EquipmentAndQuickSlots quick-slot hotbar
+  (`45-inventory-worn`, `20-hud`); Jotunn key hints; CurrencyPocket (emoji label may not render; `40-inventory`);
+  StarLevelSystem stars; VNEI tab button.
+- Not covered by new inventory, still verify: MultiUserChest in-use message / chest UI (`42-container`); Seasonality
+  config drawer + season HUD image; ValheimPlus HUD features (required items, XP notes, bow ammo); Armory/Wizardry/
+  OreMines config drawers / messages.
+- Unconfirmed: chat world-text / NPC bubbles (`Chat.cs:383/692`); large-map pin labels (`Minimap.cs:876`).
 
 No UI found: Advize_PlantEverything, BlacksmithTools, BoneAppetit, ChaosArmor, ConditionalConfigSync, HoneyPlus,
-SolidHitboxes, JsonDotNET, YamlDotNet.
-
-Open from item 1: EL scrollbar handles (item_background -> backdrop) faint on backdrop track.
+SolidHitboxes, JsonDotNET, YamlDotNet, SmoothRegen, FastStartup, Skidbladnir, SeedBed, MorgottTweaks.
+Messages of all our mods go via MessageHud (styled).
