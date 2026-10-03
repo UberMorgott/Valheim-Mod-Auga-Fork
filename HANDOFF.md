@@ -3,6 +3,18 @@
 Repo: <https://github.com/UberMorgott/Valheim-Mod-Auga-Fork> (fork of RandyKnapp/Auga), local `E:\DEV\Valheim\Auga-Fork`.
 Target: Valheim 1.0.12 (Unity 6, network 40), BepInEx 5.4.23.5. Personal build.
 
+## Epic Loot Hildir TemperPanel (2026-10-04)
+
+- `e29bd16`: Epic Loot 0.14.13 `TemperPanel.LoadImageSprites` (decompiled `TemperPanel.cs:297-309`) reads vanilla
+  `Store/SellPanel` + `Store/ItemList/Items/ItemElement/{bkg,icon,selected}`; Auga's store (`AugaStoreScreen`) has
+  neither -> NRE in `TemperPanel.Awake` (log), rest of Awake skipped: white Sundial/Temper button, English titles.
+  `Store_Setup.AddVanillaStorePaths` adds inactive stand-ins with Auga row art; `Show_Finalizer` (Priority.Last, after
+  EL's finalizer) runs `AugaStyle.Restyle` on `TemperPanel` once (Auga panel frame, fonts). Haldor `MerchantPanel`
+  is null-safe (not restyled, still EL wood).
+- Autotest `-Mod Auga -Shots 65b-hildir-temper` (tools `e4c790b`): FAIL before (`tools\out\20261004-000842`), PASS
+  after (`20261004-001001`). DEPLOYED + published client pack (`valheim-pack.ps1 -Only AugaSkin -Upload`):
+  `AugaSkin.dll` `9534AA2D5D4F2FCD6A4CEDCB93B42F82276314A738FA5D9CC926E17F5F1E32CB` (VPS client manifest v30).
+
 ## Published 2026-10-03
 
 - `dedb1fa` (`9a8dce4` password/connecting dialogs wrapped in root canvases 3000/3100 -- were never drawn, black
