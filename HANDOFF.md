@@ -3,6 +3,11 @@
 Repo: <https://github.com/UberMorgott/Valheim-Mod-Auga-Fork> (fork of RandyKnapp/Auga), local `E:\DEV\Valheim\Auga-Fork`.
 Target: Valheim 1.0.12 (Unity 6, network 40), BepInEx 5.4.23.5. Personal build.
 
+## Published 2026-10-03
+
+- `2516cff` (block power label + armor row): DEPLOYED + published client pack (`valheim-pack.ps1 -Only AugaSkin
+  -Upload`): `AugaSkin.dll` `6E2A283D0A72FEC2381576BE3B7B04E526E0FC256268BBD6346D9DD23CCF221B` (VPS client manifest v27).
+
 ## Character stats window behind a 5th Info button (2026-09-29 night)
 
 - `277425b`: stats panel left the minimap (user). `CharacterStatsPanel.Create(InventoryGui)` from
