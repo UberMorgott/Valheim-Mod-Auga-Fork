@@ -129,6 +129,10 @@ namespace Auga
                 switch (role.Value)
                 {
                     case Role.Panel: Panel(image); break;
+                    // Mod list rows (Epic Loot MerchantPanel ItemElement) mark the selection with a "Selected" child on
+                    // the same item_background art as the row; it takes the Auga list-row selection colour.
+                    case Role.Backdrop when string.Equals(image.name, "selected", System.StringComparison.OrdinalIgnoreCase):
+                        SetSprite(image, "TextBackdrop", SelectedRow, Image.Type.Sliced); break;
                     case Role.Backdrop: SetSprite(image, "TextBackdrop", BackdropColor, Image.Type.Sliced); break;
                     case Role.Tooltip: SetSprite(image, "TextBackdrop", TooltipColor, Image.Type.Sliced); break;
                     case Role.Input:
@@ -182,6 +186,33 @@ namespace Auga
                 if (inButton && text.enableAutoSizing)
                     text.margin = new Vector4(buttons[selectable], text.margin.y, buttons[selectable], text.margin.w);
             }
+
+            // Legacy uGUI texts (mod bundle panels, e.g. Epic Loot MerchantPanel: Norsebold titles, AveriaSans/Serif
+            // Libre-Bold body and button labels): body text takes Auga's Source Sans Pro, button labels and Norsebold
+            // headers take the game's Norsebold, as the TMP rule above.
+            foreach (var text in root.GetComponentsInChildren<Text>(true))
+            {
+                if (!text.font || !VanillaLegacyFonts.Contains(text.font.name))
+                    continue;
+                var selectable = text.GetComponentInParent<Selectable>(true);
+                var label = (selectable && buttons.ContainsKey(selectable)) || text.font.name == "Norsebold";
+                var font = label ? LegacyNorsebold(text.font) : Auga.Assets.SourceSansProRegular;
+                if (font)
+                    text.font = font;
+            }
+        }
+
+        private static readonly HashSet<string> VanillaLegacyFonts =
+            new HashSet<string> { "AveriaSerifLibre-Bold", "AveriaSansLibre-Bold", "Norsebold" };
+        private static Font _legacyNorsebold;
+
+        private static Font LegacyNorsebold(Font current)
+        {
+            if (current.name == "Norsebold")
+                return current;
+            if (!_legacyNorsebold)
+                _legacyNorsebold = System.Array.Find(Resources.FindObjectsOfTypeAll<Font>(), f => f && f.name == "Norsebold");
+            return _legacyNorsebold;
         }
 
         private static Role? RoleOf(string sprite)

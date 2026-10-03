@@ -130,24 +130,35 @@ namespace Auga
             }
         }
 
-        // Epic Loot builds its TemperPanel (Hildir) in its own StoreGui.Show finalizer; Priority.Last runs this one
-        // after it. The panel's frame takes Epic Loot's woodpanel_large art and vanilla fonts; Restyle gives it the
-        // Auga panel and fonts once (the frame's AugaCorner ornaments mark a styled panel).
+        // Epic Loot builds its trader panels in its own StoreGui.Show finalizer (StoreGui_Patch.OpenPanelFor):
+        // TemperPanel at Hildir, MerchantPanel (secret stash, gamble, treasure maps, bounties) at Haldor, both
+        // instantiated from its bundle under the StoreGui. Priority.Last runs this one after it. Both take Epic
+        // Loot's woodpanel art and vanilla fonts (Epic Loot's own Auga branch never runs: its HasAuga is never set);
+        // Restyle gives them the Auga panel, rows, buttons and fonts once (the frame's AugaCorner ornaments mark a
+        // styled panel). MerchantPanel's Awake already filled its lists (AddComponent on an active object), so the
+        // restyle covers the live rows and the inactive ItemElement templates later rows are cloned from.
         [HarmonyPatch(typeof(StoreGui), nameof(StoreGui.Show))]
         [HarmonyFinalizer]
         [HarmonyPriority(Priority.Last)]
         public static void Show_Finalizer(StoreGui __instance)
         {
-            var temper = __instance ? __instance.transform.Find("TemperPanel") : null;
-            if (!temper || temper.Find("Frame/AugaCorner"))
+            if (!__instance)
+                return;
+            RestyleOnce(__instance.transform.Find("TemperPanel"), "Frame/AugaCorner");
+            RestyleOnce(__instance.transform.Find("MerchantPanel"), "AugaCorner");
+        }
+
+        private static void RestyleOnce(Transform panel, string styledMarker)
+        {
+            if (!panel || panel.Find(styledMarker))
                 return;
             try
             {
-                AugaStyle.Restyle(temper);
+                AugaStyle.Restyle(panel);
             }
             catch (Exception e)
             {
-                Debug.LogWarning($"[Auga] Epic Loot TemperPanel restyle failed: {e}");
+                Debug.LogWarning($"[Auga] Epic Loot {panel.name} restyle failed: {e}");
             }
         }
 
