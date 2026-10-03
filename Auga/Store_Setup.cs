@@ -5,6 +5,7 @@ using System.Reflection.Emit;
 using AugaUnity;
 using HarmonyLib;
 using UnityEngine;
+using UnityEngine.UI;
 using Object = UnityEngine.Object;
 
 namespace Auga
@@ -46,8 +47,44 @@ namespace Auga
 
             newStoreGui.m_coinPrefab = ObjectDB.instance.GetItemPrefab("Coins").GetComponent<ItemDrop>();
             newStoreGui.transform.Find("Store").gameObject.AddComponent<MovableHudElement>().Init(TextAnchor.UpperLeft, 140, -180);
+            AddVanillaStorePaths(newStoreGui);
 
             return newStoreGui;
+        }
+
+        // Epic Loot 0.14.13 TemperPanel.LoadImageSprites (Hildir's tempering panel, built under the shown StoreGui
+        // by its StoreGui.Show finalizer) copies art from vanilla Store_Screen paths: Store/SellPanel (frame
+        // material) and Store/ItemList/Items/ItemElement/bkg|icon|selected (row sprite, icon material, selection
+        // colour). Auga's store has neither path, so the lookup threw and TemperPanel.Awake stopped there: white
+        // sprite-less Sundial and Temper button, English titles, no position from its config. Inactive stand-ins
+        // carrying Auga's own row art (the store's m_listElement) give it those values; nothing draws them.
+        private static void AddVanillaStorePaths(StoreGui store)
+        {
+            var root = store.m_rootPanel ? store.m_rootPanel.transform : store.transform.Find("Store");
+            if (!root || root.Find("SellPanel"))
+                return;
+            var panel = root.Find("AugaPanelBase/Background");
+            Stub("SellPanel", root).material = panel && panel.TryGetComponent<Image>(out var bg) ? bg.material : null;
+
+            var items = Stub("ItemList", root).transform;
+            items = Stub("Items", items).transform;
+            var element = Stub("ItemElement", items).transform;
+            var template = store.m_listElement ? store.m_listElement.transform : null;
+            foreach (var name in new[] { "bkg", "icon", "selected" })
+            {
+                var src = template ? template.Find(name) : null;
+                var dst = Stub(name, element);
+                if (src && src.TryGetComponent<Image>(out var image))
+                    AugaStyle.CopyImage(dst, image);
+            }
+        }
+
+        private static Image Stub(string name, Transform parent)
+        {
+            var go = new GameObject(name, typeof(RectTransform));
+            go.SetActive(false);
+            go.transform.SetParent(parent, false);
+            return go.AddComponent<Image>();
         }
 
     }
@@ -90,6 +127,27 @@ namespace Auga
 
                 yield return LogMessage(instrs[i]);
                 counter++;
+            }
+        }
+
+        // Epic Loot builds its TemperPanel (Hildir) in its own StoreGui.Show finalizer; Priority.Last runs this one
+        // after it. The panel's frame takes Epic Loot's woodpanel_large art and vanilla fonts; Restyle gives it the
+        // Auga panel and fonts once (the frame's AugaCorner ornaments mark a styled panel).
+        [HarmonyPatch(typeof(StoreGui), nameof(StoreGui.Show))]
+        [HarmonyFinalizer]
+        [HarmonyPriority(Priority.Last)]
+        public static void Show_Finalizer(StoreGui __instance)
+        {
+            var temper = __instance ? __instance.transform.Find("TemperPanel") : null;
+            if (!temper || temper.Find("Frame/AugaCorner"))
+                return;
+            try
+            {
+                AugaStyle.Restyle(temper);
+            }
+            catch (Exception e)
+            {
+                Debug.LogWarning($"[Auga] Epic Loot TemperPanel restyle failed: {e}");
             }
         }
 
