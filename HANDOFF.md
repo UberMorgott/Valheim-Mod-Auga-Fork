@@ -3,6 +3,20 @@
 Repo: <https://github.com/UberMorgott/Valheim-Mod-Auga-Fork> (fork of RandyKnapp/Auga), local `E:\DEV\Valheim\Auga-Fork`.
 Target: Valheim 1.0.12 (Unity 6, network 40), BepInEx 5.4.23.5. Personal build.
 
+## Epic Loot Haldor MerchantPanel (2026-10-04)
+
+- `732d705`: EL 0.14.13 `MerchantPanel` (Haldor: secret stash, gamble, treasure maps, bounties; built by EL's
+  `StoreGui_Patch.OpenPanelFor` under the StoreGui) kept `woodpanel_large`/`item_background` art and legacy
+  Averia fonts. EL's own Auga branch is dead code: `EpicLoot.HasAuga` is declared (`EpicLoot.cs:65`) and never
+  assigned, and its `EpicLootAuga` helpers are empty stubs (`ReplaceButton` would even destroy the button) -- so
+  renaming the assembly back to `Auga` would fix nothing. `Show_Finalizer` now restyles `MerchantPanel` once
+  (root `AugaCorner`); `AugaStyle.Restyle` maps legacy `Text` (Averia -> Source Sans Pro, button labels ->
+  Norsebold) and sprite rows named `Selected` -> Auga selection colour.
+- Autotest `-Mod Auga -Shots 65c-haldor-merchant` (tools `a8ab4fb`): FAIL before (`tools\out\20261004-012200`,
+  wood=71, averia=13), PASS after (`20261004-012339`). DEPLOYED + published (`valheim-pack.ps1 -Only AugaSkin
+  -Upload`): `AugaSkin.dll` `6E3C2757CBF1F42341647C1FF63054A044279A8F4D9D7045F100C1AC5FEAA5B5` (VPS client manifest v33).
+- Open: EL scrollbar handles (item_background -> backdrop) are faint on the backdrop track.
+
 ## Epic Loot Hildir TemperPanel (2026-10-04)
 
 - `e29bd16`: Epic Loot 0.14.13 `TemperPanel.LoadImageSprites` (decompiled `TemperPanel.cs:297-309`) reads vanilla
