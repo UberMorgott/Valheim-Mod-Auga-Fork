@@ -27,6 +27,7 @@ namespace Auga
         private static readonly Vector2 Origin = new Vector2(138f, 66f);
         private static readonly Vector2[] BarLeftCenter = { new Vector2(70f, 66f), new Vector2(70f, 42f), new Vector2(47f, 17f) };
         private static readonly Vector2[] FoodCenter = { new Vector2(25f, 25f), new Vector2(54f, 54f), new Vector2(25f, 83f) };
+        private static readonly Vector2 GuardianPowerSlot = new Vector2(100f, 86f); // hudroot pixels, pivot (1,0)
         private const float BarHeight = 16f, FoodSize = 50f, FoodIconSize = 32f;
 
         // Vanilla bar length is 32 px per 25 units (Hud.cs:1084, 1108, 1177); Auga's is 500/270 px per unit
@@ -97,6 +98,16 @@ namespace Auga
                 timeRt.anchoredPosition = new Vector2(4f, 0f); // the diamond's left corner is empty art
                 time.alignment = TextAlignmentOptions.MidlineRight;
             }
+
+            // Guardian power: vanilla's slot (scene hudroot/GuardianPower, 64x64, pivot (1,0) at (209,86)) lies on the
+            // food column (hudroot x 138-217) and its timers, so icon, name and cooldown were drawn under the food
+            // diamonds and over the timers. Auga keeps it left of the cluster (bundle hudroot/GuardianPower at x 60);
+            // the food timers reach left to about x 105, so the 64 px slot ends at x 100. Hud.UpdateGuardianPower
+            // (Hud.cs:1599-1623) only toggles it, so the GuardianPower offset still applies on top.
+            var gp = hud.m_gpRoot;
+            gp.anchorMin = gp.anchorMax = Vector2.zero;
+            gp.pivot = new Vector2(1f, 0f);
+            gp.anchoredPosition = GuardianPowerSlot;
         }
 
         private static void Bind()
