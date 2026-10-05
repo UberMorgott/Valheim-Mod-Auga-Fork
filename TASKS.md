@@ -86,7 +86,7 @@ NO = no Auga styling; PARTIAL = partly styled.
 | [ ] 52 | ConfigurationManager | settings window (IMGUI) | NO | ? | M (via c) | `68-configmanager` |
 | [ ] 53 | Epic Loot | comparison tooltip | verify | ? | S | new `65e-el-tooltip` |
 | [ ] 54 | Epic Loot | scrollbar handles faint (item_background -> backdrop on backdrop track; from item 1) | PARTIAL | ? | ? | `65c-haldor-merchant` |
-| [ ] 55 | BossAwakening | world boss bar `BA_WorldBossBar` (own art `BossBarAssets.cs:11`; font copied `BossBarHud.cs:334`) -- **PENDING USER DECISION (own design vs Auga)** | - | ? | S-M | `77-boss-bar` |
+| [-] 55 | BossAwakening | world boss bar `BA_WorldBossBar` (own art `BossBarAssets.cs:11`; font copied `BossBarHud.cs:334`) -- **WON'T DO: user 2026-10-05 keeps the mod's own design (exempt from Auga scope)** | - | - | - | `77-boss-bar` |
 
 ## Verify only (likely inherit Auga)
 

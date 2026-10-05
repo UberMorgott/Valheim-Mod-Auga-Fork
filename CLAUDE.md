@@ -2,6 +2,7 @@
 
 ## Scope rule (user, 2026-10-04)
 ALL UI — vanilla game and every mod in the pack — must be in Auga style. Any non-Auga-styled panel = AugaSkin defect: fix it without asking per panel (from game decompile / mod decompile, Auga side only, no third-party DLL patches). Close-out per panel: committed + pushed + published to VPS (`valheim-pack.ps1 -Only AugaSkin -Upload`). Backlog: `TASKS.md`.
+Exception (user, 2026-10-05): BossAwakening world boss bar (`BA_WorldBossBar`) keeps its own design — do not restyle.
 
 Valheim workspace rules: E:\DEV\Valheim\CLAUDE.md and shared memory C:\Users\Morgott\.claude\projects\E--DEV-Valheim\memory\MEMORY.md — read both first.
 
