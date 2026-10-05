@@ -85,7 +85,7 @@ namespace Auga
     public class Auga : BaseUnityPlugin
     {
         public const string PluginID = "morgott.valheim.augaskin";
-        public const string Version = "2.0.6";
+        public const string Version = "2.0.7";
         // Embedded resources are named by the project's RootNamespace (Auga), not by the assembly name.
         private const string ResourcePrefix = "Auga.";
 
@@ -162,6 +162,7 @@ namespace Auga
             HasChatter = Chainloader.PluginInfos.TryGetValue("redseiko.valheim.chatter", out var chatterPlugin);
 
             _harmony = Harmony.CreateAndPatchAll(Assembly.GetExecutingAssembly(), PluginID);
+            JotunnGui.Init(_harmony);
 
             if (HasChatter)
             {

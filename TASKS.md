@@ -15,7 +15,7 @@ NO = no Auga styling; PARTIAL = partly styled.
   `EpicLootAuga` helper (`ReplaceBackground`, `FixItemBG`, `FixFonts`, `MakeSimpleTooltip`) is an empty stub and
   `ReplaceButton` would destroy the button. Renaming AugaSkin back to `Auga` would fix nothing (and LICENSING.md
   keeps the rename). Approach = restyle EL panels from AugaSkin (pattern: `Store_Setup.Show_Finalizer` + `AugaStyle.Restyle`).
-- [ ] (b) Jotunn `GUIManager` central hook -- M. Postfix `GUIManager.ApplyWoodpanelStyle/ApplyButtonStyle/ApplyTextStyle/
+- [x] (b) Jotunn `GUIManager` central hook -- DONE 2026-10-05 (AugaSkin 2.0.7, `Auga\Compat\JotunnGui.cs`: prefix+finalizer on every public `Apply*Style`/`Create*` of GUIManager, CreateColor/GradientPicker, MinimapManager.SetupGUI; VNEI bypasses hooked: Styling.ApplyAllComponents, DisplayItem.Awake, RecipeScroll.SpawnRecipe; shots `67-jotunn-gui`,`67b..67e`,`47-vnei`). Was: M. Postfix `GUIManager.ApplyWoodpanelStyle/ApplyButtonStyle/ApplyTextStyle/
   ApplyInputFieldStyle/ApplyToogleStyle/ApplyDropdownStyle/ApplyScrollRectStyle/ApplyScrollbarStyle/ApplySliderStyle`
   (Jotunn `GUIManager.cs:1096-1381`; the `Create*` builders call them) -> Auga art via `AugaStyle`. Callers in pack:
   StarLevelSystem (6 CreateWoodpanel, 5 CreateText, 3 CreateButton, 2 CreateInputField, toggle, slider, scroll view),
@@ -45,7 +45,7 @@ NO = no Auga styling; PARTIAL = partly styled.
 | [ ] 11 | Vanilla | loading/sleep/teleport screen (`Hud.m_loadingScreen`, `m_sleepingProgress`, `m_teleportingProgress`, `Hud.cs:219-231`, outside hudroot) | NO | high | M | new |
 | [ ] 12 | Vanilla | ShipHud art (`ship_circle`, `rudder_arrow`, `windicon`; only made movable `Hud_Setup.cs:40`) | NO | high | M | new |
 | [ ] 13 | Vanilla | hover text [E] yellow tags (only UpdateBuild recoloured `Hud_Setup.cs:89-99`) | PARTIAL | high | M | `20-hud` |
-| [ ] 14 | VNEI | main window (`BaseUI.cs`, `Styling.cs`; Jotunn-built) | NO | high | M (via b) | new `47-vnei` |
+| [x] 14 | VNEI | main window (`BaseUI.cs`, `Styling.cs`; Jotunn-built) | done | high | M (via b) | `47-vnei` |
 | [ ] 15 | Almanac (fork) | main window (bundle AlmanacUI); partial by accident (`UI_Patches.cs:71-220` copies vanilla sprites, order-dependent) | PARTIAL | high | L | new `69-almanac` |
 | [ ] 16 | Epic Loot | enchanting table window; borrows StoreGui `border (1)` material -> null with Auga store | NO | high | L | new `65d-el-enchant` |
 | [ ] 17 | Almanac (fork) | quest tracker HUD | NO | med-high | S | new |
@@ -61,7 +61,7 @@ NO = no Auga styling; PARTIAL = partly styled.
 | [ ] 27 | Epic Loot | Welcome/ConfigMessage popups at FejdStartup.Start | NO | med | S | new |
 | [ ] 28 | Epic Loot | map pin filter / adventure pins | NO | med | S | new |
 | [ ] 29 | Almanac (fork) | NPC dialogue panel | NO | med | M | new |
-| [ ] 30 | Jotunn | ModCompatibility window (`ModCompatibility.cs:219-233`) | NO | med | M (via b) | new `67-jotunn-gui` |
+| [x] 30 | Jotunn | ModCompatibility window (`ModCompatibility.cs:219-233`) | done | med | M (via b) | `67-jotunn-gui` |
 | [ ] 31 | ValheimBuildCamera | IMGUI labels (`DismantlePreview.cs:560-647`) | NO | med | M | `21c-buildcamera` |
 | [ ] 32 | Epic Loot | AugmentChoiceDialog | NO | med | M | new `65d-el-enchant` |
 | [ ] 33 | Epic Loot | Compendium MagicPages rows (created after Auga restyle; `PauseMenu_Setup.cs:91-95`) | NO | med | M | `12-compendium` |
@@ -79,10 +79,10 @@ NO = no Auga styling; PARTIAL = partly styled.
 | [ ] 45 | Vanilla | ValheimRadial | PARTIAL | low | M | new |
 | [ ] 46 | Almanac (fork) | form modal | NO | low | M | new |
 | [ ] 47 | Almanac (fork) | NPC customization | NO | low | M | new |
-| [ ] 48 | Jotunn | color/gradient pickers | NO | low | ? (via b) | new `67-jotunn-gui` |
+| [x] 48 | Jotunn | color/gradient pickers | done | low | (via b) | `67b-jotunn-colorpicker`, `67c-jotunn-gradientpicker` |
 | [ ] 49 | Epic Loot | config drawers (IMGUI) | NO | low | (via c) | `68-configmanager` |
-| [ ] 50 | StarLevelSystem | QuickConfigureTool + Mod Config button + startup popups (`ConfigUI.cs`, `QuickConfigBroker.cs:172-215`; Jotunn-built) | NO | ? | (via b) | `60-creature-levels` + new |
-| [ ] 51 | StarLevelSystem | zone-level map overlay panel (`ZoneScaleSystem.cs:190`; Jotunn-built) | NO | ? | (via b) | new |
+| [x] 50 | StarLevelSystem | QuickConfigureTool + Mod Config button + startup popups (`ConfigUI.cs`, `QuickConfigBroker.cs:172-215`; Jotunn-built) | done (tool + button shot; popups use the same CreateWoodpanel path, not shot) | ? | (via b) | `67d-sls-quickconfig`, `67-jotunn-gui` |
+| [x] 51 | StarLevelSystem | zone-level map overlay panel (`ZoneScaleSystem.cs:190`; Jotunn MinimapManager overlay panel) | done | ? | (via b) | `67e-map-overlay` |
 | [ ] 52 | ConfigurationManager | settings window (IMGUI) | NO | ? | M (via c) | `68-configmanager` |
 | [ ] 53 | Epic Loot | comparison tooltip | verify | ? | S | new `65e-el-tooltip` |
 | [ ] 54 | Epic Loot | scrollbar handles faint (item_background -> backdrop on backdrop track; from item 1) | PARTIAL | ? | ? | `65c-haldor-merchant` |

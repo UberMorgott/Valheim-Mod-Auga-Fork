@@ -1,3 +1,8 @@
+### 2.0.7 - Jotunn-built UI in Auga style
+
+* New: every window built with Jotunn's GUIManager (`Create*` builders and `Apply*Style` appliers) takes the Auga look: panels, buttons, inputs, toggles, sliders, scrollbars, dropdown lists, fonts. Covers VNEI, StarLevelSystem config tool / Mod Config button / popups, Epic Loot's Jotunn buttons and scroll views, Jotunn's mod-compatibility window, colour/gradient pickers and map-overlay panel. Jotunn stays optional.
+* Fix: runtime atlas sprites named `<sprite>(Clone)` are restyled like their originals; slider handles drawn with checkbox art become Auga knobs; AveriaSerif-Regular legacy texts take Source Sans.
+
 ### 2.0.6 - Character stats and HUD fixes
 
 * New: character stats window behind a 5th inventory Info button; shows the real damage reduction per damage type (replaces the armor row), using MorgottTweaks' pooled resistance step when that mod is loaded.

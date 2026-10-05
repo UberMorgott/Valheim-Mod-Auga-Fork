@@ -126,6 +126,10 @@ namespace Auga
                 // (MiniMap/small/MapBG = TextBackdrop).
                 if (role == Role.Input && !(owns && (selectable is TMP_InputField || selectable is InputField)))
                     role = Role.Backdrop;
+                // Mod sliders (Jotunn DefaultControls knob, StarLevelSystem ConfigUI.BuildSlider) draw their handle with
+                // checkbox_marker; a slider handle is a knob, as vanilla's (Knob sprite).
+                if (role == Role.ToggleMark && owns && selectable is Slider)
+                    role = Role.Knob;
                 switch (role.Value)
                 {
                     case Role.Panel: Panel(image); break;
@@ -195,15 +199,22 @@ namespace Auga
                 if (!text.font || !VanillaLegacyFonts.Contains(text.font.name))
                     continue;
                 var selectable = text.GetComponentInParent<Selectable>(true);
-                var label = (selectable && buttons.ContainsKey(selectable)) || text.font.name == "Norsebold";
+                var label = (selectable && buttons.ContainsKey(selectable)) || IsAugaButton(selectable) || text.font.name == "Norsebold";
                 var font = label ? LegacyNorsebold(text.font) : Auga.Assets.SourceSansProRegular;
                 if (font)
                     text.font = font;
             }
         }
 
+        // AveriaSerifLibre-Regular: Jotunn's GUIManager.AveriaSerif, VNEI's body text (Styling.ApplyText).
         private static readonly HashSet<string> VanillaLegacyFonts =
-            new HashSet<string> { "AveriaSerifLibre-Bold", "AveriaSansLibre-Bold", "Norsebold" };
+            new HashSet<string> { "AveriaSerifLibre-Bold", "AveriaSerifLibre-Regular", "AveriaSansLibre-Bold", "Norsebold" };
+
+        // A button restyled by an earlier pass (its graphic already carries Auga's button/tab art): its label is still a
+        // label when a later pass reaches only the text (Jotunn's ApplyTextStyle on a button label).
+        private static bool IsAugaButton(Selectable selectable) =>
+            selectable && selectable.targetGraphic is Image image && image.sprite &&
+            ((_buttonImage && image.sprite == _buttonImage.sprite) || (_tabImage && image.sprite == _tabImage.sprite));
         private static Font _legacyNorsebold;
 
         private static Font LegacyNorsebold(Font current)
@@ -217,6 +228,10 @@ namespace Auga
 
         private static Role? RoleOf(string sprite)
         {
+            // Sprites fetched from a SpriteAtlas at runtime (Jotunn GUIManager.GetSprite, SpriteAtlas.GetSprite) are
+            // copies named "<sprite>(Clone)".
+            if (sprite.EndsWith("(Clone)"))
+                sprite = sprite.Substring(0, sprite.Length - "(Clone)".Length);
             if (Roles.TryGetValue(sprite, out var role))
                 return role;
             return sprite.StartsWith("woodpanel_") ? Role.Panel : (Role?)null;
@@ -258,6 +273,45 @@ namespace Auga
         {
             Load();
             SetSprite(image, "TextBackdrop", BackdropColor, Image.Type.Sliced);
+        }
+
+        // Auga's tooltip / list frame (MainMenu Tooltip), as the Tooltip role gives vanilla dropdown templates.
+        public static void Tooltip(Image image)
+        {
+            Load();
+            SetSprite(image, "TextBackdrop", TooltipColor, Image.Type.Sliced);
+        }
+
+        private static bool _scrollbarLoaded;
+        private static Scrollbar _scrollbar;
+        private static Image _scrollbarTrack, _scrollbarHandle;
+
+        // Auga's scrollbar (bundle Inventory_screen crafting recipe list, AugaCraftingPanel.RecipeListScrollbar): track
+        // and handle art, transition and colours. The scrollbar's RectTransforms stay as the caller sized them.
+        public static void Scrollbar(Scrollbar dst)
+        {
+            if (!_scrollbarLoaded)
+            {
+                _scrollbarLoaded = true;
+                var crafting = Auga.Assets.InventoryScreen ? Auga.Assets.InventoryScreen.GetComponentInChildren<AugaUnity.AugaCraftingPanel>(true) : null;
+                _scrollbar = crafting ? crafting.RecipeListScrollbar : null;
+                if (_scrollbar)
+                {
+                    _scrollbar.TryGetComponent(out _scrollbarTrack);
+                    _scrollbarHandle = _scrollbar.handleRect ? _scrollbar.handleRect.GetComponent<Image>() : null;
+                }
+                else
+                    Debug.LogError("[Auga] AugaStyle: bundle Inventory_screen has no crafting recipe list scrollbar");
+            }
+            if (!dst || !_scrollbar || dst == _scrollbar)
+                return;
+            if (_scrollbarTrack && dst.TryGetComponent<Image>(out var track))
+                CopyImage(track, _scrollbarTrack);
+            if (_scrollbarHandle && dst.handleRect && dst.handleRect.TryGetComponent<Image>(out var handle))
+                CopyImage(handle, _scrollbarHandle);
+            dst.transition = _scrollbar.transition;
+            dst.colors = _scrollbar.colors;
+            dst.spriteState = _scrollbar.spriteState;
         }
 
         // Rendered size of a sliced border, in local units per texture pixel (Image.pixelsPerUnit already divides by
