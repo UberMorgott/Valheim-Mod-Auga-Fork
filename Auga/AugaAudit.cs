@@ -35,7 +35,10 @@ namespace Auga
         // Fields the game itself points at objects it destroys, so they are not Auga's doing.
         private static readonly HashSet<string> VanillaDead = new HashSet<string>
         {
-            "BuildUi.m_debugUi" // BuildUi.cs:140 destroys its debug panel in Awake and keeps the field
+            "BuildUi.m_debugUi", // BuildUi.cs:140 destroys its debug panel in Awake and keeps the field
+            // SessionPlayerList.OnDisable destroys the current-players window (SessionPlayerList.cs:258-266); Menu keeps
+            // the field and makes a new one when it reads null (Menu.cs:426)
+            "Menu.m_currentPlayersInstance"
         };
 
         private static readonly HashSet<string> VanillaAssemblies = new HashSet<string>

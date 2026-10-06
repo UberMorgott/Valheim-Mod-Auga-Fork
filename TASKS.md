@@ -24,6 +24,9 @@ NO = no Auga styling; PARTIAL = partly styled.
 - Batch 3 (AugaSkin 2.0.11): Epic Loot #8 #10 #27 #33 #34 #43 #53, #24 #28 #44 closed as covered / n.a.; #9 #26
   skipped (design decision). Shots `65g-el-popups`, `65h-el-hudparts` (new), `12-compendium` pages.
 
+- Batch 4 (AugaSkin 2.0.12): vanilla panels #18 #19 #35 #36 #37 #38 #39 #40 #45 (`VanillaPanels.cs`); audit knows
+  Menu.m_currentPlayersInstance is destroyed by vanilla. Shot `28b-vanilla-panels` (new).
+
 ## Cross-cutting levers (do first: one fix covers many surfaces)
 
 - [x] (a) Epic Loot "HasAuga" -- evaluated, no rename. EL 0.14.13 `EpicLoot.HasAuga` is declared (`EpicLoot.cs:65`) and
@@ -65,8 +68,8 @@ NO = no Auga styling; PARTIAL = partly styled.
 | [ ] 15 | Almanac (fork) | main window (bundle AlmanacUI); partial by accident (`UI_Patches.cs:71-220` copies vanilla sprites, order-dependent) | PARTIAL | high | L | new `69-almanac` |
 | [x] 16 | Epic Loot | enchanting table window, all 7 tabs incl. locked (AugaSkin 2.0.8 `Compat\EpicLootEnchanting.cs`: `EnchantingTableUI.Start` postfix -> `AugaStyle.RestyleAll` + list `ElementPrefab`s); small labels fixed 2.0.9 (button art by height: Small/Medium/Fancy, labels grow to the Auga label size) | done | high | L | `65d-el-enchant` |
 | [ ] 17 | Almanac (fork) | quest tracker HUD | NO | med-high | S | new |
-| [ ] 18 | Vanilla | AchievementUnlockPopup (`Achievements.cs:165`) | NO | med | S | new |
-| [ ] 19 | Vanilla | ConnectPanel F2 (`ConnectPanel.cs:8,166`) | NO | med | S | new `28-vanilla-misc` |
+| [x] 18 | Vanilla | AchievementUnlockPopup (`VanillaPanels`: Start postfix, 2.0.12; unverified in-game: no achievement trigger in the autotest) | done | med | S | - |
+| [x] 19 | Vanilla | ConnectPanel F2 (+ player row template, `VanillaPanels`, 2.0.12) | done | med | S | `28b-vanilla-panels` |
 | [x] 20 | Vanilla | MountHud bars (`bar_gradient_40` -> Auga bar body, 2.0.10) | done | med | S | `28-vanilla-hud`, `62-mount-hud` |
 | [x] 21 | Vanilla | stagger / action_progress bar (`bar_stagger` -> Auga bar body, 2.0.10) | done | med | S | `28-vanilla-hud` |
 | [x] 22 | Vanilla | KeyHints `key_base` -> Auga keybind backdrop (2.0.10) | done | med | S | `28-vanilla-hud` |
@@ -82,17 +85,17 @@ NO = no Auga styling; PARTIAL = partly styled.
 | [x] 32 | Epic Loot | AugmentChoiceDialog + CraftSuccessDialog (variant-dialog clones; frame/buttons were already Auga, scroll description scrollbar fixed 2.0.9 via `CraftSuccessDialog.ConvertToScrollingDescription` postfix) | done | med | M | `65f-el-augment` |
 | [x] 33 | Epic Loot | Compendium MagicPages rows + search field (`MagicPages.Awake`/`OnSelectText` postfixes, 2.0.11) | done | med | M | `12-compendium` (+ `-p2..p8`) |
 | [x] 34 | Epic Loot | socket break / chisel prompts (ConfirmPrompt : MessagePanelBase, same hook as #27, 2.0.11) | done | low-med | S | `65h-el-hudparts` |
-| [ ] 35 | Vanilla | Console F5 (Terminal) | NO | low | S | new |
-| [ ] 36 | Vanilla | Feedback (`Menu.cs:582`) | NO | low | S | new |
-| [ ] 37 | Vanilla | ResolutionSwitchDialog | NO | low | S | new |
-| [ ] 38 | Vanilla | EndCredits | NO | low | S | new |
-| [ ] 39 | Vanilla | JoinCode / SessionPlayerList / ClosedCaptions | NO | low | S | new |
-| [ ] 40 | Vanilla | ManageSavesMenu rows (saveElement `ManageSavesMenu.cs:657`) | PARTIAL | low | S | new |
+| [x] 35 | Vanilla | Console F5 (`VanillaPanels`: Console.Awake, 2.0.12) | done | low | S | `33-input-console` |
+| [x] 36 | Vanilla | Feedback (`VanillaPanels`: Feedback.Awake, 2.0.12) | done | low | S | `28b-vanilla-panels` |
+| [x] 37 | Vanilla | ResolutionSwitchDialog -- child of the Settings prefab (`GraphicsSettings.m_resolutionSwitchDialog`), covered by `Settings_Setup` restyle; unverified in-game (needs a resolution change) | done | low | S | - |
+| [x] 38 | Vanilla | EndCredits (`VanillaPanels`: EndCredits.Awake -> m_creditsPanel, 2.0.12; unverified in-game: world object) | done | low | S | - |
+| [x] 39 | Vanilla | JoinCode / SessionPlayerList / ClosedCaptions (`VanillaPanels`, 2.0.12; SessionPlayerList shot, JoinCode/ClosedCaptions unverified in-game) | done | low | S | `28b-vanilla-panels` |
+| [x] 40 | Vanilla | ManageSavesMenu rows (saveElement template, `VanillaPanels`, 2.0.12) | done | low | S | `28b-vanilla-panels` |
 | [x] 41 | Vanilla | Save / BadConnection icons -> bundle art of the same name (2.0.10) | done | low | S | `28-vanilla-hud` |
 | [ ] 42 | ValheimPlus | version label font/pos override | NO | low | S | new |
 | [x] 43 | Epic Loot | DebugText (`Hud_Awake_ModParts`, 2.0.11) | done | low | S | `65h-el-hudparts` |
 | [x] 44 | Epic Loot | extra skill levels -- clones the already-restyled vanilla skill bar, appends a rarity colour tag; nothing vanilla-styled left | done | low | S | `44-skills` |
-| [ ] 45 | Vanilla | ValheimRadial | PARTIAL | low | M | new |
+| [x] 45 | Vanilla | radial menu (`Valheim.UI.RadialBase.Open` -> RestyleAll per open: fonts/known art; its radial art has no Auga counterpart; unverified in-game) | done | low | M | - |
 | [ ] 46 | Almanac (fork) | form modal | NO | low | M | new |
 | [ ] 47 | Almanac (fork) | NPC customization | NO | low | M | new |
 | [x] 48 | Jotunn | color/gradient pickers (2.0.9: Cancel/Done take Auga small-button art, narrow inputs keep a text area) | done | low | (via b) | `67b-jotunn-colorpicker`, `67c-jotunn-gradientpicker` |

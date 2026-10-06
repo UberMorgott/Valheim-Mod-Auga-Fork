@@ -1,3 +1,7 @@
+### 2.0.12 - Vanilla side panels
+
+* F2 connection panel, F5 console, feedback form, current-players list, manage-saves rows, achievement popup, credits, join code, captions and radial menu in Auga style.
+
 ### 2.0.11 - Epic Loot panels, tooltips
 
 * Item tooltips (and Epic Loot's comparison tooltip) use Auga's tooltip frame and fonts.
