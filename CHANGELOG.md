@@ -1,3 +1,10 @@
+### 2.0.13 - Almanac, main menu texts, IMGUI fonts
+
+* Almanac's windows (main window, quest tracker, NPC dialogue, NPC editor, form) in Auga style.
+* Main menu: BepInEx info and version texts in Auga's font; the version text no longer hides under the Mod Config button.
+* Configuration Manager window and Build Camera badges use Auga's font.
+* Input fields that mods draw with button art take Auga's input art.
+
 ### 2.0.12 - Vanilla side panels
 
 * F2 connection panel, F5 console, feedback form, current-players list, manage-saves rows, achievement popup, credits, join code, captions and radial menu in Auga style.

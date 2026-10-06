@@ -59,9 +59,10 @@ namespace Auga
         private static readonly Color SelectedRow = new Color(0.28f, 0.23f, 0.19f);     // RecipeElement/selected (Auga list rows)
         private static readonly Color BlobColor = new Color(0f, 0f, 0f, 0.7f);          // HUD BuildHud/Darken over the scene
 
-        // AveriaSansLibre-Bold SDF: Epic Loot's own TMP asset (enchanting table tab labels).
+        // AveriaSansLibre-Bold SDF: Epic Loot's own TMP asset (enchanting table tab labels). Valheim-Prstartk: vanilla's
+        // pixel font (main-menu version text, world-version dialog, teleport text).
         private static readonly HashSet<string> VanillaFonts =
-            new HashSet<string> { "Valheim-AveriaSerifLibre", "Valheim-AveriaSansLibre", "Valheim-Norsebold", "AveriaSansLibre-Bold SDF" };
+            new HashSet<string> { "Valheim-AveriaSerifLibre", "Valheim-AveriaSansLibre", "Valheim-Norsebold", "AveriaSansLibre-Bold SDF", "Valheim-Prstartk" };
         private const float HeaderSize = 30f;
 
         // Auga's button family (bundle prefabs, UnityPy dump of augaassets): art, native height, label side inset
@@ -222,6 +223,13 @@ namespace Auga
                         break;
                 }
             }
+
+            // Input fields mods draw with a button's art (Epic Loot's compendium search: the close button's disabled
+            // sprite; Almanac's search fields: sprites copied from the trophies close button) carry Auga's button art
+            // once that button is restyled; an input field is Auga's input.
+            foreach (var input in root.GetComponentsInChildren<Selectable>(true))
+                if ((input is InputField || input is TMP_InputField) && input.targetGraphic is Image field && field.sprite && IsButtonArt(field.sprite.name))
+                    InputArt(field);
 
             // Build-menu tag rows show the current tag through m_toggledOnObject (BuildUiTagButton.cs:89-92), a blue
             // sliced image; it takes the Auga list-row selection colour like the "selected" rows above.
@@ -449,6 +457,10 @@ namespace Auga
             if (image.TryGetComponent<Selectable>(out var selectable) && selectable.transition == Selectable.Transition.SpriteSwap)
                 selectable.spriteState = default;
         }
+
+        // Bundle button art of every state (FancyButtonUp/Over/Down/Disabled, MediumButton*, SmallButton*, SettignsButton*).
+        private static bool IsButtonArt(string sprite) =>
+            sprite.StartsWith("FancyButton") || sprite.StartsWith("MediumButton") || sprite.StartsWith("SmallButton") || sprite.StartsWith("SettignsButton");
 
         // A bundle sprite by name (from the prefabs Load harvests), or null.
         public static Sprite BundleSprite(string name)
