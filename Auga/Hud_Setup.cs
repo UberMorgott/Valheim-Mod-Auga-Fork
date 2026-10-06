@@ -27,6 +27,12 @@ namespace Auga
             // Auga's bar cluster (health, stamina, eitr and the food diamonds) built from the vanilla objects; it lives
             // in m_healthPanel, so the HealthPanel offset moves the whole cluster.
             AugaStatBars.Setup(__instance);
+            // Bar fills and the ship HUD (sprite sets Restyle does not map).
+            HudParts.Setup(__instance);
+            // Loading / sleeping / teleporting screen: m_loadingScreen (LoadingBlack) sits beside hudroot, outside the
+            // pass above (Hud.cs:219-231): Averia texts -> Auga fonts, the braid separator -> Auga divider colour.
+            if (__instance.m_loadingScreen)
+                AugaStyle.Restyle(__instance.m_loadingScreen.transform);
 
             Movable(__instance.GetComponentInChildren<HotkeyBar>(true)?.transform, "HotKeyBar");
             Movable(__instance.GetComponentInChildren<KeyHints>(true)?.transform, "KeyHints");
@@ -60,11 +66,45 @@ namespace Auga
         }
     }
 
-    // Auga's hover colour: vanilla turns the crosshair yellow over something interactable (Hud.cs:839).
+    // Auga's hover colour: vanilla turns the crosshair yellow over something interactable (Hud.cs:839), and every
+    // Hoverable writes its key tags as "[<color=yellow><b>$KEY_Use</b></color>]" (e.g. Container, Door, ItemDrop
+    // GetHoverText). The text UpdateCrosshair puts into m_hoverName goes through HoverText first: after the gamepad
+    // rewrite (which matches the yellow tag), so only the keyboard tags it leaves take Auga's gold.
     [HarmonyPatch(typeof(Hud), nameof(Hud.UpdateCrosshair))]
     public static class Hud_UpdateCrosshair_Patch
     {
         private static Color _gold;
+        private static string _goldTag;
+
+        public static string HoverText(string text)
+        {
+            if (string.IsNullOrEmpty(text) || text.IndexOf("<color=yellow>", System.StringComparison.Ordinal) < 0)
+                return text;
+            _goldTag ??= $"<color={Auga.Colors.BrightestGold}>";
+            return text.Replace("<color=yellow>", _goldTag);
+        }
+
+        [UsedImplicitly]
+        private static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions)
+        {
+            var getHoverText = AccessTools.Method(typeof(Hoverable), nameof(Hoverable.GetHoverText));
+            var setText = AccessTools.PropertySetter(typeof(TMPro.TMP_Text), nameof(TMPro.TMP_Text.text));
+            var seenHover = false;
+            var hits = 0;
+            foreach (var instruction in instructions)
+            {
+                if (instruction.Calls(getHoverText))
+                    seenHover = true;
+                else if (seenHover && hits == 0 && instruction.Calls(setText))
+                {
+                    yield return new CodeInstruction(OpCodes.Call, AccessTools.Method(typeof(Hud_UpdateCrosshair_Patch), nameof(HoverText)));
+                    hits++;
+                }
+                yield return instruction;
+            }
+            if (hits != 1)
+                Debug.LogError($"[Auga] UpdateCrosshair transpiler: expected 1 hover text hit, got {hits}");
+        }
 
         [UsedImplicitly]
         public static void Postfix(Hud __instance)

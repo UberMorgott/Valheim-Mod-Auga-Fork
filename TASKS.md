@@ -17,6 +17,10 @@ NO = no Auga styling; PARTIAL = partly styled.
   skips chat world texts (NPC bubbles). Shots `20-hud` (+ `quickslots` check), `65f-el-augment` (new),
   `67e-map-overlay-open` (new), regression 65b/65c/65d/67*/47-vnei/40-inventory/02/10/11/12/22/23/41/42 all PASS.
 
+- Batch 2 (AugaSkin 2.0.10): vanilla HUD parts #3 #11 #12 #13 #20 #21 #22 #23 #41 (`HudParts.cs`, HUD roles,
+  hover-text transpiler, loading screen restyle). Shot `28-vanilla-hud` (new, 6 screenshots + checks); harness: traders left
+  by 65-hildir/65b/65c now removed with their ZDO.
+
 ## Cross-cutting levers (do first: one fix covers many surfaces)
 
 - [x] (a) Epic Loot "HasAuga" -- evaluated, no rename. EL 0.14.13 `EpicLoot.HasAuga` is declared (`EpicLoot.cs:65`) and
@@ -43,7 +47,7 @@ NO = no Auga styling; PARTIAL = partly styled.
 |---|-----|---------|--------|-----|-----|------|
 | [x] 1 | Epic Loot | Haldor MerchantPanel (stash/gamble/maps/bounties) | done | high | S | `65c-haldor-merchant` |
 | [x] 2 | Epic Loot | Hildir TemperPanel | done | high | S | `65b-hildir-temper` |
-| [ ] 3 | Vanilla | PieceHealth bar (`bar_monster_hp_5`) | PARTIAL | high | S | new `28-vanilla-misc` |
+| [x] 3 | Vanilla | PieceHealth bar (`bar_monster_hp_5` -> Auga `AugaProgressBarBody_Small`, `HudParts.Bars`, 2.0.10) | done | high | S | `28-vanilla-hud` |
 | [ ] 4 | AdventureBackpacks | backpack panel inherits Auga, but >~8 columns overflow (its `HANDOFF.md:361`) | PARTIAL | high | S | `46b-backpack-hotkey` |
 | [ ] 5 | Almanac (fork) | Trophies button icon | NO | high | S | new `69-almanac` |
 | [ ] 6 | StarLevelSystem | stacked boss bars | PARTIAL | high | S | new |
@@ -51,19 +55,19 @@ NO = no Auga styling; PARTIAL = partly styled.
 | [ ] 8 | Epic Loot | tooltip text colours | NO | high | S | new `65e-el-tooltip` |
 | [ ] 9 | Epic Loot | rarity backgrounds on slots | NO | high | S | `40-inventory` |
 | [ ] 10 | Epic Loot | AbilityBar (Hud.Awake order) | NO | high | S | `20-hud` |
-| [ ] 11 | Vanilla | loading/sleep/teleport screen (`Hud.m_loadingScreen`, `m_sleepingProgress`, `m_teleportingProgress`, `Hud.cs:219-231`, outside hudroot) | NO | high | M | new |
-| [ ] 12 | Vanilla | ShipHud art (`ship_circle`, `rudder_arrow`, `windicon`; only made movable `Hud_Setup.cs:40`) | NO | high | M | new |
-| [ ] 13 | Vanilla | hover text [E] yellow tags (only UpdateBuild recoloured `Hud_Setup.cs:89-99`) | PARTIAL | high | M | `20-hud` |
+| [x] 11 | Vanilla | loading/sleep/teleport screen (`Hud.m_loadingScreen` restyled 2.0.10: Auga fonts, divider colour; teleport swirl art + Prstartk text kept, no bundle counterpart in uGUI) | done | high | M | `28-vanilla-hud` |
+| [x] 12 | Vanilla | ShipHud art -> bundle ShipHud icons (WindCircle, Ship, WindIndicator, RudderIndicator, rudder, ForwardSlow/Forward/ForwardFast/Backward; `HudParts.Ship`, 2.0.10) | done | high | M | `28-vanilla-hud` |
+| [x] 13 | Vanilla | hover text [E] yellow tags -> Auga gold (UpdateCrosshair transpiler, 2.0.10) | done | high | M | `28-vanilla-hud` |
 | [x] 14 | VNEI | main window (`BaseUI.cs`, `Styling.cs`; Jotunn-built) | done | high | M (via b) | `47-vnei` |
 | [ ] 15 | Almanac (fork) | main window (bundle AlmanacUI); partial by accident (`UI_Patches.cs:71-220` copies vanilla sprites, order-dependent) | PARTIAL | high | L | new `69-almanac` |
 | [x] 16 | Epic Loot | enchanting table window, all 7 tabs incl. locked (AugaSkin 2.0.8 `Compat\EpicLootEnchanting.cs`: `EnchantingTableUI.Start` postfix -> `AugaStyle.RestyleAll` + list `ElementPrefab`s); small labels fixed 2.0.9 (button art by height: Small/Medium/Fancy, labels grow to the Auga label size) | done | high | L | `65d-el-enchant` |
 | [ ] 17 | Almanac (fork) | quest tracker HUD | NO | med-high | S | new |
 | [ ] 18 | Vanilla | AchievementUnlockPopup (`Achievements.cs:165`) | NO | med | S | new |
 | [ ] 19 | Vanilla | ConnectPanel F2 (`ConnectPanel.cs:8,166`) | NO | med | S | new `28-vanilla-misc` |
-| [ ] 20 | Vanilla | MountHud bars (`bar_gradient_40`) | PARTIAL | med | S | new |
-| [ ] 21 | Vanilla | stagger / action_progress bar (`bar_stagger`) | PARTIAL | med | S | new |
-| [ ] 22 | Vanilla | KeyHints `key_base` x47 | PARTIAL | med | S | `20-hud` |
-| [ ] 23 | Vanilla | EventBar (`point3`) | PARTIAL | med | S | new |
+| [x] 20 | Vanilla | MountHud bars (`bar_gradient_40` -> Auga bar body, 2.0.10) | done | med | S | `28-vanilla-hud`, `62-mount-hud` |
+| [x] 21 | Vanilla | stagger / action_progress bar (`bar_stagger` -> Auga bar body, 2.0.10) | done | med | S | `28-vanilla-hud` |
+| [x] 22 | Vanilla | KeyHints `key_base` -> Auga keybind backdrop (2.0.10) | done | med | S | `28-vanilla-hud` |
+| [x] 23 | Vanilla | EventBar (`point3` -> `darken_blob`, 2.0.10) | done | med | S | `28-vanilla-hud` |
 | [ ] 24 | StarLevelSystem | level text on minimap/no-map (`NoMapLevelIndicator.cs:31`, `MinimapLevelIndicator.cs:34`) | PARTIAL | med | S | new |
 | [ ] 25 | DisplayBepInExInfo | main menu text Arial (`DisplayInfoPlugin.cs:34-69`, created at FejdStartup.Start after Auga restyle) | NO | med | S | new |
 | [ ] 26 | Epic Loot | recipe rarity tint | NO | med | S | new |
@@ -81,7 +85,7 @@ NO = no Auga styling; PARTIAL = partly styled.
 | [ ] 38 | Vanilla | EndCredits | NO | low | S | new |
 | [ ] 39 | Vanilla | JoinCode / SessionPlayerList / ClosedCaptions | NO | low | S | new |
 | [ ] 40 | Vanilla | ManageSavesMenu rows (saveElement `ManageSavesMenu.cs:657`) | PARTIAL | low | S | new |
-| [ ] 41 | Vanilla | Save / BadConnection icons | PARTIAL | low | S | new |
+| [x] 41 | Vanilla | Save / BadConnection icons -> bundle art of the same name (2.0.10) | done | low | S | `28-vanilla-hud` |
 | [ ] 42 | ValheimPlus | version label font/pos override | NO | low | S | new |
 | [ ] 43 | Epic Loot | DebugText | NO | low | S | new |
 | [ ] 44 | Epic Loot | extra skill levels | NO | low | S | new |

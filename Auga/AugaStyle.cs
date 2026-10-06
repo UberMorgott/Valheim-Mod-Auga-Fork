@@ -16,7 +16,7 @@ namespace Auga
     // MainMenu (toggles, list rows, inputs) and InventoryTooltip.
     public static class AugaStyle
     {
-        private enum Role { Panel, Backdrop, Tooltip, Input, Button, Tab, TabSelected, Toggle, ToggleMark, Knob, Knot, Line }
+        private enum Role { Panel, Backdrop, Tooltip, Input, Button, Tab, TabSelected, Toggle, ToggleMark, Knob, Knot, Line, Key, Blob, Same }
 
         private static readonly Dictionary<string, Role> Roles = new Dictionary<string, Role>
         {
@@ -37,6 +37,13 @@ namespace Auga
             { "BraidLineHorisontalMedium", Role.Line },
             { "panel_separator", Role.Line },
             { "TabBackground", Role.Backdrop },             // Epic Loot enchanting table tab column
+            // HUD (bundle HUD prefab): key hint caps -> Auga keybind backdrop (HoverNameWithButton/LabeledKeybind/
+            // Background: TextBackdrop, dark); the event bar's red glow (EventBar/Image point3) -> Auga's darken blob;
+            // save / bad-connection icons -> the bundle's own art under the same name (hudroot/SaveIcon, BadConnectionIcon).
+            { "key_base", Role.Key },
+            { "point3", Role.Blob },
+            { "save_icon", Role.Same },
+            { "badconnection_icon", Role.Same },
         };
 
         // Bundle sprites are texture sub-assets (AssetBundle.LoadAsset<Sprite>(name) returns null), so they are taken
@@ -50,6 +57,7 @@ namespace Auga
         private static readonly Color ToggleColor = new Color(0.09f, 0.08f, 0.06f);     // MainMenu toggle Background
         private static readonly Color ToggleMarkColor = new Color(0.73f, 0.54f, 0.07f); // MainMenu toggle Checkmark
         private static readonly Color SelectedRow = new Color(0.28f, 0.23f, 0.19f);     // RecipeElement/selected (Auga list rows)
+        private static readonly Color BlobColor = new Color(0f, 0f, 0f, 0.7f);          // HUD BuildHud/Darken over the scene
 
         // AveriaSansLibre-Bold SDF: Epic Loot's own TMP asset (enchanting table tab labels).
         private static readonly HashSet<string> VanillaFonts =
@@ -103,7 +111,7 @@ namespace Auga
                 if (s && !Sprites.ContainsKey(s.name))
                     Sprites.Add(s.name, s);
             }
-            foreach (var prefab in new[] { Auga.Assets.MainMenuPrefab, Auga.Assets.MenuPrefab, Auga.Assets.ButtonSettings, Auga.Assets.InventoryScreen, Auga.Assets.PasswordDialog })
+            foreach (var prefab in new[] { Auga.Assets.MainMenuPrefab, Auga.Assets.MenuPrefab, Auga.Assets.ButtonSettings, Auga.Assets.InventoryScreen, Auga.Assets.PasswordDialog, Auga.Assets.Hud })
             {
                 if (!prefab)
                     continue;
@@ -203,6 +211,15 @@ namespace Auga
                     // Vanilla line sprites are a thin rule inside a tall transparent texture; Auga's Divider_Line would fill
                     // the whole rect, so the rule keeps its sprite and takes Auga's divider colour.
                     case Role.Line: image.color = Light; break;
+                    case Role.Key: SetSprite(image, "TextBackdrop", ToggleColor, Image.Type.Sliced); break;
+                    case Role.Blob: SetSprite(image, "darken_blob", BlobColor, Image.Type.Simple); break;
+                    case Role.Same:
+                        if (Sprites.TryGetValue(image.sprite.name, out var same) && image.sprite != same)
+                        {
+                            image.sprite = same;
+                            image.preserveAspect = true;
+                        }
+                        break;
                 }
             }
 
@@ -421,6 +438,13 @@ namespace Auga
         {
             Load();
             SetSprite(image, "TextBackdrop", TooltipColor, Image.Type.Sliced);
+        }
+
+        // A bundle sprite by name (from the prefabs Load harvests), or null.
+        public static Sprite BundleSprite(string name)
+        {
+            Load();
+            return Sprites.TryGetValue(name, out var s) ? s : null;
         }
 
         private static bool _scrollbarLoaded;

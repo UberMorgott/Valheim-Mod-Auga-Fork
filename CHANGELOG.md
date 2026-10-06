@@ -1,3 +1,11 @@
+### 2.0.10 - Vanilla HUD parts
+
+* Piece health, stagger, action progress and mount bars use Auga's bar art.
+* Ship HUD in Auga's icons (wind circle, ship, wind, rudder wheel, speed chevrons).
+* Key hint caps, event banner glow, save and bad-connection icons in Auga style.
+* Hover text key tags ([E]) in Auga gold instead of yellow.
+* Loading, sleeping and teleport screens use Auga's fonts.
+
 ### 2.0.9 - Button sizes, Epic Loot dialogs, quick slots
 
 * Buttons take the Auga art made for their height (small, medium or fancy), and their labels grow to Auga's label size: Epic Loot's enchanting tab and mode labels, Jotunn's colour/gradient picker buttons and map-overlay button are readable now.
