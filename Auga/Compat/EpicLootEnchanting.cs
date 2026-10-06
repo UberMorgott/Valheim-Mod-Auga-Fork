@@ -66,10 +66,84 @@ public static class EpicLootEnchanting
                 _harmony.Patch(convert, postfix: new HarmonyMethod(typeof(EpicLootEnchanting), nameof(ScrollingDescription_Postfix)));
             else
                 Debug.LogWarning("[Auga] Epic Loot without CraftSuccessDialog.ConvertToScrollingDescription, its dialog scrollbars keep the vanilla look");
+
+            // Epic Loot's message panels, each its own bundle prefab with wood art, legacy Averia text and plain
+            // buttons: the welcome and config-update popups at the main menu (FejdStartup.Start postfixes,
+            // WelcomeMessage_FejdStartup_Start_Patch / ConfigUpdatePrompt_FejdStartup_Start_Patch) and the socket
+            // break / shard chisel confirmations (ConfirmPrompt.Create). MessagePanelBase.Awake (ConfigMessage and every
+            // ConfirmPrompt; EL 0.14.13 MessagePanelBase.cs:17) and WelcomeMessage.Awake (WelcomeMessage.cs:27) find
+            // their parts and, with EpicLoot.HasAuga (never set), would run Epic Loot's empty Auga stubs; after them
+            // the whole panel gets AugaStyle.RestyleAll.
+            // Compendium pages (MagicPages on the TextsDialog, EL 0.14.13 EpicLoot.Compendium\MagicPages.cs:49): its
+            // search field takes the close button's disabled sprite as background (now Auga's large fancy-button
+            // art) and its page rows are legacy texts EL builds per page on AveriaSerifLibre (OnSelectText). The search
+            // field gets Auga's input art once; each built page is restyled like the rest of the compendium.
+            var pages = assembly.GetType("EpicLoot.Compendium.MagicPages");
+            _magicSearch = pages?.GetProperty("Search", BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance) as MemberInfo
+                           ?? pages?.GetField("Search", BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
+            var pagesAwake = pages?.GetMethod("Awake", BindingFlags.Public | BindingFlags.Instance);
+            var selectText = pages?.GetMethod("OnSelectText", BindingFlags.Public | BindingFlags.Instance);
+            if (pagesAwake != null && selectText != null && _magicSearch != null)
+            {
+                _harmony.Patch(pagesAwake, postfix: new HarmonyMethod(typeof(EpicLootEnchanting), nameof(MagicPagesAwake_Postfix)));
+                _harmony.Patch(selectText, postfix: new HarmonyMethod(typeof(EpicLootEnchanting), nameof(MagicPagesSelect_Postfix)));
+            }
+            else
+                Debug.LogWarning("[Auga] Epic Loot without MagicPages.Awake/OnSelectText/Search, its compendium pages keep its own look");
+
+            foreach (var typeName in new[] { "EpicLoot.MessagePanelBase", "EpicLoot.WelcomeMessage" })
+            {
+                var awake = assembly.GetType(typeName)?.GetMethod("Awake", BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.DeclaredOnly);
+                if (awake != null)
+                    _harmony.Patch(awake, postfix: new HarmonyMethod(typeof(EpicLootEnchanting), nameof(Panel_Postfix)) { priority = Priority.Last });
+                else
+                    Debug.LogWarning($"[Auga] Epic Loot without {typeName}.Awake, that popup keeps the vanilla look");
+            }
         }
         catch (Exception e)
         {
             Debug.LogError($"[Auga] Epic Loot enchanting table restyle hook failed: {e}");
+        }
+    }
+
+    private static MemberInfo _magicSearch;
+
+    public static void MagicPagesAwake_Postfix(MonoBehaviour __instance)
+    {
+        try
+        {
+            var search = _magicSearch is PropertyInfo p ? p.GetValue(__instance) : ((FieldInfo)_magicSearch).GetValue(__instance);
+            var input = search?.GetType().GetProperty("Input")?.GetValue(search) as UnityEngine.UI.Selectable
+                        ?? search?.GetType().GetField("Input")?.GetValue(search) as UnityEngine.UI.Selectable;
+            var image = input ? (input.targetGraphic as UnityEngine.UI.Image ?? input.GetComponent<UnityEngine.UI.Image>()) : null;
+            if (image)
+                AugaStyle.InputArt(image);
+            AugaStyle.Restyle(input ? input.transform : __instance.transform);
+        }
+        catch (Exception e)
+        {
+            Debug.LogWarning($"[Auga] Epic Loot compendium search restyle failed: {e}");
+        }
+    }
+
+    public static void MagicPagesSelect_Postfix(MonoBehaviour __instance)
+    {
+        var frame = __instance ? __instance.transform.Find("Texts_frame") : null;
+        if (frame)
+            AugaStyle.Restyle(frame);
+    }
+
+    public static void Panel_Postfix(MonoBehaviour __instance)
+    {
+        if (!__instance)
+            return;
+        try
+        {
+            AugaStyle.RestyleAll(__instance.transform);
+        }
+        catch (Exception e)
+        {
+            Debug.LogWarning($"[Auga] Epic Loot {__instance.name} restyle failed: {e}");
         }
     }
 

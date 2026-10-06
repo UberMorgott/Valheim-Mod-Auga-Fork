@@ -1,3 +1,10 @@
+### 2.0.11 - Epic Loot panels, tooltips
+
+* Item tooltips (and Epic Loot's comparison tooltip) use Auga's tooltip frame and fonts.
+* Epic Loot's welcome and config-update popups, socket/chisel confirmations, ability bar and debug text in Auga style.
+* Epic Loot compendium pages and their search field in Auga style.
+* HUD parts other mods add at startup get the Auga restyle too (BossAwakening's world boss bar excepted).
+
 ### 2.0.10 - Vanilla HUD parts
 
 * Piece health, stagger, action progress and mount bars use Auga's bar art.

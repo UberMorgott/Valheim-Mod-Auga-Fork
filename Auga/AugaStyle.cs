@@ -440,6 +440,16 @@ namespace Auga
             SetSprite(image, "TextBackdrop", TooltipColor, Image.Type.Sliced);
         }
 
+        // Auga's input art on a field mods draw with their own background (Epic Loot's compendium search field).
+        public static void InputArt(Image image)
+        {
+            Load();
+            SetSprite(image, "TextInputBG", Color.white, Image.Type.Sliced, 2f);
+            FitInputEnds(image);
+            if (image.TryGetComponent<Selectable>(out var selectable) && selectable.transition == Selectable.Transition.SpriteSwap)
+                selectable.spriteState = default;
+        }
+
         // A bundle sprite by name (from the prefabs Load harvests), or null.
         public static Sprite BundleSprite(string name)
         {

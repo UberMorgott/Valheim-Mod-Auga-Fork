@@ -17,6 +17,9 @@ namespace Auga
             AugaStyle.LinkGameFontFallbacks(); // no-op once linked from the main menu
             // hudroot holds the bars, food, status effects, hotkey bar, ship HUD, minimap and the build HUD.
             AugaStyle.Restyle(__instance.m_rootObject.transform);
+            Hud_Awake_ModParts.Seen.Clear();
+            foreach (Transform child in __instance.m_rootObject.transform)
+                Hud_Awake_ModParts.Seen.Add(child.GetInstanceID());
             // Build-menu icons are instantiated from this template (Hud.cs:1210 UpdatePieceList).
             AugaStyle.Restyle(__instance.m_pieceIconPrefab.transform);
             // Hotbar slots are instantiated from this template (HotkeyBar.cs:29 m_elementPrefab), outside hudroot.
@@ -50,6 +53,29 @@ namespace Auga
         {
             if (t)
                 t.gameObject.AddComponent<MovableHudElement>().InitOffset(name);
+        }
+    }
+
+    // HUD parts other mods add in their own Hud.Awake postfixes, after this restyle ran: Epic Loot's AbilityBar and
+    // DebugText (EL 0.14.13 EpicLoot.Abilities.Hud_Awake_Patch, EpicLoot.Hud_Awake_Patch: bundle prefabs under
+    // m_rootObject), StarLevelSystem's no-map level text (NoMapLevelIndicator, Jotunn CreateText). Running last, every
+    // hudroot child the first pass did not see gets the same restyle. BossAwakening's world boss bar (BA_*) keeps its
+    // own design (user decision 2026-10-05).
+    [HarmonyPatch(typeof(Hud), nameof(Hud.Awake))]
+    public static class Hud_Awake_ModParts
+    {
+        public static readonly HashSet<int> Seen = new HashSet<int>();
+
+        [UsedImplicitly]
+        [HarmonyPriority(Priority.Last)]
+        public static void Postfix(Hud __instance)
+        {
+            foreach (Transform child in __instance.m_rootObject.transform)
+            {
+                if (!Seen.Add(child.GetInstanceID()) || child.name.StartsWith("BA_"))
+                    continue;
+                AugaStyle.RestyleAll(child);
+            }
         }
     }
 

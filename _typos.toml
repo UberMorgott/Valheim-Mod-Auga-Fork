@@ -49,5 +49,7 @@ AugaTextsDialogeLore = "AugaTextsDialogeLore"
 BA_WorldBossBar = "BA_WorldBossBar"
 
 [default.extend-words]
+# BossAwakening's object-name prefix (BA_WorldBossBar), another repo's naming.
+BA = "BA"
 # Surname in the Iron Gate credits list (AugaUnity/Assets/Prefabs/Credits.prefab).
 hassel = "hassel"
