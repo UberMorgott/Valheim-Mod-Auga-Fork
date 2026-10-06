@@ -55,13 +55,23 @@ namespace Auga
         private static readonly HashSet<string> VanillaFonts =
             new HashSet<string> { "Valheim-AveriaSerifLibre", "Valheim-AveriaSansLibre", "Valheim-Norsebold", "AveriaSansLibre-Bold SDF" };
         private const float HeaderSize = 30f;
-        private const float ButtonLabelInset = 28f, TabLabelInset = 14f;
+
+        // Auga's button family (bundle prefabs, UnityPy dump of augaassets): art, native height, label side inset
+        // (Label sizeDelta.x / -2) and label size per height (Label fontSize / height). Each art's ornamented ends are
+        // a horizontal 9-slice border drawn at fixed size and stretched vertically, so a button takes the art made
+        // for its height: ButtonFancy's 50 px ends squashed into a 22 px button left no room for its label.
+        private sealed class ButtonArt
+        {
+            public Button Button;
+            public Image Image;
+            public float Height, Inset, LabelRatio;
+        }
+
+        private static ButtonArt _fancy, _medium, _small, _tabArt;
 
         private static bool _loaded;
         private static Image _panel;
         private static Image[] _corners;
-        private static Button _button, _tab;
-        private static Image _buttonImage, _tabImage;
         private static TMP_FontAsset _labelFont, _bodyFont;
 
         private static void Load()
@@ -71,10 +81,20 @@ namespace Auga
             _loaded = true;
             _panel = FromPrefab<Image>(Auga.Assets.PanelBase, "Background");
             _corners = _panel ? System.Array.FindAll(_panel.GetComponentsInChildren<Image>(true), i => i != _panel) : new Image[0];
-            _button = FromPrefab<Button>(Auga.Assets.ButtonFancy, "");
-            _buttonImage = FromPrefab<Image>(Auga.Assets.ButtonFancy, "Image");
-            _tab = FromPrefab<Button>(Auga.Assets.ButtonSettings, "");
-            _tabImage = FromPrefab<Image>(Auga.Assets.ButtonSettings, "Image");
+            // ButtonFancy 272x50 label 32 inset 28; ButtonMedium 122x35 label 16 inset 20; ButtonSmall 77x22 label 13
+            // inset 14; ButtonSettings (tabs) 136x22 label 13 inset 14.
+            ButtonArt Art(GameObject prefab, float height, float inset, float label) => new ButtonArt
+            {
+                Button = FromPrefab<Button>(prefab, ""),
+                Image = FromPrefab<Image>(prefab, "Image"),
+                Height = height,
+                Inset = inset,
+                LabelRatio = label / height
+            };
+            _fancy = Art(Auga.Assets.ButtonFancy, 50f, 28f, 32f);
+            _medium = Art(Auga.Assets.ButtonMedium, 35f, 20f, 16f);
+            _small = Art(Auga.Assets.ButtonSmall, 22f, 14f, 13f);
+            _tabArt = Art(Auga.Assets.ButtonSettings, 22f, 14f, 13f);
             _labelFont = Auga.Assets.NorseboldTMP;
             _bodyFont = Auga.Assets.SourceSansProRegularTMP;
 
@@ -106,7 +126,7 @@ namespace Auga
         public static void Restyle(Transform root)
         {
             Load();
-            var buttons = new Dictionary<Selectable, float>(); // button -> label side inset of the Auga art
+            var buttons = new Dictionary<Selectable, ButtonArt>(); // button -> the Auga art it took
             var overrides = ControlRoles(root, out var tabs, out var bars);
             foreach (var image in root.GetComponentsInChildren<Image>(true))
             {
@@ -158,6 +178,7 @@ namespace Auga
                     case Role.Input:
                         var vanillaBorder = image.sprite.border / Ppu(image);
                         SetSprite(image, "TextInputBG", Color.white, Image.Type.Sliced, 2f);
+                        FitInputEnds(image);
                         InsetInputText(image, vanillaBorder);
                         // Vanilla GuiInputField swaps to its own selected/highlighted sprites on focus; with empty
                         // states SpriteSwap keeps the Auga sprite.
@@ -166,12 +187,12 @@ namespace Auga
                         break;
                     case Role.Button:
                     case Role.Tab:
-                        var tab = role == Role.Tab;
-                        CopyImage(image, tab ? _tabImage : _buttonImage);
+                        var art = role == Role.Tab ? _tabArt : ArtFor(owns ? selectable.transform : image.transform);
+                        CopyImage(image, art.Image);
                         if (owns)
                         {
-                            Button(selectable, tab ? _tab : _button);
-                            buttons[selectable] = tab ? TabLabelInset : ButtonLabelInset;
+                            Button(selectable, art.Button);
+                            buttons[selectable] = art;
                         }
                         break;
                     case Role.TabSelected: SetSprite(image, "SettignsButtonOver", Color.white, Image.Type.Sliced); break;
@@ -200,11 +221,16 @@ namespace Auga
                 var inButton = selectable && buttons.ContainsKey(selectable);
                 var label = inButton || text.fontSize >= HeaderSize || text.font.name == "Valheim-Norsebold";
                 SetFont(text, label ? _labelFont : _bodyFont);
-                // Auga's button art has ornamented ends, so its label sits inset (bundle ButtonFancy/Label and
-                // ButtonSettings/Label sizeDelta.x -56/-28). Labels vanilla already auto-sizes get the same inset as a
-                // TMP margin and vanilla's auto-size shrinks them to fit; the RectTransform stays vanilla.
+                // Auga's button art has ornamented ends, so its label sits inset (bundle Label sizeDelta.x -56/-40/-28).
+                // Labels vanilla already auto-sizes get the same inset as a TMP margin, and may grow up to the Auga
+                // label size for the button's height (mods size them for plain art: Epic Loot's tab labels max 10 in a
+                // 20 px tab); auto-size still shrinks them to fit. The RectTransform stays vanilla.
                 if (inButton && text.enableAutoSizing)
-                    text.margin = new Vector4(buttons[selectable], text.margin.y, buttons[selectable], text.margin.w);
+                {
+                    var art = buttons[selectable];
+                    text.margin = new Vector4(art.Inset, text.margin.y, art.Inset, text.margin.w);
+                    text.fontSizeMax = Mathf.Max(text.fontSizeMax, Mathf.Round(art.LabelRatio * Height(selectable.transform, art)));
+                }
             }
 
             // Legacy uGUI texts (mod bundle panels, e.g. Epic Loot MerchantPanel: Norsebold titles, AveriaSans/Serif
@@ -215,11 +241,67 @@ namespace Auga
                 if (!text.font || !VanillaLegacyFonts.Contains(text.font.name))
                     continue;
                 var selectable = text.GetComponentInParent<Selectable>(true);
-                var label = (selectable && buttons.ContainsKey(selectable)) || IsAugaButton(selectable) || text.font.name == "Norsebold";
+                var inButton = selectable && buttons.ContainsKey(selectable);
+                var label = inButton || IsAugaButton(selectable) || text.font.name == "Norsebold";
                 var font = label ? LegacyNorsebold(text.font) : Auga.Assets.SourceSansProRegular;
                 if (font)
                     text.font = font;
+                if (inButton)
+                    FitLegacyLabel(text, selectable.transform, buttons[selectable]);
             }
+        }
+
+        // A legacy button label (Jotunn CreateButton, Epic Loot bundle buttons) gets what a TMP label gets above: the
+        // art's side inset (its rect, when it spans the button, pulled in from both ends) and best fit up to the Auga
+        // label size for the button's height, never below its own size. Mods size these labels for plain art (Jotunn
+        // 16 in a 40 px button, Epic Loot best fit 1-14 in 36 px), small inside Auga's ornamented frame.
+        private static void FitLegacyLabel(Text text, Transform button, ButtonArt art)
+        {
+            var rt = text.rectTransform;
+            if (rt.anchorMin.x == 0f && rt.anchorMax.x == 1f && rt.offsetMin.x < art.Inset && -rt.offsetMax.x < art.Inset)
+            {
+                rt.offsetMin = new Vector2(art.Inset, rt.offsetMin.y);
+                rt.offsetMax = new Vector2(-art.Inset, rt.offsetMax.y);
+            }
+            var size = Mathf.RoundToInt(art.LabelRatio * Height(button, art));
+            if (!text.resizeTextForBestFit)
+            {
+                text.resizeTextMinSize = Mathf.Min(text.fontSize, 10);
+                text.resizeTextForBestFit = true;
+            }
+            text.resizeTextMaxSize = Mathf.Max(text.resizeTextMaxSize, text.fontSize, size);
+        }
+
+        // The Auga art for a button of this height: the one whose native height is nearest (geometric midpoints).
+        private static ButtonArt ArtFor(Transform button)
+        {
+            var h = Height(button, null);
+            if (h <= 0f)
+                return _fancy;
+            if (h < Mathf.Sqrt(_small.Height * _medium.Height))
+                return _small;
+            return h < Mathf.Sqrt(_medium.Height * _fancy.Height) ? _medium : _fancy;
+        }
+
+        // Laid-out height, else the LayoutElement's (layout groups size their children later), else the art's own.
+        private static float Height(Transform t, ButtonArt art)
+        {
+            var h = t is RectTransform rt ? rt.rect.height : 0f;
+            if (h <= 0f && t.TryGetComponent<LayoutElement>(out var layout))
+                h = Mathf.Max(layout.preferredHeight, layout.minHeight);
+            return h > 0f ? h : art?.Height ?? 0f;
+        }
+
+        // Auga's input art has chevron ends 136 texture px wide in all; at the Auga multiplier a narrow field (Jotunn
+        // gradient picker: 75x20 and 50x20) is all ends and its text area goes negative. The ends shrink to at most
+        // half the field's width.
+        private static void FitInputEnds(Image image)
+        {
+            var width = ((RectTransform)image.transform).rect.width;
+            var ends = image.sprite.border.x + image.sprite.border.z;
+            if (width <= 0f || ends <= 0f || ends / Ppu(image) <= 0.5f * width)
+                return;
+            image.pixelsPerUnitMultiplier = ends / (image.pixelsPerUnit * 0.5f * width);
         }
 
         // Roles a sprite name alone cannot give, from the controls that own the images, plus the tab buttons and bar
@@ -264,14 +346,16 @@ namespace Auga
         }
 
         // AveriaSerifLibre-Regular: Jotunn's GUIManager.AveriaSerif, VNEI's body text (Styling.ApplyText).
+        // LegacyRuntime / Arial: Unity's built-in font, which mods get when they set none (Jotunn's map-overlay toggle
+        // labels, MinimapManager.cs; DisplayBepInExInfo's main menu lines).
         private static readonly HashSet<string> VanillaLegacyFonts =
-            new HashSet<string> { "AveriaSerifLibre-Bold", "AveriaSerifLibre-Regular", "AveriaSansLibre-Bold", "Norsebold" };
+            new HashSet<string> { "AveriaSerifLibre-Bold", "AveriaSerifLibre-Regular", "AveriaSansLibre-Bold", "Norsebold", "LegacyRuntime", "Arial" };
 
         // A button restyled by an earlier pass (its graphic already carries Auga's button/tab art): its label is still a
         // label when a later pass reaches only the text (Jotunn's ApplyTextStyle on a button label).
         private static bool IsAugaButton(Selectable selectable) =>
             selectable && selectable.targetGraphic is Image image && image.sprite &&
-            ((_buttonImage && image.sprite == _buttonImage.sprite) || (_tabImage && image.sprite == _tabImage.sprite));
+            System.Array.Exists(new[] { _fancy, _medium, _small, _tabArt }, a => a?.Image && image.sprite == a.Image.sprite);
         private static Font _legacyNorsebold;
 
         private static Font LegacyNorsebold(Font current)

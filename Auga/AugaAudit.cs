@@ -73,7 +73,7 @@ namespace Auga
                 MissingScripts(root, findings);
                 DeadRefs(owner, root, findings);
                 CanvasLess(root, findings);
-                Overlaps(root, 2, MapPinElements(), findings);
+                Overlaps(root, 2, WorldElements(), findings);
                 foreach (var f in findings)
                     Debug.LogWarning($"[Auga] audit {name}: {f}");
                 total += findings.Count;
@@ -213,7 +213,7 @@ namespace Auga
         // Map pins and their name labels are map content, not layout: Minimap.UpdatePins puts them at the pins' world
         // positions (Minimap.cs:1620-1658) under the pin name root (Minimap.cs:874-878), so pins at one spot (repeated
         // deaths at spawn) stack their labels exactly as vanilla draws them.
-        private static HashSet<Transform> MapPinElements()
+        private static HashSet<Transform> WorldElements()
         {
             var elements = new HashSet<Transform>();
             if (!Minimap.instance)
@@ -224,6 +224,19 @@ namespace Auga
                     elements.Add(pin.m_uiElement);
                 if (pin.m_NamePinData != null && pin.m_NamePinData.PinNameRectTransform)
                     elements.Add(pin.m_NamePinData.PinNameRectTransform);
+            }
+            // Same for the chat's world texts: NPC speech bubbles and player shouts follow their speaker's head on
+            // screen (Chat.UpdateNpcTexts / UpdateWorldTexts set m_gui.position from the world point, Chat.cs:637, 367),
+            // so two traders talking side by side (autotest 65b/65c spawn Hildir and Haldor at one spot) stack as vanilla
+            // draws them.
+            if (Chat.instance)
+            {
+                foreach (var npc in Chat.instance.m_npcTexts)
+                    if (npc.m_gui)
+                        elements.Add(npc.m_gui.transform);
+                foreach (var text in Chat.instance.m_worldTexts)
+                    if (text.m_gui)
+                        elements.Add(text.m_gui.transform);
             }
             return elements;
         }

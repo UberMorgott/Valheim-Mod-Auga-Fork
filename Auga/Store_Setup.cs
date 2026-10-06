@@ -154,7 +154,9 @@ namespace Auga
                 return;
             try
             {
-                AugaStyle.Restyle(panel);
+                // RestyleAll: also Auga's scrollbar (Epic Loot's item_background handles were a backdrop on a
+                // backdrop track, barely visible) and dropdown lists.
+                AugaStyle.RestyleAll(panel);
             }
             catch (Exception e)
             {

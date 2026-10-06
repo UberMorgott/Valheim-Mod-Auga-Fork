@@ -200,6 +200,49 @@ namespace Auga
             }
         }
 
+        // EAQS's quick-slot hotbar (QuickSlotsHotBar.Hud_Awake_CreateQuickSlotsBar: a HotKeyBar clone placed by
+        // ConfigPositionedElement from [Quick Slots] Anchor/Position, default LowerLeft (216,150), ValConfig.cs:178-179)
+        // sat on AugaSkin's stat-bar cluster (bars and food diamonds lower-left, AugaStatBars) - the HUD audit's
+        // QuickSlotsHotkeyBar x healthpanel overlap. EAQS moves the bar for Auga's HUD itself
+        // (EquipmentAndQuickSlots.FixQuickSlotPositionForAuga: a still-default position becomes (216,86)), but it
+        // detects Auga by assembly name and AugaSkin is not that HUD. The same rule for AugaSkin's layout: a position
+        // the player never changed (EAQS default or its Auga value) goes just above the cluster.
+        [HarmonyPatch(typeof(Hud), nameof(Hud.Awake))]
+        public static class Hud_Awake_QuickSlots_Patch
+        {
+            private const float Gap = 4f;
+
+            [UsedImplicitly]
+            [HarmonyAfter(EaqsGuid)]
+            public static void Postfix(Hud __instance)
+            {
+                if (!Chainloader.PluginInfos.ContainsKey(EaqsGuid))
+                    return;
+                var config = AccessTools.TypeByName("EquipmentAndQuickSlots.ValConfig");
+                var anchor = config == null ? null : AccessTools.Field(config, "QuickSlotsAnchor")?.GetValue(null) as BepInEx.Configuration.ConfigEntry<TextAnchor>;
+                var position = config == null ? null : AccessTools.Field(config, "QuickSlotsPosition")?.GetValue(null) as BepInEx.Configuration.ConfigEntry<Vector2>;
+                if (anchor == null || position == null)
+                {
+                    Auga.LogWarning("EAQS found, but its quick-slot position config changed; quick slots keep their position");
+                    return;
+                }
+                var standard = (Vector2)position.DefaultValue;
+                var augaValue = new Vector2(standard.x, 86f); // FixQuickSlotPositionForAuga
+                if (anchor.Value != TextAnchor.LowerLeft || (position.Value != standard && position.Value != augaValue))
+                    return;
+                // HotkeyBar.UpdateIcons puts each slot's pivot on the bar's pivot (localPosition (i * m_elementSpace, 0),
+                // HotkeyBar.cs:110); the slot prefab hangs from its top-left pivot, so the slots draw below the
+                // bar's anchored position by the slot's height below its pivot.
+                var bar = __instance.m_rootObject.transform.Find("QuickSlotsHotkeyBar");
+                var element = bar && bar.TryGetComponent<HotkeyBar>(out var hotkeyBar) && hotkeyBar.m_elementPrefab
+                    ? hotkeyBar.m_elementPrefab.transform as RectTransform : null;
+                var below = element ? element.pivot.y * element.rect.height : 0f;
+                var above = new Vector2(standard.x, AugaStatBars.ClusterTop + Gap + below);
+                if (position.Value != above)
+                    position.Value = above;
+            }
+        }
+
         // Padding of the vanilla player grid background (m_player/Bkg, the rect EAQS clones for its backgrounds)
         // around the first grid cell, both in m_player space.
         private static void MeasurePadding(InventoryGui gui)

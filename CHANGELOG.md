@@ -1,3 +1,11 @@
+### 2.0.9 - Button sizes, Epic Loot dialogs, quick slots
+
+* Buttons take the Auga art made for their height (small, medium or fancy), and their labels grow to Auga's label size: Epic Loot's enchanting tab and mode labels, Jotunn's colour/gradient picker buttons and map-overlay button are readable now.
+* Narrow input fields (Jotunn gradient picker) keep room for their text.
+* Text in Unity's default font (Arial) inside restyled windows takes Auga's body font.
+* Epic Loot's augment choice and crafting result dialogs and the Haldor/Hildir panels use Auga's scrollbar.
+* EquipmentAndQuickSlots' quick-slot bar sits above the health/stamina cluster instead of on top of the health bar (only while its position is still the default).
+
 ### 2.0.8 - Epic Loot enchanting table in Auga style
 
 * New: Epic Loot's enchanting table window takes the Auga look on every tab (Sacrifice/Identify, Convert, Enchant, Augment, Disenchant, Runes, Upgrade, locked tabs too): Auga panel and tab column, tab art, buttons, inputs, diamond toggles, list backdrops and rows, scrollbars, dropdown lists, fonts.

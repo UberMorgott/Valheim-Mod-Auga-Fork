@@ -54,11 +54,29 @@ public static class EpicLootEnchanting
                 return;
             }
             _harmony.Patch(start, postfix: new HarmonyMethod(typeof(EpicLootEnchanting), nameof(Start_Postfix)) { priority = Priority.Last });
+
+            // Epic Loot's modal dialogs (AugmentChoiceDialog via AugmentHelper.CreateAugmentChoiceDialog, the crafting /
+            // gamble result CraftSuccessDialog.Create) are clones of the vanilla variant dialog, which InventoryGui's
+            // restyle already gave the Auga frame; their Jotunn buttons are Auga too. Only the item description they
+            // turn into a scroll view (CraftSuccessDialog.ConvertToScrollingDescription, EL 0.14.13
+            // CraftSuccessDialog.cs:87) clones InventoryGui.m_recipeListScroll, whose vanilla scrollbar art no restyle
+            // pass maps: it gets Auga's scrollbar there.
+            var convert = assembly.GetType("EpicLoot.Crafting.CraftSuccessDialog")?.GetMethod("ConvertToScrollingDescription", BindingFlags.Public | BindingFlags.Static);
+            if (convert != null)
+                _harmony.Patch(convert, postfix: new HarmonyMethod(typeof(EpicLootEnchanting), nameof(ScrollingDescription_Postfix)));
+            else
+                Debug.LogWarning("[Auga] Epic Loot without CraftSuccessDialog.ConvertToScrollingDescription, its dialog scrollbars keep the vanilla look");
         }
         catch (Exception e)
         {
             Debug.LogError($"[Auga] Epic Loot enchanting table restyle hook failed: {e}");
         }
+    }
+
+    public static void ScrollingDescription_Postfix(UnityEngine.UI.ScrollRect __result)
+    {
+        if (__result && __result.verticalScrollbar)
+            AugaStyle.Scrollbar(__result.verticalScrollbar);
     }
 
     public static void Start_Postfix(MonoBehaviour __instance)

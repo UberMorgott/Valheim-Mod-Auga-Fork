@@ -25,6 +25,9 @@ namespace Auga
         // Bundle hudroot layout (lower-left anchored, pivot (0,0)): bars 17 px high at (208,123.5), (208,99.5),
         // (185,74.5); food panels 50x50 at (138,66), (167,95), (138,124). The cluster origin is FoodPanel0.
         private static readonly Vector2 Origin = new Vector2(138f, 66f);
+        private static readonly Vector2 ClusterSize = new Vector2(640f, 110f);
+        // Top edge of the cluster in hudroot pixels (lower-left origin), before the player's HealthPanel offset.
+        public static float ClusterTop => Origin.y + ClusterSize.y;
         private static readonly Vector2[] BarLeftCenter = { new Vector2(70f, 66f), new Vector2(70f, 42f), new Vector2(47f, 17f) };
         private static readonly Vector2[] FoodCenter = { new Vector2(25f, 25f), new Vector2(54f, 54f), new Vector2(25f, 83f) };
         private static readonly Vector2 GuardianPowerSlot = new Vector2(100f, 86f); // hudroot pixels, pivot (1,0)
@@ -49,7 +52,7 @@ namespace Auga
             // One lower-left group for the cluster; its size only bounds the bars for the HUD overlap audit.
             panel.anchorMin = panel.anchorMax = panel.pivot = Vector2.zero;
             panel.anchoredPosition = Origin;
-            panel.sizeDelta = new Vector2(640f, 110f);
+            panel.sizeDelta = ClusterSize;
 
             // Vanilla decorations with no Auga counterpart and no vanilla code that shows them again: the walnut and
             // fork icons (Hud.m_foodIcon is declared only, Hud.cs:135). The food-bar strip `Food` is inactive in the scene.

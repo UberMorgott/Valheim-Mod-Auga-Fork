@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
@@ -85,7 +85,7 @@ namespace Auga
     public class Auga : BaseUnityPlugin
     {
         public const string PluginID = "morgott.valheim.augaskin";
-        public const string Version = "2.0.8";
+        public const string Version = "2.0.9";
         // Embedded resources are named by the project's RootNamespace (Auga), not by the assembly name.
         private const string ResourcePrefix = "Auga.";
 
