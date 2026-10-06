@@ -30,6 +30,13 @@ NO = no Auga styling; PARTIAL = partly styled.
 - Batch 5 (AugaSkin 2.0.13): Almanac #5 #15 #17 #29 #46 #47, #25, #42, lever (c) + #49 #52, #31; #6 #7 closed (no own
   art); #4 handed to the AdventureBackpacks fork. Shots `69-almanac`, `68-configmanager` (new), `01-mainmenu`.
 
+- State 2026-10-07: no open row left. Open on purpose: #9/#26 (EL rarity slot/recipe art: needs a user design
+  decision), #4 (AdventureBackpacks fork's own panel sizing). In-game unverified (code-only): #18 achievement popup,
+  #31 build-camera badges, #37 resolution dialog, #38 credits, #39 join code/captions, #45 radial, #6 two-boss stack,
+  #53 comparison tooltip, StarLevelSystem startup popups (same Jotunn path as the shot quick-config tool), Almanac
+  quest/dialogue/NPC/form windows (checked while inactive). Vanilla WorldVersion dialog keeps UISprite buttons (plain
+  Unity sprite, also used by verified build-menu tabs; not mapped globally).
+
 ## Cross-cutting levers (do first: one fix covers many surfaces)
 
 - [x] (a) Epic Loot "HasAuga" -- evaluated, no rename. EL 0.14.13 `EpicLoot.HasAuga` is declared (`EpicLoot.cs:65`) and
