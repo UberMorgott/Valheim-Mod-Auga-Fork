@@ -276,58 +276,110 @@ namespace Auga
         // dark gap shows around the bar. Its length is the shield in HP units at the HP bar's own pixels per HP, so
         // it outruns the bar when the shield exceeds max health and shrinks as the shield is hit. Nothing covers
         // the HP fill; with no shield the object is inactive.
-        private static RectTransform _shieldRim;
+        //
+        // Energy shield (MorgottTweaks [EnergyShield], contract BalanceSim TASKS.md Phase 3 / DESIGN-SHIELD.md 2.4): the
+        // owner writes the current and max value into the player ZDO (floats mt_es / mt_es_max, throttled). It gets a
+        // second rim of the same kind in violet. With both, the SE_Shield rim moves one band further out (OuterPad), so
+        // the order from the bar outwards is gap, violet ES, gap, blue shield; each keeps its own length.
+        private sealed class Rim
+        {
+            public RectTransform Rect;
+            public Image Fill, Gap;
+            public float Pad = -1f;
+        }
+
+        private static Rim _shieldRim, _energyRim;
+        private static Image _rimBackground;
+        private static float _rimBarHeight;
         private static readonly Color ShieldColor = new Color(0.35f, 0.62f, 1f, 1f);
+        private static readonly Color EnergyShieldColor = new Color(0.66f, 0.42f, 1f, 1f);
         private static readonly Color ShieldGapColor = new Color(0f, 0f, 0f, 0.5f);
-        private const float ShieldGap = 3f, ShieldPad = 6f;
+        private const float ShieldGap = 3f, ShieldPad = 6f, OuterPad = 10f;
+        public static readonly int EnergyShieldKey = "mt_es".GetStableHashCode();
+        public static readonly int EnergyShieldMaxKey = "mt_es_max".GetStableHashCode();
 
         private static void Shield(RectTransform health, Image background)
         {
             if (!background)
                 return;
-            _shieldRim = NewChild(health, "AugaShield");
-            _shieldRim.anchorMin = new Vector2(0f, 0f);
-            _shieldRim.anchorMax = new Vector2(0f, 1f);
-            _shieldRim.pivot = new Vector2(0f, 0.5f);
-            _shieldRim.anchoredPosition = new Vector2(-ShieldPad, 0f);
-            _shieldRim.SetAsFirstSibling(); // behind the bar
-            var rim = _shieldRim.gameObject.AddComponent<Image>();
-            AugaStyle.CopyImage(rim, background);
-            rim.color = ShieldColor;
-            rim.raycastTarget = false;
-            var gap = NewChild(_shieldRim, "Gap");
+            _rimBackground = background;
+            _rimBarHeight = health.rect.height;
+            // Created back to front: each goes first, so the shield rim (made last) is the rearmost.
+            _energyRim = MakeRim(health, background, "AugaEnergyShield", EnergyShieldColor);
+            _shieldRim = MakeRim(health, background, "AugaShield", ShieldColor);
+        }
+
+        private static Rim MakeRim(RectTransform health, Image background, string name, Color color)
+        {
+            var rect = NewChild(health, name);
+            rect.anchorMin = new Vector2(0f, 0f);
+            rect.anchorMax = new Vector2(0f, 1f);
+            rect.pivot = new Vector2(0f, 0.5f);
+            rect.SetAsFirstSibling(); // behind the bar
+            var fill = rect.gameObject.AddComponent<Image>();
+            AugaStyle.CopyImage(fill, background);
+            fill.color = color;
+            fill.raycastTarget = false;
+            var gap = NewChild(rect, "Gap");
             gap.sizeDelta = -2f * (ShieldPad - ShieldGap) * Vector2.one;
             var gapImage = gap.gameObject.AddComponent<Image>();
             AugaStyle.CopyImage(gapImage, background);
             gapImage.color = ShieldGapColor;
             gapImage.raycastTarget = false;
-            // The slanted ends are the sprite's border slices, drawn at a fixed size (Image sliced mesh; a rect shorter
-            // than its borders squeezes them on that axis only). A taller copy with the same multiplier keeps the cap
-            // size and adds a vertical run, so its ends slant differently. Dividing the multiplier by the height ratio
-            // scales the caps with the height: the outline is the bar's silhouette scaled uniformly, same slant.
-            var barHeight = background.rectTransform.rect.height;
-            var rimHeight = health.rect.height + 2f * ShieldPad;
-            var gapHeight = rimHeight - 2f * (ShieldPad - ShieldGap);
-            rim.pixelsPerUnitMultiplier = background.pixelsPerUnitMultiplier * barHeight / rimHeight;
-            gapImage.pixelsPerUnitMultiplier = background.pixelsPerUnitMultiplier * barHeight / gapHeight;
-            _shieldRim.gameObject.SetActive(false);
+            rect.gameObject.SetActive(false);
+            return new Rim { Rect = rect, Fill = fill, Gap = gapImage };
+        }
+
+        // Shows the rim `length` px long (0 hides it), `pad` px out from the bar on every side.
+        private static void SetRim(Rim rim, float length, float pad)
+        {
+            if (rim == null)
+                return;
+            rim.Rect.gameObject.SetActive(length > 0f);
+            if (length <= 0f)
+                return;
+            if (rim.Pad != pad)
+            {
+                rim.Pad = pad;
+                rim.Rect.anchoredPosition = new Vector2(-pad, 0f);
+                // The slanted ends are the sprite's border slices, drawn at a fixed size (Image sliced mesh; a rect
+                // shorter than its borders squeezes them on that axis only). A taller copy with the same multiplier keeps
+                // the cap size and adds a vertical run, so its ends slant differently. Dividing the multiplier by the
+                // height ratio scales the caps with the height: the outline is the bar's silhouette scaled uniformly.
+                var barHeight = _rimBackground.rectTransform.rect.height;
+                var rimHeight = _rimBarHeight + 2f * pad;
+                var gapHeight = rimHeight - 2f * (ShieldPad - ShieldGap);
+                rim.Fill.pixelsPerUnitMultiplier = _rimBackground.pixelsPerUnitMultiplier * barHeight / rimHeight;
+                rim.Gap.pixelsPerUnitMultiplier = _rimBackground.pixelsPerUnitMultiplier * barHeight / gapHeight;
+            }
+            rim.Rect.sizeDelta = new Vector2(length + 2f * pad, 2f * pad);
+        }
+
+        // Energy shield of a player from its ZDO (owner-written by MorgottTweaks); (0, 0) without one.
+        public static (float current, float max) EnergyShield(Character player)
+        {
+            var zdo = player && player.m_nview ? player.m_nview.GetZDO() : null;
+            if (zdo == null)
+                return (0f, 0f);
+            return (Mathf.Max(0f, zdo.GetFloat(EnergyShieldKey)), zdo.GetFloat(EnergyShieldMaxKey));
         }
 
         // Postfix of Hud.UpdateHealth: remaining absorb = SE_Shield m_totalAbsorbDamage - m_damage (SE_Shield.cs:23-57).
         public static void UpdateShield(Hud hud, Player player)
         {
-            if (!_shieldRim)
+            if (_shieldRim == null)
                 return;
             var shield = 0f;
             foreach (var se in player.GetSEMan().GetStatusEffects())
                 if (se is SE_Shield s)
                     shield += Mathf.Max(0f, s.m_totalAbsorbDamage - s.m_damage);
-            _shieldRim.gameObject.SetActive(shield > 0f);
-            if (shield <= 0f)
-                return;
+            var (energy, energyMax) = Auga.ShowEnergyShield.Value ? EnergyShield(player) : (0f, 0f);
+            if (energyMax <= 0f)
+                energy = 0f;
             // HP bar pixels per HP = its width / max health (covers the length scale and a fixed length alike).
             var pixelsPerHp = hud.m_healthBarRoot.rect.width / Mathf.Max(1f, player.GetMaxHealth());
-            _shieldRim.sizeDelta = new Vector2(shield * pixelsPerHp + 2f * ShieldPad, 2f * ShieldPad);
+            SetRim(_energyRim, energy * pixelsPerHp, ShieldPad);
+            SetRim(_shieldRim, shield * pixelsPerHp, energy > 0f ? OuterPad : ShieldPad);
         }
 
         // Adrenaline (1.0.x trinkets): the vanilla adrenaline bar (Hud.cs:1122-1161) becomes a thin strip along the

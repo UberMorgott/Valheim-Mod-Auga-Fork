@@ -85,7 +85,7 @@ namespace Auga
     public class Auga : BaseUnityPlugin
     {
         public const string PluginID = "morgott.valheim.augaskin";
-        public const string Version = "2.0.13";
+        public const string Version = "2.1.0";
         // Embedded resources are named by the project's RootNamespace (Auga), not by the assembly name.
         private const string ResourcePrefix = "Auga.";
 
@@ -219,7 +219,14 @@ namespace Auga
         {
             _loggingEnabled = Config.Bind("Logging", "LoggingEnabled", false, "Enable logging");
             _logLevel = Config.Bind("Logging", "LogLevel", LogLevel.Info, "Only log messages of the selected level or higher");
+            ShowEnergyShield = Config.Bind("Hud", "ShowEnergyShield", true,
+                "Show the energy shield (MorgottTweaks, player ZDO mt_es / mt_es_max): a violet outline behind your health bar and a violet strip under other players' health bars.");
+            ShowSummonFrames = Config.Bind("Hud", "ShowSummonFrames", true,
+                "Show a frame per living summon of yours (icon, health bar, stars) under the hotkey bar.");
         }
+
+        public static ConfigEntry<bool> ShowEnergyShield;
+        public static ConfigEntry<bool> ShowSummonFrames;
 
         private static void LoadAssets()
         {

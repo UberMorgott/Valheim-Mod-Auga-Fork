@@ -30,6 +30,12 @@ NO = no Auga styling; PARTIAL = partly styled.
 - Batch 5 (AugaSkin 2.0.13): Almanac #5 #15 #17 #29 #46 #47, #25, #42, lever (c) + #49 #52, #31; #6 #7 closed (no own
   art); #4 handed to the AdventureBackpacks fork. Shots `69-almanac`, `68-configmanager` (new), `01-mainmenu`.
 
+- Batch 6 (AugaSkin 2.1.0, Phase 3 of BalanceSim): energy shield (MorgottTweaks player ZDO `mt_es`/`mt_es_max`) as a
+  violet rim behind the HP bar (`AugaStatBars`, SE_Shield rim moves out to pad 10 when both show), violet ES strip under
+  other players' EnemyHud health (`EnergyShieldHud.cs`), summon frames under the hotkey bar (`SummonFrames.cs`: ZDO
+  `mt_sum_owner` == local id, fallback vanilla staff summon following by name; trophy icon, HP bar, stars). Config
+  `[Hud] ShowEnergyShield/ShowSummonFrames`, offset `HudLayout.SummonFramesOffset`. Shots `26b-hud-energy-shield`,
+  `26c-summon-frames` (new). Unverified: real second player's strip (shot shows the local player on the player HUD).
 - State 2026-10-07: no open row left. Open on purpose: #9/#26 (EL rarity slot/recipe art: needs a user design
   decision), #4 (AdventureBackpacks fork's own panel sizing). In-game unverified (code-only): #18 achievement popup,
   #31 build-camera badges, #37 resolution dialog, #38 credits, #39 join code/captions, #45 radial, #6 two-boss stack,

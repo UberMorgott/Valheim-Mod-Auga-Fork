@@ -32,6 +32,8 @@ namespace Auga
             AugaStatBars.Setup(__instance);
             // Bar fills and the ship HUD (sprite sets Restyle does not map).
             HudParts.Setup(__instance);
+            // Frames of the local player's summons, under the hotkey bar (Phase 3).
+            SummonFrames.Setup(__instance);
             // Loading / sleeping / teleporting screen: m_loadingScreen (LoadingBlack) sits beside hudroot, outside the
             // pass above (Hud.cs:219-231): Averia texts -> Auga fonts, the braid separator -> Auga divider colour.
             if (__instance.m_loadingScreen)
