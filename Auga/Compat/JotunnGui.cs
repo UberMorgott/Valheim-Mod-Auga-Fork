@@ -162,14 +162,7 @@ public static class JotunnGui
             return;
         try
         {
-            AugaStyle.Restyle(root);
-            foreach (var scrollbar in root.GetComponentsInChildren<Scrollbar>(true))
-                AugaStyle.Scrollbar(scrollbar);
-            // Dropdown list: Jotunn's button_small frame (GUIManager.cs:1274-1279) -> Auga tooltip/list backdrop, as
-            // vanilla's woodpanel_400_tileable dropdown templates.
-            foreach (var dropdown in root.GetComponentsInChildren<Dropdown>(true))
-                if (dropdown.template && dropdown.template.TryGetComponent<Image>(out var list) && list.sprite && list.sprite.name == "button_small")
-                    AugaStyle.Tooltip(list);
+            AugaStyle.RestyleAll(root);
         }
         catch (Exception e)
         {

@@ -47,7 +47,7 @@ NO = no Auga styling; PARTIAL = partly styled.
 | [ ] 13 | Vanilla | hover text [E] yellow tags (only UpdateBuild recoloured `Hud_Setup.cs:89-99`) | PARTIAL | high | M | `20-hud` |
 | [x] 14 | VNEI | main window (`BaseUI.cs`, `Styling.cs`; Jotunn-built) | done | high | M (via b) | `47-vnei` |
 | [ ] 15 | Almanac (fork) | main window (bundle AlmanacUI); partial by accident (`UI_Patches.cs:71-220` copies vanilla sprites, order-dependent) | PARTIAL | high | L | new `69-almanac` |
-| [ ] 16 | Epic Loot | enchanting table window; borrows StoreGui `border (1)` material -> null with Auga store | NO | high | L | new `65d-el-enchant` |
+| [x] 16 | Epic Loot | enchanting table window, all 7 tabs incl. locked (AugaSkin 2.0.8 `Compat\EpicLootEnchanting.cs`: `EnchantingTableUI.Start` postfix -> `AugaStyle.RestyleAll` + list `ElementPrefab`s); left: Norsebold tab/mode-toggle labels render small | done | high | L | `65d-el-enchant` |
 | [ ] 17 | Almanac (fork) | quest tracker HUD | NO | med-high | S | new |
 | [ ] 18 | Vanilla | AchievementUnlockPopup (`Achievements.cs:165`) | NO | med | S | new |
 | [ ] 19 | Vanilla | ConnectPanel F2 (`ConnectPanel.cs:8,166`) | NO | med | S | new `28-vanilla-misc` |

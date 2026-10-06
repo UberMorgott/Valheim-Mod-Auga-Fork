@@ -36,6 +36,7 @@ namespace Auga
             { "BraidKnotMedium", Role.Knot },
             { "BraidLineHorisontalMedium", Role.Line },
             { "panel_separator", Role.Line },
+            { "TabBackground", Role.Backdrop },             // Epic Loot enchanting table tab column
         };
 
         // Bundle sprites are texture sub-assets (AssetBundle.LoadAsset<Sprite>(name) returns null), so they are taken
@@ -50,8 +51,9 @@ namespace Auga
         private static readonly Color ToggleMarkColor = new Color(0.73f, 0.54f, 0.07f); // MainMenu toggle Checkmark
         private static readonly Color SelectedRow = new Color(0.28f, 0.23f, 0.19f);     // RecipeElement/selected (Auga list rows)
 
+        // AveriaSansLibre-Bold SDF: Epic Loot's own TMP asset (enchanting table tab labels).
         private static readonly HashSet<string> VanillaFonts =
-            new HashSet<string> { "Valheim-AveriaSerifLibre", "Valheim-AveriaSansLibre", "Valheim-Norsebold" };
+            new HashSet<string> { "Valheim-AveriaSerifLibre", "Valheim-AveriaSansLibre", "Valheim-Norsebold", "AveriaSansLibre-Bold SDF" };
         private const float HeaderSize = 30f;
         private const float ButtonLabelInset = 28f, TabLabelInset = 14f;
 
@@ -105,6 +107,7 @@ namespace Auga
         {
             Load();
             var buttons = new Dictionary<Selectable, float>(); // button -> label side inset of the Auga art
+            var overrides = ControlRoles(root, out var tabs, out var bars);
             foreach (var image in root.GetComponentsInChildren<Image>(true))
             {
                 if (!image.sprite)
@@ -114,17 +117,30 @@ namespace Auga
                         image.color = SelectedRow;
                     continue;
                 }
-                var role = RoleOf(image.sprite.name);
+                // A GuiBar's fill keeps its art and colour: GuiBar.Awake caches the colour (GuiBar.cs:33-37) and mod
+                // bars (Epic Loot progress bars, SetRarityColor) tint it per rarity.
+                if (bars.Contains(image))
+                    continue;
+                var role = overrides.TryGetValue(image, out var forced) ? forced : RoleOf(image.sprite.name);
                 if (role == null)
                     continue;
                 var selectable = image.GetComponentInParent<Selectable>(true);
                 var owns = selectable && selectable.targetGraphic == image;
+                var isInput = owns && (selectable is TMP_InputField || selectable is InputField);
+                // Mod bundles (Epic Loot) frame their input fields with item_background: an input field's own graphic
+                // is an input whatever its vanilla sprite.
+                if (role == Role.Backdrop && isInput)
+                    role = Role.Input;
+                // Tab buttons of a TabHandler (TabHandler.cs:228-251) take Auga's tab art even when the mod drew them
+                // with the plain button sprite (Epic Loot enchanting table tabs).
+                if (role == Role.Button && owns && tabs.Contains(selectable))
+                    role = Role.Tab;
                 // Vanilla also uses the input sprites as a plain frame: the minimap (hudroot/MiniMap/small and large),
                 // bar "darken" overlays and the inventory lists (requirements, skills, trophies, texts). Auga's input
                 // art has chevron ends, so on the minimap it peeked out behind the map like a second map. Only an
                 // input field's own graphic is an input; any other use is a backdrop, as in Auga's bundle HUD
                 // (MiniMap/small/MapBG = TextBackdrop).
-                if (role == Role.Input && !(owns && (selectable is TMP_InputField || selectable is InputField)))
+                if (role == Role.Input && !isInput)
                     role = Role.Backdrop;
                 // Mod sliders (Jotunn DefaultControls knob, StarLevelSystem ConfigUI.BuildSlider) draw their handle with
                 // checkbox_marker; a slider handle is a knob, as vanilla's (Knob sprite).
@@ -204,6 +220,47 @@ namespace Auga
                 if (font)
                     text.font = font;
             }
+        }
+
+        // Roles a sprite name alone cannot give, from the controls that own the images, plus the tab buttons and bar
+        // fills of the tree. A toggle drawn as a box with a check sprite in it (Epic Loot bundle toggles: item_background
+        // "Background" + CheckMark "Checkmark", the toggle's graphic) is Auga's diamond toggle, as vanilla checkbox art.
+        private static Dictionary<Image, Role> ControlRoles(Transform root, out HashSet<Selectable> tabs, out HashSet<Image> bars)
+        {
+            var roles = new Dictionary<Image, Role>();
+            foreach (var toggle in root.GetComponentsInChildren<Toggle>(true))
+            {
+                if (!(toggle.graphic is Image mark) || !mark.sprite || mark.sprite.name != "CheckMark")
+                    continue;
+                roles[mark] = Role.ToggleMark; // also the box-less tick of a dropdown list item
+                var parent = mark.transform.parent;
+                if (parent && parent.TryGetComponent<Image>(out var box) && box.sprite && RoleOf(box.sprite.name) == Role.Backdrop)
+                    roles[box] = Role.Toggle;
+            }
+            tabs = new HashSet<Selectable>();
+            foreach (var handler in root.GetComponentsInChildren<TabHandler>(true))
+                foreach (var tab in handler.m_tabs)
+                    if (tab != null && tab.m_button)
+                        tabs.Add(tab.m_button);
+            bars = new HashSet<Image>();
+            foreach (var bar in root.GetComponentsInChildren<GuiBar>(true))
+                if (bar.m_bar && bar.m_bar.TryGetComponent<Image>(out var fill))
+                    bars.Add(fill);
+            return roles;
+        }
+
+        // Restyle plus the controls whose Auga look is more than a sprite: scrollbars take Auga's scrollbar, legacy
+        // dropdown lists Auga's tooltip/list frame (Jotunn's button_small frame, GUIManager.cs:1274-1279, and mod
+        // bundle lists Restyle has already made a backdrop), as vanilla's woodpanel_400_tileable dropdown templates.
+        public static void RestyleAll(Transform root)
+        {
+            Restyle(root);
+            foreach (var scrollbar in root.GetComponentsInChildren<Scrollbar>(true))
+                Scrollbar(scrollbar);
+            foreach (var dropdown in root.GetComponentsInChildren<Dropdown>(true))
+                if (dropdown.template && dropdown.template.TryGetComponent<Image>(out var list) && list.sprite &&
+                    (list.sprite.name == "button_small" || list.sprite.name == "TextBackdrop"))
+                    Tooltip(list);
         }
 
         // AveriaSerifLibre-Regular: Jotunn's GUIManager.AveriaSerif, VNEI's body text (Styling.ApplyText).

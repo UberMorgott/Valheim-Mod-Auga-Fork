@@ -1,3 +1,8 @@
+### 2.0.8 - Epic Loot enchanting table in Auga style
+
+* New: Epic Loot's enchanting table window takes the Auga look on every tab (Sacrifice/Identify, Convert, Enchant, Augment, Disenchant, Runes, Upgrade, locked tabs too): Auga panel and tab column, tab art, buttons, inputs, diamond toggles, list backdrops and rows, scrollbars, dropdown lists, fonts.
+* Shared restyle: toggles drawn as a box with a check sprite become Auga diamond toggles, TabHandler tabs on plain button art take Auga tab art, input fields on mod backdrop art take Auga input art, GuiBar fills keep their colour.
+
 ### 2.0.7 - Jotunn-built UI in Auga style
 
 * New: every window built with Jotunn's GUIManager (`Create*` builders and `Apply*Style` appliers) takes the Auga look: panels, buttons, inputs, toggles, sliders, scrollbars, dropdown lists, fonts. Covers VNEI, StarLevelSystem config tool / Mod Config button / popups, Epic Loot's Jotunn buttons and scroll views, Jotunn's mod-compatibility window, colour/gradient pickers and map-overlay panel. Jotunn stays optional.
