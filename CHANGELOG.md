@@ -1,3 +1,8 @@
+### 2.1.3 - Ally shield on the overhead health bar
+
+* Other players' absorb shield (Staff of Protection bubble, any vanilla SE_Shield) shows as a blue strip under their overhead health bar, filled by remaining / total absorb. Needs MorgottTweaks 1.46.0+ on the shielded player ([Multiplayer] ShareShieldAbsorb, player ZDO mt_shield / mt_shield_max): vanilla keeps the absorb only on the owner.
+* The violet energy-shield strip stays right under the bar; the strips close up when one is absent. Strips are cached per HUD instead of looked up every frame.
+
 ### 2.1.2 - Epic Loot equipped and set-item marks
 
 * Equipped and queued items show Auga's own marks again (blue / amber corner in the inventory, blue / amber slot on the hotbar); they had become an almost invisible dark backdrop. With Epic Loot they no longer turn into Epic Loot's frame.
