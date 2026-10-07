@@ -36,8 +36,10 @@ NO = no Auga styling; PARTIAL = partly styled.
   `mt_sum_owner` == local id, fallback vanilla staff summon following by name; trophy icon, HP bar, stars). Config
   `[Hud] ShowEnergyShield/ShowSummonFrames`, offset `HudLayout.SummonFramesOffset`. Shots `26b-hud-energy-shield`,
   `26c-summon-frames` (new). Unverified: real second player's strip (shot shows the local player on the player HUD).
-- State 2026-10-07: no open row left. Open on purpose: #9/#26 (EL rarity slot/recipe art: needs a user design
-  decision), #4 (AdventureBackpacks fork's own panel sizing). In-game unverified (code-only): #18 achievement popup,
+- Batch 7 (AugaSkin 2.1.1 + AdventureBackpacks 1.9.14.8): #9 #26 EL rarity colour on Auga's slot outline (decision: keep EL colour,
+  Auga art, no new art; EL's `HasAuga` path not enabled: it also runs EL's empty/destructive Auga stubs); #4 wide backpack
+  panels in the AB fork. Shots `40c-el-rarity`, `46c-backpack-wide` (new).
+- State 2026-10-07: no open row left. Not covered by #9: Epic Loot's equipped-slot frame (`Equipped` sprite, ItemBackgroundHelper.ApplyEquippedSprite) and set-item marker stay EL art (candidate for a next row). In-game unverified (code-only): #18 achievement popup,
   #31 build-camera badges, #37 resolution dialog, #38 credits, #39 join code/captions, #45 radial, #6 two-boss stack,
   #53 comparison tooltip, StarLevelSystem startup popups (same Jotunn path as the shot quick-config tool), Almanac
   quest/dialogue/NPC/form windows (checked while inactive). Vanilla WorldVersion dialog keeps UISprite buttons (plain
@@ -70,12 +72,12 @@ NO = no Auga styling; PARTIAL = partly styled.
 | [x] 1 | Epic Loot | Haldor MerchantPanel (stash/gamble/maps/bounties) | done | high | S | `65c-haldor-merchant` |
 | [x] 2 | Epic Loot | Hildir TemperPanel | done | high | S | `65b-hildir-temper` |
 | [x] 3 | Vanilla | PieceHealth bar (`bar_monster_hp_5` -> Auga `AugaProgressBarBody_Small`, `HudParts.Bars`, 2.0.10) | done | high | S | `28-vanilla-hud` |
-| [-] 4 | AdventureBackpacks | backpack panel inherits Auga, but >~8 columns overflow -- SKIPPED here: sizing bug in AB's own panel clone (`Patches\BackpackPanel.cs:104` keeps the container size while `InventoryGrid.cs:9-26` widens the grid), fix belongs in AdventureBackpacks-Fork, not AugaSkin | AB fork | high | S | `46b-backpack-hotkey` |
+| [x] 4 | AdventureBackpacks | wide backpacks (>8 columns) clipped: vanilla lays the grid out centred on the 8-column container panel; fixed in AdventureBackpacks-Fork 1.9.14.8 (`ContainerPanelWidth`: panel = native width + one slot pitch per extra column, native width back for containers that fit; AB panel now sits at the crafting panel; live resize freeze fixed) | done (AB fork) | high | S | `46c-backpack-wide` |
 | [x] 5 | Almanac (fork) | Trophies button icon (Auga cup shown, no Almanac swap visible) | done | high | S | `69-almanac` (`-inventory`) |
 | [x] 6 | StarLevelSystem | stacked boss bars -- clones of the Auga-restyled vanilla boss HUD (`UIHudControl.StackBossHuds` only lays them out); no own art; unverified in-game (needs two bosses) | done | high | S | `61-boss-hud` |
 | [x] 7 | MonsterModifiers | modifier icons on EnemyHud -- mod content icons on the Auga enemy HUD star slots, no frame art; nothing to restyle | n/a | high | S | `60-creature-levels` |
 | [x] 8 | Epic Loot | item tooltips (all vanilla tooltip instances): Auga tooltip frame + fonts via `UITooltip.OnHoverStart` postfix (2.0.11); EL colour tags kept (rarity/effect information, no Auga counterpart) | done | high | S | `65h-el-hudparts` (`65h-el-tooltip`) |
-| [-] 9 | Epic Loot | rarity backgrounds on slots -- SKIPPED, needs a design decision: EL's `GenericItemBg` rarity glow is rarity information, not vanilla art; the bundle has no rarity-slot art (only solid `Container_Square_*` shapes) | design? | high | S | `40-inventory` |
+| [x] 9 | Epic Loot | rarity backgrounds on slots: EL rarity colour on Auga's own slot outline (`Container_Square_A_Outline`) -- `EpicLoot.GetMagicItemBgSprite` postfix (grid/hotbar/recipe/dialogs) + `AugaStyle` Role.Rarity for EL bundle rows (2.1.1) | done | high | S | `40c-el-rarity` |
 | [x] 10 | Epic Loot | AbilityBar (Hud.Awake order) -- `Hud_Awake_ModParts` restyles hudroot children other mods add (2.0.11) | done | high | S | `65h-el-hudparts` |
 | [x] 11 | Vanilla | loading/sleep/teleport screen (`Hud.m_loadingScreen` restyled 2.0.10: Auga fonts, divider colour; teleport swirl art + Prstartk text kept, no bundle counterpart in uGUI) | done | high | M | `28-vanilla-hud` |
 | [x] 12 | Vanilla | ShipHud art -> bundle ShipHud icons (WindCircle, Ship, WindIndicator, RudderIndicator, rudder, ForwardSlow/Forward/ForwardFast/Backward; `HudParts.Ship`, 2.0.10) | done | high | M | `28-vanilla-hud` |
@@ -92,7 +94,7 @@ NO = no Auga styling; PARTIAL = partly styled.
 | [x] 23 | Vanilla | EventBar (`point3` -> `darken_blob`, 2.0.10) | done | med | S | `28-vanilla-hud` |
 | [x] 24 | StarLevelSystem | level text on minimap/no-map (Jotunn `CreateText`, covered by 2.0.7 JotunnGui; no-map text also by `Hud_Awake_ModParts` 2.0.11) | done | med | S | `20-hud` |
 | [x] 25 | DisplayBepInExInfo | main menu text Arial -> Source Sans (FejdStartup.Start Priority.Last restyle, 2.0.13) | done | med | S | `01-mainmenu` |
-| [-] 26 | Epic Loot | recipe rarity tint -- SKIPPED with #9 (same `ApplyMagicItemBackgroundToIcon` art, design decision) | design? | med | S | new |
+| [x] 26 | Epic Loot | recipe rarity tint (`ApplyMagicItemBackgroundToIcon` -> same Auga outline in rarity colour, 2.1.1) | done | med | S | `40c-el-rarity` (`-recipe`) |
 | [x] 27 | Epic Loot | Welcome/ConfigMessage popups (`MessagePanelBase.Awake`/`WelcomeMessage.Awake` postfix -> RestyleAll, 2.0.11) | done | med | S | `65g-el-popups` |
 | [x] 28 | Epic Loot | map pin filter / adventure pins -- no uGUI of its own (pins go through vanilla `Minimap.AddPin`, icons are EL content); nothing to restyle | n/a | med | S | - |
 | [x] 29 | Almanac (fork) | NPC dialogue panel (same hook, 2.0.13; checked inactive) | done | med | M | `69-almanac` |
