@@ -91,6 +91,18 @@ public static class EpicLootEnchanting
             else
                 Debug.LogWarning("[Auga] Epic Loot without MagicPages.Awake/OnSelectText/Search, its compendium pages keep its own look");
 
+            // Rarity backgrounds Epic Loot re-assigns on every update (API.ApplyMagicItemBackground from its InventoryGrid
+            // .UpdateGui / HotkeyBar.UpdateIcons transpilers, ApplyMagicItemBackgroundToIcon for the recipe list and
+            // recipe icon, AugmentHelper / CraftSuccessDialog MagicBG) all take their art from EpicLoot.GetMagicItemBgSprite
+            // (EL 0.14.13 EpicLoot.cs:941), Epic Loot's own switch between its generic and Auga art (on EpicLoot.HasAuga,
+            // never assigned, and setting it would also run EL's broken Auga stubs on its popups). Its result becomes
+            // AugaStyle.RarityFrame, the same art the Restyle role gives bundle rows; Epic Loot still sets the colour.
+            var bgSprite = assembly.GetType("EpicLoot.EpicLoot")?.GetMethod("GetMagicItemBgSprite", BindingFlags.Public | BindingFlags.Static);
+            if (bgSprite != null && bgSprite.ReturnType == typeof(Sprite))
+                _harmony.Patch(bgSprite, postfix: new HarmonyMethod(typeof(EpicLootEnchanting), nameof(MagicItemBg_Postfix)));
+            else
+                Debug.LogWarning("[Auga] Epic Loot without EpicLoot.GetMagicItemBgSprite, its rarity slot backgrounds keep Epic Loot's art");
+
             foreach (var typeName in new[] { "EpicLoot.MessagePanelBase", "EpicLoot.WelcomeMessage" })
             {
                 var awake = assembly.GetType(typeName)?.GetMethod("Awake", BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.DeclaredOnly);
@@ -145,6 +157,13 @@ public static class EpicLootEnchanting
         {
             Debug.LogWarning($"[Auga] Epic Loot {__instance.name} restyle failed: {e}");
         }
+    }
+
+    public static void MagicItemBg_Postfix(ref Sprite __result)
+    {
+        var frame = AugaStyle.RarityFrame;
+        if (frame)
+            __result = frame;
     }
 
     public static void ScrollingDescription_Postfix(UnityEngine.UI.ScrollRect __result)

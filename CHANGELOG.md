@@ -1,3 +1,7 @@
+### 2.1.1 - Epic Loot rarity on Auga slots
+
+* Epic Loot rarity backgrounds (inventory, hotbar, recipe list and icon, Epic Loot panels and dialogs) use Auga's own slot outline in the rarity colour instead of Epic Loot's glow art.
+
 ### 2.0.13 - Almanac, main menu texts, IMGUI fonts
 
 * Almanac's windows (main window, quest tracker, NPC dialogue, NPC editor, form) in Auga style.

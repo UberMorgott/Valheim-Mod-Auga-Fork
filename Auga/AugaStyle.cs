@@ -16,7 +16,7 @@ namespace Auga
     // MainMenu (toggles, list rows, inputs) and InventoryTooltip.
     public static class AugaStyle
     {
-        private enum Role { Panel, Backdrop, Tooltip, Input, Button, Tab, TabSelected, Toggle, ToggleMark, Knob, Knot, Line, Key, Blob, Same }
+        private enum Role { Panel, Backdrop, Tooltip, Input, Button, Tab, TabSelected, Toggle, ToggleMark, Knob, Knot, Line, Key, Blob, Same, Rarity }
 
         private static readonly Dictionary<string, Role> Roles = new Dictionary<string, Role>
         {
@@ -44,7 +44,17 @@ namespace Auga
             { "point3", Role.Blob },
             { "save_icon", Role.Same },
             { "badconnection_icon", Role.Same },
+            // Epic Loot rarity backgrounds (EL 0.14.13 EpicAssets.GenericItemBgSprite "GenericItemBg", and its Auga variant
+            // "AugaItemBG"): bundle panel rows (ItemElement/RequirementElement/TemperPanel MagicBG, AugmentChoiceDialog).
+            // The rarity colour Epic Loot sets on the image is information and stays; the art becomes RarityFrame.
+            { "GenericItemBg", Role.Rarity },
+            { "AugaItemBG", Role.Rarity },
         };
+
+        // Auga's own slot outline (bundle Inventory_screen InventoryElement/selected: Container_Square_A_Outline), drawn
+        // in the item's rarity colour behind the icon: Auga's art, Epic Loot's colour. Also what Epic Loot gets from
+        // GetMagicItemBgSprite (Compat\EpicLootEnchanting) for the slots it re-tints on every grid/hotbar/recipe update.
+        public static Sprite RarityFrame => BundleSprite("Container_Square_A_Outline");
 
         // Bundle sprites are texture sub-assets (AssetBundle.LoadAsset<Sprite>(name) returns null), so they are taken
         // from the bundle prefabs that use them: Images and button sprite states of these roots.
@@ -127,7 +137,7 @@ namespace Auga
                     Add(state.disabledSprite);
                 }
             }
-            foreach (var name in new[] { "TextBackdrop", "TextInputBG", "Container_Diamond", "Knob", "Divider_Chevron_b", "SettignsButtonOver" })
+            foreach (var name in new[] { "TextBackdrop", "TextInputBG", "Container_Diamond", "Knob", "Divider_Chevron_b", "SettignsButtonOver", "Container_Square_A_Outline" })
                 if (!Sprites.ContainsKey(name))
                     Debug.LogError($"[Auga] AugaStyle: bundle sprite {name} not found in the Auga prefabs");
         }
@@ -219,6 +229,13 @@ namespace Auga
                         {
                             image.sprite = same;
                             image.preserveAspect = true;
+                        }
+                        break;
+                    case Role.Rarity:
+                        if (RarityFrame)
+                        {
+                            image.sprite = RarityFrame;
+                            image.type = Image.Type.Simple;
                         }
                         break;
                 }
