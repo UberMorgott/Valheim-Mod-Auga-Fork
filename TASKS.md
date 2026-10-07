@@ -39,7 +39,14 @@ NO = no Auga styling; PARTIAL = partly styled.
 - Batch 7 (AugaSkin 2.1.1 + AdventureBackpacks 1.9.14.8): #9 #26 EL rarity colour on Auga's slot outline (decision: keep EL colour,
   Auga art, no new art; EL's `HasAuga` path not enabled: it also runs EL's empty/destructive Auga stubs); #4 wide backpack
   panels in the AB fork. Shots `40c-el-rarity`, `46c-backpack-wide` (new).
-- State 2026-10-07: no open row left. Not covered by #9: Epic Loot's equipped-slot frame (`Equipped` sprite, ItemBackgroundHelper.ApplyEquippedSprite) and set-item marker stay EL art (candidate for a next row). In-game unverified (code-only): #18 achievement popup,
+- Batch 8 (AugaSkin 2.1.2 + AdventureBackpacks 1.9.14.9): #56 equipped/queued slot marks = Auga's own (`AugaStyle.SlotMarks` from the bundle
+  InventoryElement/HotKeyElement; the restyle had made them a 50% black backdrop, so equipped items were unmarked), Epic Loot no longer
+  swaps them (`ItemBackgroundHelper.ApplyEquippedSprite` skipped, EL's own HasAuga grid path) and its set-item marker = the Auga corner
+  mark mirrored, set colour (`CreateAndGetMagicItemBackgroundImage` postfix); #57 AB backpack panel next to a chest: weight box mirrored
+  to the panel's left edge (was half off screen), tooltips unanchored (were off screen); checked with and without AugaSkin
+  (`autotest.ps1 -DisablePlugin AugaSkin`). Shots `40c-el-rarity` (equipped/hotbar/set-marker checks), `46c-backpack-wide` (weight/tooltip checks).
+  Set-item marker in game unverified on screen: the test character has no set item (sprite/mirror checked on the hidden markers).
+- State 2026-10-07: no open row left. In-game unverified (code-only): #18 achievement popup,
   #31 build-camera badges, #37 resolution dialog, #38 credits, #39 join code/captions, #45 radial, #6 two-boss stack,
   #53 comparison tooltip, StarLevelSystem startup popups (same Jotunn path as the shot quick-config tool), Almanac
   quest/dialogue/NPC/form windows (checked while inactive). Vanilla WorldVersion dialog keeps UISprite buttons (plain
@@ -123,6 +130,8 @@ NO = no Auga styling; PARTIAL = partly styled.
 | [x] 52 | ConfigurationManager | settings window (IMGUI fonts, via c) | done | ? | M (via c) | `68-configmanager` |
 | [x] 53 | Epic Loot | comparison tooltip (child clone inside the tooltip instance, covered by the #8 postfix; unverified in-game: needs an equipped item of the hovered type) | done | ? | S | `65h-el-hudparts` |
 | [x] 54 | Epic Loot | scrollbar handles faint (item_background -> backdrop on backdrop track; from item 1) -- 2.0.9 trader panels go through `RestyleAll` (Auga scrollbar) | done | ? | ? | `65c-haldor-merchant` |
+| [x] 56 | Epic Loot / Vanilla | equipped + set-item slot marks: EL `Equipped` frame and `GenericSetItemMarker` -> Auga slot marks (`AugaStyle.SlotMarks`, 2.1.2) | done | high | S | `40c-el-rarity` |
+| [x] 57 | AdventureBackpacks | backpack panel next to a chest: weight box half off screen, tooltips off screen (AB fork 1.9.14.9) | done (AB fork) | med | S | `46c-backpack-wide` |
 | [-] 55 | BossAwakening | world boss bar `BA_WorldBossBar` (own art `BossBarAssets.cs:11`; font copied `BossBarHud.cs:334`) -- **WON'T DO: user 2026-10-05 keeps the mod's own design (exempt from Auga scope)** | - | - | - | `77-boss-bar` |
 
 ## Verify only (likely inherit Auga)

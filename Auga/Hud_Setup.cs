@@ -25,7 +25,11 @@ namespace Auga
             // Hotbar slots are instantiated from this template (HotkeyBar.cs:29 m_elementPrefab), outside hudroot.
             var hotkeyBar = __instance.GetComponentInChildren<HotkeyBar>(true);
             if (hotkeyBar)
+            {
                 AugaStyle.Restyle(hotkeyBar.m_elementPrefab.transform);
+                var augaBar = Auga.Assets.Hud ? Auga.Assets.Hud.GetComponentInChildren<HotkeyBar>(true) : null;
+                AugaStyle.SlotMarks(hotkeyBar.m_elementPrefab.transform, augaBar ? augaBar.m_elementPrefab : null);
+            }
 
             // Auga's bar cluster (health, stamina, eitr and the food diamonds) built from the vanilla objects; it lives
             // in m_healthPanel, so the HealthPanel offset moves the whole cluster.

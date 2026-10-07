@@ -34,6 +34,10 @@ namespace Auga
                      })
                 if (template)
                     AugaStyle.Restyle(template.transform);
+            // Equipped / queued marks of the grid slots: Auga's own slot prefab (bundle Inventory_screen grid).
+            var augaGrid = Auga.Assets.InventoryScreen ? Auga.Assets.InventoryScreen.GetComponentInChildren<InventoryGrid>(true) : null;
+            foreach (var grid in new[] { __instance.m_playerGrid, __instance.m_containerGrid })
+                AugaStyle.SlotMarks(grid.m_elementPrefab ? grid.m_elementPrefab.transform : null, augaGrid ? augaGrid.m_elementPrefab : null);
 
             // 5th Info button + character stats window, cloned from the restyled vanilla ones.
             CharacterStatsPanel.Create(__instance);

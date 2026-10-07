@@ -103,6 +103,25 @@ public static class EpicLootEnchanting
             else
                 Debug.LogWarning("[Auga] Epic Loot without EpicLoot.GetMagicItemBgSprite, its rarity slot backgrounds keep Epic Loot's art");
 
+            // Equipped overlay and set-item marker (API.ApplyMagicItemBackground, EL 0.14.13 API.cs:2215, on every grid /
+            // hotbar update). ItemBackgroundHelper.ApplyEquippedSprite (ItemBackgroundHelper.cs:80) swaps the slot's own
+            // "equiped" image for EL's Equipped frame sized to its texture; with EpicLoot.HasAuga it leaves the grid slot
+            // alone and only gives the hotbar EL's AugaEquipped. Auga's bundle slots carry their own equipped art
+            // (InventoryElement/equiped: Indicator corner, HotKeyElement/equiped: Container_Square_A, both Auga blue), so
+            // the swap is skipped everywhere. The set-item marker EL clones from that overlay once per grid slot
+            // (CreateAndGetMagicItemBackgroundImage, :57-76, GenericSetItemMarker 64x64 centred) becomes Auga's own
+            // corner Indicator, mirrored into the opposite corner, in Epic Loot's set colour.
+            var helper = assembly.GetType("EpicLoot.ItemBackgroundHelper");
+            var equippedSprite = helper?.GetMethod("ApplyEquippedSprite", BindingFlags.Public | BindingFlags.Static);
+            var createBg = helper?.GetMethod("CreateAndGetMagicItemBackgroundImage", BindingFlags.Public | BindingFlags.Static);
+            if (equippedSprite != null && createBg != null)
+            {
+                _harmony.Patch(equippedSprite, prefix: new HarmonyMethod(typeof(EpicLootEnchanting), nameof(ApplyEquippedSprite_Prefix)));
+                _harmony.Patch(createBg, postfix: new HarmonyMethod(typeof(EpicLootEnchanting), nameof(CreateMagicItemBg_Postfix)));
+            }
+            else
+                Debug.LogWarning("[Auga] Epic Loot without ItemBackgroundHelper.ApplyEquippedSprite/CreateAndGetMagicItemBackgroundImage, its equipped and set-item slot art stay Epic Loot's");
+
             foreach (var typeName in new[] { "EpicLoot.MessagePanelBase", "EpicLoot.WelcomeMessage" })
             {
                 var awake = assembly.GetType(typeName)?.GetMethod("Awake", BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.DeclaredOnly);
@@ -164,6 +183,33 @@ public static class EpicLootEnchanting
         var frame = AugaStyle.RarityFrame;
         if (frame)
             __result = frame;
+    }
+
+    // The slot keeps its own equipped overlay (see Init).
+    public static bool ApplyEquippedSprite_Prefix() => false;
+
+    // Runs on every grid update; the marker is converted once (its sprite then is the overlay's).
+    public static void CreateMagicItemBg_Postfix(GameObject elementGo, GameObject equipped, bool isInventoryGrid)
+    {
+        if (!isInventoryGrid || !elementGo || !equipped)
+            return;
+        var marker = elementGo.transform.Find("setItem") as RectTransform;
+        var overlay = equipped.transform as RectTransform;
+        if (!marker || !overlay || !marker.TryGetComponent<UnityEngine.UI.Image>(out var image) ||
+            !equipped.TryGetComponent<UnityEngine.UI.Image>(out var art) || !art.sprite || image.sprite == art.sprite)
+            return;
+        image.sprite = art.sprite;
+        image.type = art.type;
+        image.preserveAspect = art.preserveAspect;
+        // Same rect as the overlay, flipped about the slot's vertical centre line: mirrored anchors and offset, and a
+        // negative x scale about the unchanged pivot, which also mirrors the art.
+        marker.anchorMin = new Vector2(1f - overlay.anchorMax.x, overlay.anchorMin.y);
+        marker.anchorMax = new Vector2(1f - overlay.anchorMin.x, overlay.anchorMax.y);
+        marker.pivot = overlay.pivot;
+        marker.sizeDelta = overlay.sizeDelta;
+        marker.anchoredPosition = new Vector2(-overlay.anchoredPosition.x, overlay.anchoredPosition.y);
+        var scale = overlay.localScale;
+        marker.localScale = new Vector3(-scale.x, scale.y, scale.z);
     }
 
     public static void ScrollingDescription_Postfix(UnityEngine.UI.ScrollRect __result)

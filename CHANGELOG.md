@@ -1,3 +1,8 @@
+### 2.1.2 - Epic Loot equipped and set-item marks
+
+* Equipped and queued items show Auga's own marks again (blue / amber corner in the inventory, blue / amber slot on the hotbar); they had become an almost invisible dark backdrop. With Epic Loot they no longer turn into Epic Loot's frame.
+* Epic Loot's set-item marker is Auga's corner mark, in the opposite corner, in the set colour.
+
 ### 2.1.1 - Epic Loot rarity on Auga slots
 
 * Epic Loot rarity backgrounds (inventory, hotbar, recipe list and icon, Epic Loot panels and dialogs) use Auga's own slot outline in the rarity colour instead of Epic Loot's glow art.

@@ -486,6 +486,34 @@ namespace Auga
             return Sprites.TryGetValue(name, out var s) ? s : null;
         }
 
+        // Slot state marks of an item slot template (vanilla InventoryGrid / HotkeyBar m_elementPrefab): the equipped
+        // and queued-equip images (InventoryGrid.cs:334-335 enabled, HotkeyBar.cs:161 SetActive) take the look and place
+        // of the same children in Auga's own slot prefab (bundle InventoryElement: an 8 px Indicator corner at the
+        // bottom left, blue / amber; HotKeyElement: the whole 64 px Container_Square_A, blue / amber). Restyle alone
+        // maps their vanilla sprite to a 50% black backdrop, which left an equipped item unmarked.
+        public static void SlotMarks(Transform template, GameObject augaSlot)
+        {
+            if (!template || !augaSlot)
+                return;
+            foreach (var name in new[] { "equiped", "queued" })
+            {
+                var dst = template.Find(name) as RectTransform;
+                var src = augaSlot.transform.Find(name) as RectTransform;
+                if (!dst || !src || !dst.TryGetComponent<Image>(out var image) || !src.TryGetComponent<Image>(out var art))
+                {
+                    Debug.LogWarning($"[Auga] AugaStyle: slot mark {name} missing in {template.name} or {augaSlot.name}");
+                    continue;
+                }
+                CopyImage(image, art);
+                image.preserveAspect = art.preserveAspect;
+                dst.anchorMin = src.anchorMin;
+                dst.anchorMax = src.anchorMax;
+                dst.pivot = src.pivot;
+                dst.sizeDelta = src.sizeDelta;
+                dst.anchoredPosition = src.anchoredPosition;
+            }
+        }
+
         private static bool _scrollbarLoaded;
         private static Scrollbar _scrollbar;
         private static Image _scrollbarTrack, _scrollbarHandle;
