@@ -1,3 +1,7 @@
+### 2.1.5 - Almanac form modal styled without Unity errors
+
+* The Almanac form modal is now Auga-styled on the copy Almanac creates (after AlmanacPanel.Start), not on its bundle prefab. Restyling the prefab tried to attach Auga's four panel corner ornaments to an asset, which Unity refuses (`Cannot instantiate objects with a parent which is persistent`, 4 errors per game start) and left the corners parentless in the scene.
+
 ### 2.1.4 - Barber: no error spam after logout
 
 * The Auga barber panel only updates its hair/beard arrows while it is open and a player exists, like the vanilla barber. Before, it ran every frame and, after logging out to the main menu, threw a NullReferenceException each frame until the world closed.
