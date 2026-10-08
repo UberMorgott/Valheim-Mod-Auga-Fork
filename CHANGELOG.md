@@ -1,3 +1,8 @@
+### 2.1.4 - Barber: no error spam after logout
+
+* The Auga barber panel only updates its hair/beard arrows while it is open and a player exists, like the vanilla barber. Before, it ran every frame and, after logging out to the main menu, threw a NullReferenceException each frame until the world closed.
+* Hair/beard arrows are both set every frame, so jumping between the first and last style no longer leaves both arrows hidden.
+
 ### 2.1.3 - Ally shield on the overhead health bar
 
 * Other players' absorb shield (Staff of Protection bubble, any vanilla SE_Shield) shows as a blue strip under their overhead health bar, filled by remaining / total absorb. Needs MorgottTweaks 1.46.0+ on the shielded player ([Multiplayer] ShareShieldAbsorb, player ZDO mt_shield / mt_shield_max): vanilla keeps the absorb only on the owner.

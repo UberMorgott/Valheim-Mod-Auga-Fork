@@ -1,23 +1,18 @@
-﻿using UnityEngine;
+using UnityEngine;
 using UnityEngine.UI;
 
 namespace AugaUnity
 {
     public class AugaBarberController : MonoBehaviour
     {
-        public static AugaBarberController Instance => _instance;
         public Button HairRightButton;
         public Button HairLeftButton;
         public Button BeardRightButton;
         public Button BeardLeftButton;
 
-        private bool _playerFound;
-        private static AugaBarberController _instance = null;
-
         private PlayerCustomizaton _playerCustomization;
         private void Awake()
         {
-            _instance = this;
             _playerCustomization = GetComponent<PlayerCustomizaton>();
         }
 
@@ -33,40 +28,24 @@ namespace AugaUnity
 
         private void Update()
         {
-            if (!_playerFound)
-            {
-                if (Player.m_localPlayer == null)
-                    return;
-                _playerFound = true;
-            }
+            // Same gate as vanilla PlayerCustomizaton.Update (PlayerCustomizaton.cs:103, game 1.0.16):
+            // work only while the barber panel is open and a player exists. The controller lives on
+            // the always-active BarberGui object, so without this it ran every frame, and after logout
+            // (Player.m_localPlayer destroyed, no FejdStartup parent) GetPlayer() is null -> NRE.
+            var customization = _playerCustomization;
+            if (customization.m_hairs == null || customization.m_beards == null
+                || (customization.m_rootPanel && !customization.m_rootPanel.activeInHierarchy)
+                || customization.GetPlayer() == null)
+                return;
 
-            var hairSetting = _playerCustomization.GetHairIndex();
-            var beardSetting = +_playerCustomization.GetBeardIndex();
+            var hairSetting = customization.GetHairIndex();
+            var beardSetting = customization.GetBeardIndex();
 
-            if (hairSetting == 0)
-                HairLeftButton.gameObject.SetActive(false);
-            else if (hairSetting >= (_playerCustomization.m_hairs.Count - 1))
-                HairRightButton.gameObject.SetActive(false);
-            else
-            {
-                HairLeftButton.gameObject.SetActive(true);
-                HairRightButton.gameObject.SetActive(true);
-            }
-
-            if (beardSetting == 0)
-                BeardLeftButton.gameObject.SetActive(false);
-            else if (beardSetting >= (_playerCustomization.m_beards.Count - 1))
-                BeardRightButton.gameObject.SetActive(false);
-            else
-            {
-                BeardLeftButton.gameObject.SetActive(true);
-                BeardRightButton.gameObject.SetActive(true);
-            }
-        }
-
-        public void ResetLocalPlayer()
-        {
-            _playerFound = false;
+            // Set both arrows every frame: hiding only one let a jump between the ends leave both hidden.
+            HairLeftButton.gameObject.SetActive(hairSetting > 0);
+            HairRightButton.gameObject.SetActive(hairSetting < customization.m_hairs.Count - 1);
+            BeardLeftButton.gameObject.SetActive(beardSetting > 0);
+            BeardRightButton.gameObject.SetActive(beardSetting < customization.m_beards.Count - 1);
         }
     }
 }

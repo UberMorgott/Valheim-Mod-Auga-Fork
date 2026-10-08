@@ -1,4 +1,3 @@
-﻿using AugaUnity;
 using HarmonyLib;
 
 namespace Auga;
@@ -14,14 +13,4 @@ public static class Barber_Setup
             return !SetupHelper.DirectObjectReplace(__instance.transform, Auga.Assets.AugaBarber, "BarberGui");
         }
     }
-
-    [HarmonyPatch(typeof(Game), nameof(Game._RequestRespawn))]
-    public static class GameRequestRespawn_Awake_Patch
-    {
-        public static void Postfix(PlayerCustomizaton __instance)
-        {
-            AugaBarberController.Instance.ResetLocalPlayer();
-        }
-    }
-
 }
