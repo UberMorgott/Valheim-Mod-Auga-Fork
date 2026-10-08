@@ -1,3 +1,7 @@
+### 2.1.6 - Almanac works again with AugaSkin 2.1.5
+
+* AugaSkin 2.1.5 hooked the Almanac panel while the game was still loading, before Almanac had loaded its UI assets. That broke Almanac's form modal for the whole session: the Almanac window never appeared and an error was logged every frame. The hook now goes in when the inventory UI is first built, after Almanac's UI exists.
+
 ### 2.1.5 - Almanac form modal styled without Unity errors
 
 * The Almanac form modal is now Auga-styled on the copy Almanac creates (after AlmanacPanel.Start), not on its bundle prefab. Restyling the prefab tried to attach Auga's four panel corner ornaments to an asset, which Unity refuses (`Cannot instantiate objects with a parent which is persistent`, 4 errors per game start) and left the corners parentless in the scene.
