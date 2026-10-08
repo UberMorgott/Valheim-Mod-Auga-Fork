@@ -8,11 +8,7 @@ namespace Auga
     // Summon frames (Phase 3, BalanceSim TASKS.md): one small frame per living summon of the local player, Diablo-2
     // style, in a row under the hotkey bar: creature icon, health bar, level stars. Vanilla has no such element.
     //
-    // Whose summon: MorgottTweaks marks every summon ZDO with long mt_sum_owner = summoner Player.GetPlayerID(). Without
-    // the key (MorgottTweaks absent or an older summon) a vanilla staff summon counts: a tamed creature whose Tameable
-    // unsummons (m_unsummonDistance / m_unsummonOnOwnerLogoutSeconds, Tameable.cs:30-32, set on Skeleton_Friendly) and
-    // that follows the local player by name (ZDO "follow", written by Tameable.RPC_Command on the vanilla summon path
-    // SpawnAbility m_commandOnSpawn -> Tameable.Command, SpawnAbility.cs:255-260, Tameable.cs:483-486).
+    // Whose summon: IsSummonOf (vanilla follow-name ownership; MorgottTweaks' mt_sum_owner stamp only narrows it).
     //
     // Art: the frame is the hotkey slot of the Auga bundle (HotKeyElement: Container_Square_A background,
     // Container_Square_A_Outline border), the bar is the bundle's AugaProgressBarBody_Small in the Auga enemy HUD's
@@ -87,6 +83,13 @@ namespace Auga
             _summons.Clear();
             if (player && !player.IsDead() && Auga.ShowSummonFrames.Value)
                 FindSummons(player, _summons);
+            if (Changed())
+            {
+                var lines = new List<string>(_summons.Count);
+                foreach (var c in _summons)
+                    lines.Add(Describe(c, player));
+                Auga.Log($"[SummonFrames] {_summons.Count} summon(s): {string.Join("; ", lines)}");
+            }
             for (var i = 0; i < _summons.Count; i++)
             {
                 if (i == _frames.Count)
@@ -100,6 +103,19 @@ namespace Auga
             }
         }
 
+        // The summon list differs from what the frames show (frames past the list hold no character).
+        private bool Changed()
+        {
+            for (var i = 0; i < Mathf.Max(_summons.Count, _frames.Count); i++)
+            {
+                object shown = i < _frames.Count ? _frames[i].Character : null;
+                object found = i < _summons.Count ? _summons[i] : null;
+                if (!ReferenceEquals(shown, found))
+                    return true;
+            }
+            return false;
+        }
+
         // Summons in Character.GetAllCharacters order (registration order, so a frame keeps its slot while it lives).
         public static void FindSummons(Player player, List<Character> result)
         {
@@ -111,19 +127,48 @@ namespace Auga
                     break;
                 if (!c || c.IsPlayer() || c.IsDead() || !c.m_nview || c.m_nview.GetZDO() is not ZDO zdo)
                     continue;
-                var owner = zdo.GetLong(OwnerKey);
-                if (owner != 0L ? owner == id : IsVanillaSummonOf(c, zdo, name))
+                if (IsSummonOf(c, zdo, player, id, name))
                     result.Add(c);
             }
         }
 
-        private static bool IsVanillaSummonOf(Character c, ZDO zdo, string playerName)
+        // Vanilla's own test of "this player's summon" (Tameable.UnsummonMaxInstances, Tameable.cs:641-701): a tamed
+        // creature whose ZDO follow name is the player's. Every summon follows its summoner from the spawn on
+        // (SpawnAbility m_commandOnSpawn -> Tameable.Command, SpawnAbility.cs:255-260) and cannot be told to stay (no
+        // vanilla summon is m_commandable, Tameable.cs:203); one that follows nobody has lost its owner and only waits for
+        // UpdateSavedFollowTarget (Tameable.cs:501-528). The mt_sum_owner stamp alone is not ownership: it stays in the
+        // ZDO for good, so it narrows the owner (another player's id = not mine) but never replaces the follow test.
+        // The creature must be a summon (m_unsummonDistance / m_unsummonOnOwnerLogoutSeconds, Tameable.cs:30-32: every
+        // prefab a player staff spawns has both, vanilla and Wizardry, all with m_commandOnSpawn), so a tame wolf or hen
+        // that follows the player is not one. On the ZDO owner the live MonsterAI follow target (set only there,
+        // RPC_Command, Tameable.cs:460-499) must be this player too (none yet = re-acquiring by name, kept), and a summon
+        // past m_unsummonDistance is one vanilla removes (UpdateSummon, Tameable.cs:629-639).
+        internal static bool IsSummonOf(Character c, ZDO zdo, Player player, long playerId, string playerName)
         {
             if (!c.IsTamed() || !c.TryGetComponent<Tameable>(out var tameable))
                 return false;
             if (tameable.m_unsummonDistance <= 0f && tameable.m_unsummonOnOwnerLogoutSeconds <= 0f)
                 return false;
-            return zdo.GetString(ZDOVars.s_follow) == playerName;
+            var stamp = zdo.GetLong(OwnerKey);
+            if (stamp != 0L && stamp != playerId)
+                return false;
+            if (string.IsNullOrEmpty(playerName) || zdo.GetString(ZDOVars.s_follow) != playerName)
+                return false;
+            if (c.m_nview.IsOwner() && c.GetBaseAI() is MonsterAI ai && ai.GetFollowTarget() is GameObject target && target != player.gameObject)
+                return false;
+            return tameable.m_unsummonDistance <= 0f ||
+                   Vector3.Distance(c.transform.position, player.transform.position) <= tameable.m_unsummonDistance;
+        }
+
+        // One line per change of the summon list (Logging/LoggingEnabled): what made each creature count as a summon.
+        private static string Describe(Character c, Player player)
+        {
+            var zdo = c.m_nview ? c.m_nview.GetZDO() : null;
+            var ai = c.GetBaseAI() as MonsterAI;
+            var target = ai ? ai.GetFollowTarget() : null;
+            return $"{Utils.GetPrefabName(c.gameObject)} name={c.m_name} level={c.GetLevel()} tamed={c.IsTamed()} " +
+                   $"owner={zdo?.GetLong(OwnerKey) ?? 0L} follow='{zdo?.GetString(ZDOVars.s_follow)}' " +
+                   $"target={(target ? target.name : "-")} dist={Vector3.Distance(c.transform.position, player.transform.position):0.#}";
         }
 
         private Frame MakeFrame(int index)

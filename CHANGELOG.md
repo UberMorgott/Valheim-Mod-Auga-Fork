@@ -1,3 +1,8 @@
+### 2.1.7 - Summon frames show only your following summons
+
+* The summon frames under the hotkey bar counted any loaded creature whose MorgottTweaks summoner stamp (`mt_sum_owner`) held your player id, at any distance and whether or not it still followed you. The stamp stays on a creature for good, so summons that had lost their owner (or any stamped creature in the loaded area) kept frames. A frame now needs what the game itself uses for "this player's summon": a tamed summon creature (it unsummons by distance or owner logout) whose follow target is you by name, live on the owner side, within its unsummon distance. A stamp from another player still excludes it.
+* With `[Logging] LoggingEnabled` on, each change of the summon list is logged with prefab, name, level, tamed, owner stamp, follow name, follow target and distance.
+
 ### 2.1.6 - Almanac works again with AugaSkin 2.1.5
 
 * AugaSkin 2.1.5 hooked the Almanac panel while the game was still loading, before Almanac had loaded its UI assets. That broke Almanac's form modal for the whole session: the Almanac window never appeared and an error was logged every frame. The hook now goes in when the inventory UI is first built, after Almanac's UI exists.
