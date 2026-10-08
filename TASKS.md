@@ -136,7 +136,7 @@ NO = no Auga styling; PARTIAL = partly styled.
 
 ## Verify only (likely inherit Auga)
 
-- BalrondSecondChance downed popup; Warfare build tab; V+ mute toggle; EquipmentAndQuickSlots quick-slot hotbar
+- Warfare build tab; V+ mute toggle; EquipmentAndQuickSlots quick-slot hotbar
   (`45-inventory-worn`, `20-hud`); Jotunn key hints; CurrencyPocket (emoji label may not render; `40-inventory`);
   StarLevelSystem stars; VNEI tab button.
 - Not covered by new inventory, still verify: MultiUserChest in-use message / chest UI (`42-container`); Seasonality
