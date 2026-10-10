@@ -17,6 +17,10 @@
     <!-- Отключаем авто-генерацию AssemblyInfo — Properties\AssemblyInfo.cs уже есть -->
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
     <ProjectGuid>{BCC7DD31-D943-4684-800E-176A97DDDB8F}</ProjectGuid>
+    <!-- SDK 8's in-box SourceLink embeds the git commit SHA in the PDB, which the deterministic
+         content id folds into the MVID/PE timestamp: every commit changed the DLL bytes. -->
+    <EnableSourceLink>false</EnableSourceLink>
+    <EnableSourceControlManagerQueries>false</EnableSourceControlManagerQueries>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)' == 'Debug'">
