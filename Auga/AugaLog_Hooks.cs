@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using AugaUnity;
 using HarmonyLib;
 using UnityEngine;
@@ -206,6 +206,13 @@ namespace Auga
 
         public static bool Prefix(Player __instance, Skills.SkillType skill)
         {
+            // Player.RaiseSkill does nothing for None (Player.cs, if (skill != Skills.SkillType.None)); Skills.GetSkill(None)
+            // would add a SkillDef-less entry that makes Skills.Save throw at logout (Skills.cs:124-133, 345-353).
+            if (skill == Skills.SkillType.None)
+            {
+                Skill = skill;
+                return true;
+            }
             Skill = skill;
             LevelBefore = Mathf.FloorToInt(__instance.m_skills.GetSkill(skill)?.m_level ?? 0);
             return true;
@@ -213,7 +220,7 @@ namespace Auga
 
         public static void Postfix(Player __instance, Skills.SkillType skill)
         {
-            if (Skill != skill)
+            if (Skill != skill || skill == Skills.SkillType.None)
             {
                 return;
             }

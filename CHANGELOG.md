@@ -1,3 +1,7 @@
+### 2.1.8 - No broken save after a skill-less hit
+
+* The message-log hook on `Player.RaiseSkill` asked `Skills.GetSkill` for every raised skill, including `None`, which vanilla skips. That added a skill with no definition, and `Skills.Save` then threw a NullReferenceException at logout, so the character was not saved. A hit with no skill (MorgottTweaks' reflected projectiles, StarLevelSystem's reflected ones) triggered it. `None` is now skipped the way vanilla skips it.
+
 ### 2.1.7 - Summon frames show only your following summons
 
 * The summon frames under the hotkey bar counted any loaded creature whose MorgottTweaks summoner stamp (`mt_sum_owner`) held your player id, at any distance and whether or not it still followed you. The stamp stays on a creature for good, so summons that had lost their owner (or any stamped creature in the loaded area) kept frames. A frame now needs what the game itself uses for "this player's summon": a tamed summon creature (it unsummons by distance or owner logout) whose follow target is you by name, live on the owner side, within its unsummon distance. A stamp from another player still excludes it.
