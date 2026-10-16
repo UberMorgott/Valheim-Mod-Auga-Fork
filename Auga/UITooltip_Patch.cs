@@ -31,8 +31,18 @@ namespace Auga
                 if (t.TryGetComponent<UnityEngine.UI.Image>(out var box) && box.sprite && Boxes.Contains(box.sprite.name))
                 {
                     AugaStyle.Tooltip(box);
-                    break;
+                    return;
                 }
+            // The plain "Tooltip" prefab of the crafting requirement elements (InventoryGui.SetupRequirement sets their
+            // UITooltip text, InventoryGui.cs:1733) has no image at all: root, Text and an empty child, the root sized
+            // around the text with padding. Vanilla shows bare text there; Auga frames every tooltip, so the root gets
+            // the Auga tooltip frame behind its children (a parent's graphic draws first).
+            if (text && !tip.GetComponentInChildren<UnityEngine.UI.Image>(true) && !tip.TryGetComponent<UnityEngine.UI.Graphic>(out _))
+            {
+                var frame = tip.AddComponent<UnityEngine.UI.Image>();
+                frame.raycastTarget = false;
+                AugaStyle.Tooltip(frame);
+            }
         }
     }
 
