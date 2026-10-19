@@ -1,3 +1,12 @@
+### 2.2.1 - Shield rims side by side
+
+* Gear energy shield (cyan) and the cast shield (purple, Staff of Protection) are consecutive segments of one rim along the health bar instead of one ring around the other: cyan first, purple right after it; a hit on the cast shield shrinks only the purple segment.
+
+### 2.2.0 - Alchemist food slot, resource affix regen rows
+
+* A 4th food diamond on the HUD for the MorgottTweaks Alchemist gem slot (Alchemist's Gut gem: a fourth food).
+* Character stats regen rows include the MorgottTweaks flat stamina / eitr regen affixes (AddStaminaRegen / AddEitrRegen, EpicLootRebalance patch 94).
+
 ### 2.1.15 - Belt, ring and amulet slot outlines
 
 * Empty EquipmentAndQuickSlots accessory cells show what goes there: a belt in the first utility cell, a ring in the second and third (MorgottTweaks 1.83.0 keeps rings and belts in their own cells), the amulet outline in the trinket cell.

@@ -25,11 +25,18 @@ namespace Auga
         // Bundle hudroot layout (lower-left anchored, pivot (0,0)): bars 17 px high at (208,123.5), (208,99.5),
         // (185,74.5); food panels 50x50 at (138,66), (167,95), (138,124). The cluster origin is FoodPanel0.
         private static readonly Vector2 Origin = new Vector2(138f, 66f);
-        private static readonly Vector2 ClusterSize = new Vector2(640f, 110f);
+        // Up to the top of the highest food diamond plus 2 px (110 with the bundle's three).
+        private static Vector2 ClusterSize => new Vector2(640f, FoodCenter[FoodCenter.Length - 1].y + FoodSize / 2f + 2f);
         // Top edge of the cluster in hudroot pixels (lower-left origin), before the player's HealthPanel offset.
         public static float ClusterTop => Origin.y + ClusterSize.y;
         private static readonly Vector2[] BarLeftCenter = { new Vector2(70f, 66f), new Vector2(70f, 42f), new Vector2(47f, 17f) };
-        private static readonly Vector2[] FoodCenter = { new Vector2(25f, 25f), new Vector2(54f, 54f), new Vector2(25f, 83f) };
+        // The bundle's three diamonds zig-zag up the column; the 4th (MorgottTweaks Alchemist gem food slot, a clone of the
+        // third that MorgottTweaks appends to Hud.m_foodIcons/m_foodTime/m_foodBars before this runs) continues the zig-zag.
+        private static readonly Vector2[] FoodCenter =
+            { new Vector2(25f, 25f), new Vector2(54f, 54f), new Vector2(25f, 83f), new Vector2(54f, 112f) };
+        // The bundle has frames for three foods; a diamond past them is shown only while a food fills it (UpdateFoodFrames).
+        private const int BundleFoodSlots = 3;
+        private static readonly List<Image> ExtraFoodFrames = new List<Image>();
         private static readonly Vector2 GuardianPowerSlot = new Vector2(100f, 86f); // hudroot pixels, pivot (1,0)
         private const float BarHeight = 16f, FoodSize = 50f, FoodIconSize = 32f;
 
@@ -80,7 +87,10 @@ namespace Auga
 
             // Food: Auga diamond frames in a diagonal column, the vanilla timer to the left of each icon.
             var frame = AugaStyle.FromPrefab<Image>(prefab, "hudroot/FoodPanel0/IconBG");
-            for (var i = 0; i < hud.m_foodIcons.Length; i++)
+            // Vanilla's prefab has three (Hud.cs:125-129); slots past FoodCenter keep their vanilla place.
+            var foodSlots = Mathf.Min(Mathf.Min(hud.m_foodIcons.Length, hud.m_foodTime.Length), FoodCenter.Length);
+            ExtraFoodFrames.Clear();
+            for (var i = 0; i < foodSlots; i++)
             {
                 var icon = hud.m_foodIcons[i];
                 var slot = (RectTransform)icon.transform.parent;
@@ -89,7 +99,14 @@ namespace Auga
                 slot.anchoredPosition = FoodCenter[i];
                 slot.sizeDelta = new Vector2(FoodSize, FoodSize);
                 if (slot.TryGetComponent<Image>(out var slotImage))
+                {
                     AugaStyle.CopyImage(slotImage, frame);
+                    if (i >= BundleFoodSlots)
+                    {
+                        slotImage.enabled = false;
+                        ExtraFoodFrames.Add(slotImage);
+                    }
+                }
                 var iconRt = icon.rectTransform;
                 iconRt.anchorMin = iconRt.anchorMax = iconRt.pivot = new Vector2(0.5f, 0.5f);
                 iconRt.anchoredPosition = Vector2.zero;
@@ -332,9 +349,12 @@ namespace Auga
         //
         // Energy shield (MorgottTweaks [EnergyShield], contract BalanceSim TASKS.md Phase 3 / DESIGN-SHIELD.md 2.4): the
         // owner writes the current and max value into the player ZDO (floats mt_es / mt_es_max, throttled). It gets a
-        // second rim of the same kind in cyan. With both, the SE_Shield rim moves one band further out (OuterPad), so
-        // the order from the bar outwards is gap, cyan ES, gap, purple cast shield; each keeps its own length. Their
-        // values are printed right of the HP value in the same colours (ShieldText).
+        // second rim of the same kind in cyan. With both, they are consecutive segments of one rim along the bar (user
+        // 2026-10-19: side by side, never on the same span): cyan ES from the bar start, then the purple cast shield
+        // right after it. The purple rim runs from the bar start to the end of both and sits behind the cyan one, whose
+        // opaque fill covers its first part, so the seam is the cyan rim's own slanted end and a short purple remainder
+        // keeps its cap size. The cast shield drains first (outer layer), so its segment shrinks while cyan stays.
+        // Their values are printed right of the HP value in the same colours (ShieldText).
         private sealed class Rim
         {
             public RectTransform Rect;
@@ -348,11 +368,12 @@ namespace Auga
         // User 2026-10-19: gear energy shield = light blue / cyan, the staff's self-cast shield (SE_Shield, temporary) =
         // purple; the same two colours on the rims, the numbers beside the HP value and the overhead strips
         // (EnergyShieldHud). The cast shield takes a hit first (SEMan.OnDamaged, Character.cs:2331, before block and
-        // armor), the energy shield after armor (MorgottTweaks, DamageArmorDurability :2384), so its rim is the outer one.
+        // armor; MorgottTweaks StaffShieldAfterArmor: right before the ES), the energy shield after armor (MorgottTweaks,
+        // DamageArmorDurability :2384), so its segment is the outer (later) one along the bar.
         public static readonly Color ShieldColor = new Color(0.66f, 0.42f, 1f, 1f);
         public static readonly Color EnergyShieldColor = new Color(0.35f, 0.85f, 1f, 1f);
         private static readonly Color ShieldGapColor = new Color(0f, 0f, 0f, 0.5f);
-        private const float ShieldGap = 3f, ShieldPad = 6f, OuterPad = 10f;
+        private const float ShieldGap = 3f, ShieldPad = 6f;
         public static readonly int EnergyShieldKey = "mt_es".GetStableHashCode();
         public static readonly int EnergyShieldMaxKey = "mt_es_max".GetStableHashCode();
 
@@ -437,7 +458,8 @@ namespace Auga
             // HP bar pixels per HP = its width / max health (covers the length scale and a fixed length alike).
             var pixelsPerHp = hud.m_healthBarRoot.rect.width / Mathf.Max(1f, player.GetMaxHealth());
             SetRim(_energyRim, energy * pixelsPerHp, ShieldPad);
-            SetRim(_shieldRim, shield * pixelsPerHp, energy > 0f ? OuterPad : ShieldPad);
+            // Purple segment after the cyan one: behind it, from the bar start to the end of both (see Shield).
+            SetRim(_shieldRim, shield > 0f ? (energy + shield) * pixelsPerHp : 0f, ShieldPad);
             SetShieldText(energy, shield);
         }
 
@@ -487,6 +509,18 @@ namespace Auga
                 rim.SetAsFirstSibling();
                 _adrenalineRim.SetActive(false);
             }
+        }
+
+        // Postfix of Hud.UpdateFood: vanilla hides the icon and timer of slot i once i >= foods.Count (Hud.cs:1018-1056);
+        // a diamond past the bundle's three follows the same rule, so an unused 4th slot draws no empty frame.
+        public static void UpdateFoodFrames(Player player)
+        {
+            if (ExtraFoodFrames.Count == 0)
+                return;
+            var eaten = player.GetFoods().Count;
+            for (var i = 0; i < ExtraFoodFrames.Count; i++)
+                if (ExtraFoodFrames[i])
+                    ExtraFoodFrames[i].enabled = BundleFoodSlots + i < eaten;
         }
 
         public static float AdrenalineLength(float size) => _staminaRoot ? _staminaRoot.rect.width - 16f : size;
@@ -562,6 +596,9 @@ namespace Auga
 
         [HarmonyPatch(nameof(Hud.UpdateAdrenaline)), HarmonyPostfix, UsedImplicitly]
         private static void AdrenalineUpdate(Player player) => AugaStatBars.UpdateAdrenaline(player);
+
+        [HarmonyPatch(nameof(Hud.UpdateFood)), HarmonyPostfix, UsedImplicitly]
+        private static void FoodFrames(Player player) => AugaStatBars.UpdateFoodFrames(player);
 
         private static IEnumerable<CodeInstruction> Lift(IEnumerable<CodeInstruction> code, float lifted, string method)
         {
