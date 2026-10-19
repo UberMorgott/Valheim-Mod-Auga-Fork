@@ -1,3 +1,7 @@
+### 2.1.15 - Belt, ring and amulet slot outlines
+
+* Empty EquipmentAndQuickSlots accessory cells show what goes there: a belt in the first utility cell, a ring in the second and third (MorgottTweaks 1.83.0 keeps rings and belts in their own cells), the amulet outline in the trinket cell.
+
 ### 2.1.14 - Trash plate icon
 
 * MorgottTweaks 1.82.0's trash plate in the inventory (under armor, purse and weight) shows Auga's own trash icon.

@@ -41,15 +41,17 @@ namespace Auga
         private static readonly string[] Backgrounds = { "EaqsEquipmentBkg", "EaqsQuickSlotBkg", "EaqsCustomSlotBkg" };
 
         // Embedded silhouette icon (Assets/SlotIcons, white on transparent) per EAQS equipment slot ID (Slots.cs:987-994).
+        // Utility = belt, Utility2 / Utility3 = rings, Trinket = amulet (trinket.png): the pack runs EAQS with Utility Slot
+        // Count 3 and MorgottTweaks [Compat] EaqsRingSlot, which keeps rings in Utility2/3, belts and other utility items in Utility.
         private static readonly Dictionary<string, string> SilhouetteIcons = new Dictionary<string, string>
         {
             { "Helmet", "helmet" },
             { "Chest", "chest" },
             { "Legs", "legs" },
             { "Shoulder", "cape" },
-            { "Utility", "utility" },
-            { "Utility2", "utility" },
-            { "Utility3", "utility" },
+            { "Utility", "belt" },
+            { "Utility2", "ring" },
+            { "Utility3", "ring" },
             { "Trinket", "trinket" },
         };
 
