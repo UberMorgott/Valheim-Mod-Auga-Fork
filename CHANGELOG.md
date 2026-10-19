@@ -1,3 +1,7 @@
+### 2.1.14 - Trash plate icon
+
+* MorgottTweaks 1.82.0's trash plate in the inventory (under armor, purse and weight) shows Auga's own trash icon.
+
 ### 2.1.13 - Active effects rows without gaps
 
 * Effect texts with blank lines (meads: description, then resistances and duration) no longer leave an empty line inside their row.
