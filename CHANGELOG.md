@@ -1,3 +1,8 @@
+### 2.1.11 - Shield values on the HP bar, new shield colours
+
+* The energy shield value is printed right of the HP value on the health bar, and the Staff of Protection (or any vanilla absorb) shield value after it. MorgottTweaks 1.73.0 drops its energy-shield icon from the status list in the top-right corner.
+* Gear energy shield is now light blue / cyan and the self-cast staff shield purple, on the rims around the HP bar, the values and the strips under overhead health bars. The cast shield still takes a hit first, the energy shield after armor.
+
 ### 2.1.8 - No broken save after a skill-less hit
 
 * The message-log hook on `Player.RaiseSkill` asked `Skills.GetSkill` for every raised skill, including `None`, which vanilla skips. That added a skill with no definition, and `Skills.Save` then threw a NullReferenceException at logout, so the character was not saved. A hit with no skill (MorgottTweaks' reflected projectiles, StarLevelSystem's reflected ones) triggered it. `None` is now skipped the way vanilla skips it.
