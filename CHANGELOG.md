@@ -1,3 +1,7 @@
+### 2.2.2 - Summon slot frames
+
+* Summon frames under the hotbar follow the MorgottTweaks 1.98.0 summon slots: one frame per slot with its state (Respawn Ns / No reserve / Stay / Off), a cyan energy shield overlay, and no level stars (summons stay level 1).
+
 ### 2.2.1 - Shield rims side by side
 
 * Gear energy shield (cyan) and the cast shield (purple, Staff of Protection) are consecutive segments of one rim along the health bar instead of one ring around the other: cyan first, purple right after it; a hit on the cast shield shrinks only the purple segment.
