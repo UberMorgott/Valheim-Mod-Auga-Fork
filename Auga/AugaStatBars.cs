@@ -349,9 +349,12 @@ namespace Auga
         //
         // Energy shield (MorgottTweaks [EnergyShield], contract BalanceSim TASKS.md Phase 3 / DESIGN-SHIELD.md 2.4): the
         // owner writes the current and max value into the player ZDO (floats mt_es / mt_es_max, throttled). It gets a
-        // second rim of the same kind in cyan. With both, the SE_Shield rim moves one band further out (OuterPad), so
-        // the order from the bar outwards is gap, cyan ES, gap, purple cast shield; each keeps its own length. Their
-        // values are printed right of the HP value in the same colours (ShieldText).
+        // second rim of the same kind in cyan. With both, they are consecutive segments of one rim along the bar (user
+        // 2026-10-19: side by side, never on the same span): cyan ES from the bar start, then the purple cast shield
+        // right after it. The purple rim runs from the bar start to the end of both and sits behind the cyan one, whose
+        // opaque fill covers its first part, so the seam is the cyan rim's own slanted end and a short purple remainder
+        // keeps its cap size. The cast shield drains first (outer layer), so its segment shrinks while cyan stays.
+        // Their values are printed right of the HP value in the same colours (ShieldText).
         private sealed class Rim
         {
             public RectTransform Rect;
@@ -365,11 +368,12 @@ namespace Auga
         // User 2026-10-19: gear energy shield = light blue / cyan, the staff's self-cast shield (SE_Shield, temporary) =
         // purple; the same two colours on the rims, the numbers beside the HP value and the overhead strips
         // (EnergyShieldHud). The cast shield takes a hit first (SEMan.OnDamaged, Character.cs:2331, before block and
-        // armor), the energy shield after armor (MorgottTweaks, DamageArmorDurability :2384), so its rim is the outer one.
+        // armor; MorgottTweaks StaffShieldAfterArmor: right before the ES), the energy shield after armor (MorgottTweaks,
+        // DamageArmorDurability :2384), so its segment is the outer (later) one along the bar.
         public static readonly Color ShieldColor = new Color(0.66f, 0.42f, 1f, 1f);
         public static readonly Color EnergyShieldColor = new Color(0.35f, 0.85f, 1f, 1f);
         private static readonly Color ShieldGapColor = new Color(0f, 0f, 0f, 0.5f);
-        private const float ShieldGap = 3f, ShieldPad = 6f, OuterPad = 10f;
+        private const float ShieldGap = 3f, ShieldPad = 6f;
         public static readonly int EnergyShieldKey = "mt_es".GetStableHashCode();
         public static readonly int EnergyShieldMaxKey = "mt_es_max".GetStableHashCode();
 
@@ -454,7 +458,8 @@ namespace Auga
             // HP bar pixels per HP = its width / max health (covers the length scale and a fixed length alike).
             var pixelsPerHp = hud.m_healthBarRoot.rect.width / Mathf.Max(1f, player.GetMaxHealth());
             SetRim(_energyRim, energy * pixelsPerHp, ShieldPad);
-            SetRim(_shieldRim, shield * pixelsPerHp, energy > 0f ? OuterPad : ShieldPad);
+            // Purple segment after the cyan one: behind it, from the bar start to the end of both (see Shield).
+            SetRim(_shieldRim, shield > 0f ? (energy + shield) * pixelsPerHp : 0f, ShieldPad);
             SetShieldText(energy, shield);
         }
 

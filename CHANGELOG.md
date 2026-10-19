@@ -1,3 +1,7 @@
+### 2.2.1 - Shield rims side by side
+
+* Gear energy shield (cyan) and the cast shield (purple, Staff of Protection) are consecutive segments of one rim along the health bar instead of one ring around the other: cyan first, purple right after it; a hit on the cast shield shrinks only the purple segment.
+
 ### 2.2.0 - Alchemist food slot, resource affix regen rows
 
 * A 4th food diamond on the HUD for the MorgottTweaks Alchemist gem slot (Alchemist's Gut gem: a fourth food).
