@@ -145,7 +145,7 @@ namespace Auga
                 {
                     Icon = se.m_icon,
                     Name = loc.Localize(se.m_name),
-                    Text = loc.Localize(se.GetTooltipString()),
+                    Text = Tidy(loc.Localize(se.GetTooltipString())),
                     Seconds = se.m_ttl > 0f ? se.GetRemaningTime() : -1f,
                     Active = true
                 });
@@ -159,7 +159,7 @@ namespace Auga
                 {
                     Icon = gp.m_icon,
                     Name = loc.Localize("$inventory_selectedgp") + ": " + loc.Localize(gp.m_name),
-                    Text = loc.Localize(gp.GetTooltipString()) + $"\n<color={Auga.Colors.Topic}>{state}</color>",
+                    Text = Tidy(loc.Localize(gp.GetTooltipString())) + $"\n<color={Auga.Colors.Topic}>{state}</color>",
                     Seconds = -1f,
                     Active = cooldown <= 0f
                 });
@@ -195,7 +195,7 @@ namespace Auga
                     {
                         Icon = r[1] as Sprite,
                         Name = r[2] as string ?? "",
-                        Text = r[3] as string ?? "",
+                        Text = Tidy(r[3] as string ?? ""),
                         Seconds = r[4] is float f ? f : -1f,
                         Active = !(r[5] is bool b) || b
                     });
@@ -207,6 +207,10 @@ namespace Auga
                     Debug.LogWarning($"[Auga] active effects: {se.GetType().Name}.{ProviderMethod} failed: {e.GetBaseException().Message}");
             }
         }
+
+        // Tooltip texts carry blank lines (SE_Stats separates its parts with "\n\n", SE_Stats.cs:483); in a row they read as gaps.
+        private static string Tidy(string text) =>
+            string.IsNullOrEmpty(text) ? "" : System.Text.RegularExpressions.Regex.Replace(text.Trim(), @"\s*\n\s*\n\s*", "\n");
 
         internal static string Time(float seconds) => seconds >= 0f ? StatusEffect.GetTimeString(seconds) : "";
 

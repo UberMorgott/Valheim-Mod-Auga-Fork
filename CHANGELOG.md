@@ -1,3 +1,7 @@
+### 2.1.13 - Active effects rows without gaps
+
+* Effect texts with blank lines (meads: description, then resistances and duration) no longer leave an empty line inside their row.
+
 ### 2.1.12 - Readable Active effects page
 
 * The compendium's Active effects page is a list instead of one block of text: every food, mead, status effect and the selected guardian power gets a row with its icon, name, time left and its effect with numbers (the game's own effect texts, live values). MorgottTweaks 1.74.0 auras bring their own rows: each aura with its icon and strength, the aura host with the reserved pools, auras that only reach enemies or your summons (Dread Banner, heralds) with their effect, suppressed auras greyed. Epic Loot's pages still work as before.
