@@ -60,7 +60,7 @@ namespace Auga
             (HitData.DamageType.Spirit, "$inventory_spirit"),
         };
 
-        private static MethodInfo _epicLootResistance, _epicLootNight, _armorResistance;
+        private static MethodInfo _epicLootResistance, _epicLootNight, _armorResistance, _epicLootTotal;
         private static bool _epicLootLookedUp;
 
         private TMP_Text _labels, _values;
@@ -367,7 +367,8 @@ namespace Auga
             var rate = (player.m_staminaRegen + (1f - player.GetStamina() / max) * player.m_staminaRegen * player.m_staminaRegenTimeMultiplier) * factor;
             var multiplier = 1f;
             player.GetSEMan().ModifyStaminaRegen(ref multiplier);
-            return rate * multiplier * Game.m_staminaRegenRate;
+            // + MorgottTweaks flat AddStaminaRegen (per second, same factor and world rate, not scaled by the multiplier).
+            return (rate * multiplier + FlatRegen(player, "AddStaminaRegen") * factor) * Game.m_staminaRegenRate;
         }
 
         // Player.UpdateStats (Player.cs:2133-2152).
@@ -382,7 +383,19 @@ namespace Auga
             var multiplier = 1f;
             player.GetSEMan().ModifyEitrRegen(ref multiplier);
             multiplier += player.GetEquipmentEitrRegenModifier();
-            return rate * multiplier;
+            // + MorgottTweaks flat AddEitrRegen (per second, same factor, not scaled by the multiplier).
+            return rate * multiplier + FlatRegen(player, "AddEitrRegen") * factor;
+        }
+
+        // MorgottTweaks ResourceAffixesModule pays flat regen affixes: Epic Loot effects summed by
+        // PlayerExtensions.GetTotalActiveMagicEffectValue(Player, string, float, ItemData). 0 without either mod.
+        private static float FlatRegen(Player player, string effect)
+        {
+            LookUpEpicLoot();
+            if (_epicLootTotal == null)
+                return 0f;
+            var v = (float)_epicLootTotal.Invoke(null, new object[] { player, effect, 1f, null });
+            return v > 0f ? v : 0f;
         }
 
         // A line holds two types: left name, its percent at a fixed column inside the label text (TMP <pos>), right
@@ -451,6 +464,11 @@ namespace Auga
             _epicLootResistance = resistance == null ? null : AccessTools.Method(resistance, "ModifyIncoming", args);
             var night = AccessTools.TypeByName("EpicLoot.MagicItemEffects.Shards.DamageReductionAtNight");
             _epicLootNight = night == null ? null : AccessTools.Method(night, "ModifyIncoming", args);
+            var players = AccessTools.TypeByName("EpicLoot.PlayerExtensions");
+            _epicLootTotal = players == null || AccessTools.TypeByName("MorgottTweaks.ResourceAffixesModule") == null
+                ? null
+                : AccessTools.Method(players, "GetTotalActiveMagicEffectValue",
+                    new[] { typeof(Player), typeof(string), typeof(float), typeof(ItemDrop.ItemData) });
             // MorgottTweaks.ArmorResistance.ApplyResistance(HitData, DamageModifiers, out DamageModifier, Character).
             _armorResistance = AccessTools.Method("MorgottTweaks.ArmorResistance:ApplyResistance", new[]
             {
