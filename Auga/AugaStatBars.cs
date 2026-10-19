@@ -266,21 +266,75 @@ namespace Auga
                 text.color = label.color;
 
             if (bar == Health)
+            {
                 Shield(rect, bkg);
+                ShieldText(rect, text);
+            }
+        }
+
+        // The shield values beside the HP value (user 2026-10-19, replaces MorgottTweaks' status-list readout): a copy of
+        // the HP value text, left-aligned from the bar centre and moved right of the rendered HP digits every update, so
+        // the HP value stays centred. Cyan energy shield first, then the purple cast shield; empty with neither.
+        private static TMP_Text _shieldText, _healthText;
+        private const float ShieldTextGap = 8f;
+
+        private static void ShieldText(RectTransform health, TMP_Text hpText)
+        {
+            _healthText = hpText;
+            var go = Object.Instantiate(hpText.gameObject, health, false);
+            go.name = "AugaShieldValues";
+            _shieldText = go.GetComponent<TMP_Text>();
+            var rt = _shieldText.rectTransform;
+            rt.anchorMin = rt.anchorMax = new Vector2(0.5f, 0.5f);
+            rt.pivot = new Vector2(0f, 0.5f);
+            rt.sizeDelta = new Vector2(200f, hpText.rectTransform.sizeDelta.y);
+            rt.SetAsLastSibling();
+            _shieldText.alignment = TextAlignmentOptions.MidlineLeft;
+            _shieldText.richText = true;
+            _shieldText.color = Color.white;
+            _shieldText.text = "";
+        }
+
+        // Properties, not initialisers: the colours are declared further down (static fields initialise in text order).
+        private static string EnergyShieldHex => "#" + ColorUtility.ToHtmlStringRGB(EnergyShieldColor);
+        private static string ShieldHex => "#" + ColorUtility.ToHtmlStringRGB(ShieldColor);
+        private static int _shownEnergy = -1, _shownShield = -1;
+
+        private static void SetShieldText(float energy, float shield)
+        {
+            if (!_shieldText || !_healthText)
+                return;
+            var e = energy > 0f ? Mathf.FloorToInt(energy) : 0;
+            var s = shield > 0f ? Mathf.CeilToInt(shield) : 0;
+            if (e != _shownEnergy || s != _shownShield)
+            {
+                _shownEnergy = e;
+                _shownShield = s;
+                var parts = new List<string>(2);
+                if (energy > 0f)
+                    parts.Add($"<color={EnergyShieldHex}>{e}</color>");
+                if (shield > 0f)
+                    parts.Add($"<color={ShieldHex}>{s}</color>");
+                _shieldText.text = string.Join(" ", parts);
+            }
+            var hpWidth = _healthText.GetPreferredValues(_healthText.text).x;
+            var hpRt = _healthText.rectTransform;
+            _shieldText.rectTransform.anchoredPosition = new Vector2(hpWidth / 2f + ShieldTextGap, hpRt.anchoredPosition.y);
         }
 
         // Shield (1.0.x SE_Shield, staff of protection): vanilla shows it only as a status-effect icon
         // (Hud.cs:1657-1692); there is no vanilla shield element to restyle or to take the hide path from. Auga
         // draws it as an outline behind the HP bar: two copies of the bar's own background silhouette (HealthBarBG,
-        // same slanted ends at any length), a blue one Pad px out and a dark one Gap px out, so a blue rim with a
+        // same slanted ends at any length), a coloured one Pad px out and a dark one Gap px out, so a coloured rim with a
         // dark gap shows around the bar. Its length is the shield in HP units at the HP bar's own pixels per HP, so
         // it outruns the bar when the shield exceeds max health and shrinks as the shield is hit. Nothing covers
         // the HP fill; with no shield the object is inactive.
         //
         // Energy shield (MorgottTweaks [EnergyShield], contract BalanceSim TASKS.md Phase 3 / DESIGN-SHIELD.md 2.4): the
         // owner writes the current and max value into the player ZDO (floats mt_es / mt_es_max, throttled). It gets a
-        // second rim of the same kind in violet. With both, the SE_Shield rim moves one band further out (OuterPad), so
-        // the order from the bar outwards is gap, violet ES, gap, blue shield; each keeps its own length.
+        // second rim of the same kind in cyan. With both, the SE_Shield rim moves one band further out (OuterPad), so
+        // the order from the bar outwards is gap, cyan ES, gap, purple cast shield; each keeps its own length. Their
+        // values are printed right of the HP value in the same colours (ShieldText).
         private sealed class Rim
         {
             public RectTransform Rect;
@@ -291,8 +345,12 @@ namespace Auga
         private static Rim _shieldRim, _energyRim;
         private static Image _rimBackground;
         private static float _rimBarHeight;
-        private static readonly Color ShieldColor = new Color(0.35f, 0.62f, 1f, 1f);
-        private static readonly Color EnergyShieldColor = new Color(0.66f, 0.42f, 1f, 1f);
+        // User 2026-10-19: gear energy shield = light blue / cyan, the staff's self-cast shield (SE_Shield, temporary) =
+        // purple; the same two colours on the rims, the numbers beside the HP value and the overhead strips
+        // (EnergyShieldHud). The cast shield takes a hit first (SEMan.OnDamaged, Character.cs:2331, before block and
+        // armor), the energy shield after armor (MorgottTweaks, DamageArmorDurability :2384), so its rim is the outer one.
+        public static readonly Color ShieldColor = new Color(0.66f, 0.42f, 1f, 1f);
+        public static readonly Color EnergyShieldColor = new Color(0.35f, 0.85f, 1f, 1f);
         private static readonly Color ShieldGapColor = new Color(0f, 0f, 0f, 0.5f);
         private const float ShieldGap = 3f, ShieldPad = 6f, OuterPad = 10f;
         public static readonly int EnergyShieldKey = "mt_es".GetStableHashCode();
@@ -380,6 +438,7 @@ namespace Auga
             var pixelsPerHp = hud.m_healthBarRoot.rect.width / Mathf.Max(1f, player.GetMaxHealth());
             SetRim(_energyRim, energy * pixelsPerHp, ShieldPad);
             SetRim(_shieldRim, shield * pixelsPerHp, energy > 0f ? OuterPad : ShieldPad);
+            SetShieldText(energy, shield);
         }
 
         // Adrenaline (1.0.x trinkets): the vanilla adrenaline bar (Hud.cs:1122-1161) becomes a thin strip along the

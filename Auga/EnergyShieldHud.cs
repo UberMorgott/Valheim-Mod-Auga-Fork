@@ -11,8 +11,8 @@ namespace Auga
     // health set every frame, :213-224). Auga's HudBasePlayer has that bar as Health (100x6 at y 40, bottom pivot)
     // with the name above it. Under it go thin strips, each filled by current / max, in the local HUD's rim order
     // from the bar outwards (AugaStatBars.Shield):
-    // - violet energy shield (MorgottTweaks [EnergyShield], player ZDO mt_es / mt_es_max, AugaStatBars.EnergyShield);
-    // - blue absorb shield (vanilla SE_Shield, e.g. the Staff of Protection bubble). Its remaining absorb lives only
+    // - cyan energy shield (MorgottTweaks [EnergyShield], player ZDO mt_es / mt_es_max, AugaStatBars.EnergyShield);
+    // - purple absorb shield (vanilla SE_Shield, e.g. the Staff of Protection bubble). Its remaining absorb lives only
     //   in the owner's SEMan (SE_Shield.cs; SEMan syncs just the seAttrib bitmask, SEMan.cs:103-134), so the owner's
     //   MorgottTweaks [Multiplayer] ShareShieldAbsorb publishes it as player ZDO mt_shield / mt_shield_max.
     // A strip is hidden while its max is 0 and the strips close up; they follow the HUD's own visibility (children of
@@ -24,8 +24,8 @@ namespace Auga
         public const string ShieldStripName = "AugaShield";
         private const float StripHeight = 3f, StripGap = 2f;
         private static readonly Color TrackColor = new Color(0f, 0f, 0f, 0.6f);
-        private static readonly Color EnergyFillColor = new Color(0.66f, 0.42f, 1f, 1f); // AugaStatBars.EnergyShieldColor
-        private static readonly Color ShieldFillColor = new Color(0.35f, 0.62f, 1f, 1f); // AugaStatBars.ShieldColor
+        private static readonly Color EnergyFillColor = AugaStatBars.EnergyShieldColor;
+        private static readonly Color ShieldFillColor = AugaStatBars.ShieldColor;
         public static readonly int ShieldKey = "mt_shield".GetStableHashCode();
         public static readonly int ShieldMaxKey = "mt_shield_max".GetStableHashCode();
 
