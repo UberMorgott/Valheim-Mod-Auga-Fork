@@ -5,14 +5,22 @@ using UnityEngine.UI;
 
 namespace Auga
 {
-    // Summon frames (Phase 3, BalanceSim TASKS.md): one small frame per living summon of the local player, Diablo-2
-    // style, in a row under the hotkey bar: creature icon, health bar, level stars. Vanilla has no such element.
+    // Summon frames (Phase 3, BalanceSim TASKS.md): one small frame per summon of the local player, Diablo-2 style, in a
+    // row under the hotkey bar: creature icon, health bar with the summon energy shield over it, state text. Vanilla has
+    // no such element. No level stars: summons stay level 1 (summons-ui-contract.md section 2).
     //
-    // Whose summon: IsSummonOf (vanilla follow-name ownership; MorgottTweaks' mt_sum_owner stamp only narrows it).
+    // Two sources:
+    // - MorgottTweaks permanent summons (soft dependency, summons-ui-contract.md section 1): the player ZDO mt_sum_ui
+    //   holds the summoner's slot list in activation order, written by the summoner's client on every change. Frames are
+    //   built from the slots, so a dead (respawn cooldown), off, suppressed or waiting slot without a body shows too.
+    //   A loaded body (ZDOID + matching mt_sum_gen) gives live HP from its Character and the energy shield from its ZDO
+    //   (mt_sum_es / mt_sum_esmax); otherwise the slot's last known hpFrac / esFrac.
+    // - Without that key (no MorgottTweaks, or nothing written yet): the loaded creatures that are the player's summons
+    //   (IsSummonOf, vanilla follow-name ownership; MorgottTweaks' mt_sum_owner stamp only narrows it).
     //
     // Art: the frame is the hotkey slot of the Auga bundle (HotKeyElement: Container_Square_A background,
     // Container_Square_A_Outline border), the bar is the bundle's AugaProgressBarBody_Small in the Auga enemy HUD's
-    // friendly green, the stars are the Auga enemy HUD star.
+    // friendly green, the shield overlay is the player HP bar's energy shield cyan (AugaStatBars.EnergyShieldColor).
     public class SummonFrames : MonoBehaviour
     {
         public const string RootName = "AugaSummonFrames";
@@ -26,23 +34,56 @@ namespace Auga
         private static readonly Color OutlineColor = new Color(0.5f, 0.45f, 0.4f, 0.8f);
         private static readonly Color HealthColor = new Color(0.1059f, 0.6078f, 0.2157f, 1f); // Auga HudBasePlayer health_fast
         private static readonly Color TrackColor = new Color(0f, 0f, 0f, 0.7f);
+        private static readonly Color InactiveIconColor = new Color(0.45f, 0.45f, 0.45f, 0.6f);
         private static readonly int OwnerKey = "mt_sum_owner".GetStableHashCode();
-        private const int MaxStars = 3;
+
+        // MorgottTweaks contract (summons-ui-contract.md): player ZDO slot list, body ZDO identity and energy shield.
+        private static readonly int SlotsKey = "mt_sum_ui".GetStableHashCode();
+        private static readonly int BodyGenerationKey = "mt_sum_gen".GetStableHashCode();
+        private static readonly int BodyShieldKey = "mt_sum_es".GetStableHashCode();
+        private static readonly int BodyShieldMaxKey = "mt_sum_esmax".GetStableHashCode();
+        private const int SlotsVersion = 1;
+
+        // mt_sum_ui slot state byte.
+        private enum SlotState : byte
+        {
+            Spawning = 0,
+            Alive = 1,
+            Dead = 2,
+            Off = 3,
+            NoReserve = 4,
+            Waiting = 5
+        }
+
+        // One frame's content, from a slot or from a loaded creature.
+        private struct Entry
+        {
+            public int Key;           // slotId, or the creature's instance id without slots
+            public GameObject Prefab; // icon / name source
+            public Character Body;    // loaded current body (null = none)
+            public SlotState State;
+            public bool Stay;
+            public float Health, Shield;
+            public bool HasShield;
+            public double CdUntil;
+        }
 
         private sealed class Frame
         {
-            public RectTransform Root, Fill;
+            public RectTransform Root, Fill, ShieldFill;
             public Image Icon;
-            public TMP_Text Letter, Level;
-            public GameObject[] Stars;
-            public Character Character;
+            public TMP_Text Letter, Status;
+            public GameObject Prefab;
+            public int Key;
+            public bool Used;
         }
 
         private readonly List<Frame> _frames = new List<Frame>();
+        private readonly List<Entry> _entries = new List<Entry>();
         private readonly List<Character> _summons = new List<Character>();
         private static readonly Dictionary<string, Sprite> Icons = new Dictionary<string, Sprite>();
         private float _timer;
-        private Sprite _square, _outline, _bar, _star;
+        private Sprite _square, _outline, _bar;
 
         public static void Setup(Hud hud)
         {
@@ -62,15 +103,6 @@ namespace Auga
             _square = AugaStyle.BundleSprite("Container_Square_A");
             _outline = AugaStyle.BundleSprite("Container_Square_A_Outline");
             _bar = AugaStyle.BundleSprite("AugaProgressBarBody_Small");
-            var enemyHud = Auga.Assets.EnemyHud ? Auga.Assets.EnemyHud.GetComponent<EnemyHud>() : null;
-            var level2 = enemyHud && enemyHud.m_baseHud ? enemyHud.m_baseHud.transform.Find("level_2") : null;
-            if (level2)
-                foreach (var image in level2.GetComponentsInChildren<Image>(true))
-                    if (image.sprite)
-                    {
-                        _star = image.sprite;
-                        break;
-                    }
         }
 
         private void Update()
@@ -80,37 +112,128 @@ namespace Auga
                 return;
             _timer = Refresh;
             var player = Player.m_localPlayer;
-            _summons.Clear();
+            _entries.Clear();
+            var fromSlots = false;
             if (player && !player.IsDead() && Auga.ShowSummonFrames.Value)
-                FindSummons(player, _summons);
-            if (Changed())
             {
-                var lines = new List<string>(_summons.Count);
-                foreach (var c in _summons)
-                    lines.Add(Describe(c, player));
-                Auga.Log($"[SummonFrames] {_summons.Count} summon(s): {string.Join("; ", lines)}");
+                fromSlots = ReadSlots(player, _entries);
+                if (!fromSlots)
+                    ReadLoaded(player, _entries);
             }
-            for (var i = 0; i < _summons.Count; i++)
+            if (Changed())
+                Auga.Log($"[SummonFrames] {_entries.Count} {(fromSlots ? "slot(s)" : "summon(s)")}: {Describe(player)}");
+            for (var i = 0; i < _entries.Count; i++)
             {
                 if (i == _frames.Count)
                     _frames.Add(MakeFrame(i));
-                Fill(_frames[i], _summons[i]);
+                Fill(_frames[i], _entries[i]);
             }
-            for (var i = _summons.Count; i < _frames.Count; i++)
+            for (var i = _entries.Count; i < _frames.Count; i++)
             {
                 _frames[i].Root.gameObject.SetActive(false);
-                _frames[i].Character = null;
+                _frames[i].Used = false;
             }
         }
 
-        // The summon list differs from what the frames show (frames past the list hold no character).
+        // MorgottTweaks slot list from the player ZDO (contract section 1). False when the key is absent (no
+        // MorgottTweaks, or nothing written yet) or of an unknown version: the caller falls back to loaded creatures.
+        private static bool ReadSlots(Player player, List<Entry> result)
+        {
+            var zdo = player.m_nview ? player.m_nview.GetZDO() : null;
+            var bytes = zdo?.GetByteArray(SlotsKey);
+            if (bytes == null || bytes.Length < 8)
+                return false;
+            var pkg = new ZPackage(bytes);
+            if (pkg.ReadInt() != SlotsVersion)
+                return false;
+            var count = pkg.ReadInt();
+            for (var i = 0; i < count; i++)
+            {
+                var slotId = pkg.ReadInt();
+                var prefabHash = pkg.ReadInt();
+                var state = (SlotState)pkg.ReadByte();
+                pkg.ReadByte(); // weight
+                var flags = pkg.ReadByte();
+                var hpFrac = pkg.ReadSingle();
+                var esFrac = pkg.ReadSingle();
+                var cdUntil = pkg.ReadDouble();
+                var generation = pkg.ReadInt();
+                var bodyId = pkg.ReadZDOID();
+                if (result.Count >= MaxFrames)
+                    continue;
+                var entry = new Entry
+                {
+                    Key = slotId,
+                    Prefab = ZNetScene.instance ? ZNetScene.instance.GetPrefab(prefabHash) : null,
+                    State = state,
+                    Stay = (flags & 1) != 0,
+                    Health = Mathf.Clamp01(hpFrac),
+                    Shield = Mathf.Clamp01(esFrac),
+                    HasShield = esFrac > 0f,
+                    CdUntil = cdUntil
+                };
+                // A loaded current body wins: live HP from its Character, shield from its ZDO (max 0 = no shield).
+                var body = Body(bodyId, generation);
+                if (body)
+                {
+                    entry.Body = body;
+                    var max = body.GetMaxHealth();
+                    entry.Health = max > 0f ? Mathf.Clamp01(body.GetHealth() / max) : 0f;
+                    var bodyZdo = body.m_nview.GetZDO();
+                    var shieldMax = bodyZdo.GetFloat(BodyShieldMaxKey);
+                    entry.HasShield = shieldMax > 0f;
+                    entry.Shield = entry.HasShield ? Mathf.Clamp01(bodyZdo.GetFloat(BodyShieldKey) / shieldMax) : 0f;
+                }
+                result.Add(entry);
+            }
+            return true;
+        }
+
+        // The slot's body when it is loaded here and is the slot's current generation (contract: body ZDO mt_sum_gen).
+        private static Character Body(ZDOID id, int generation)
+        {
+            if (id.IsNone() || !ZNetScene.instance)
+                return null;
+            var instance = ZNetScene.instance.FindInstance(id);
+            if (!instance || !instance.TryGetComponent<Character>(out var c) || c.IsDead() || !c.m_nview ||
+                c.m_nview.GetZDO() is not ZDO zdo)
+                return null;
+            return zdo.GetInt(BodyGenerationKey) == generation ? c : null;
+        }
+
+        // Without slots: the player's loaded summons (FindSummons), shield from the body ZDO when MorgottTweaks wrote it.
+        private void ReadLoaded(Player player, List<Entry> result)
+        {
+            _summons.Clear();
+            FindSummons(player, _summons);
+            foreach (var c in _summons)
+            {
+                var max = c.GetMaxHealth();
+                var zdo = c.m_nview.GetZDO();
+                var shieldMax = zdo.GetFloat(BodyShieldMaxKey);
+                result.Add(new Entry
+                {
+                    Key = c.GetInstanceID(),
+                    Prefab = c.gameObject,
+                    Body = c,
+                    State = SlotState.Alive,
+                    Health = max > 0f ? Mathf.Clamp01(c.GetHealth() / max) : 0f,
+                    HasShield = shieldMax > 0f,
+                    Shield = shieldMax > 0f ? Mathf.Clamp01(zdo.GetFloat(BodyShieldKey) / shieldMax) : 0f
+                });
+            }
+        }
+
+        // The entry list differs from what the frames show (by key and state).
         private bool Changed()
         {
-            for (var i = 0; i < Mathf.Max(_summons.Count, _frames.Count); i++)
+            for (var i = 0; i < Mathf.Max(_entries.Count, _frames.Count); i++)
             {
-                object shown = i < _frames.Count ? _frames[i].Character : null;
-                object found = i < _summons.Count ? _summons[i] : null;
-                if (!ReferenceEquals(shown, found))
+                var shown = i < _frames.Count && _frames[i].Used;
+                var found = i < _entries.Count;
+                if (shown != found)
+                    return true;
+                if (found && (_frames[i].Key != _entries[i].Key || _frames[i].Status.text != StatusText(_entries[i], false)))
                     return true;
             }
             return false;
@@ -160,15 +283,48 @@ namespace Auga
                    Vector3.Distance(c.transform.position, player.transform.position) <= tameable.m_unsummonDistance;
         }
 
-        // One line per change of the summon list (Logging/LoggingEnabled): what made each creature count as a summon.
-        private static string Describe(Character c, Player player)
+        // One line per change of the entry list (Logging/LoggingEnabled).
+        private string Describe(Player player)
         {
-            var zdo = c.m_nview ? c.m_nview.GetZDO() : null;
-            var ai = c.GetBaseAI() as MonsterAI;
-            var target = ai ? ai.GetFollowTarget() : null;
-            return $"{Utils.GetPrefabName(c.gameObject)} name={c.m_name} level={c.GetLevel()} tamed={c.IsTamed()} " +
-                   $"owner={zdo?.GetLong(OwnerKey) ?? 0L} follow='{zdo?.GetString(ZDOVars.s_follow)}' " +
-                   $"target={(target ? target.name : "-")} dist={Vector3.Distance(c.transform.position, player.transform.position):0.#}";
+            var lines = new List<string>(_entries.Count);
+            foreach (var e in _entries)
+            {
+                var name = e.Prefab ? Utils.GetPrefabName(e.Prefab) : "?";
+                var line = $"{name} key={e.Key} state={e.State} stay={e.Stay} hp={e.Health:0.##} es={(e.HasShield ? e.Shield.ToString("0.##") : "-")}";
+                if (e.Body && player)
+                {
+                    var zdo = e.Body.m_nview.GetZDO();
+                    var ai = e.Body.GetBaseAI() as MonsterAI;
+                    var target = ai ? ai.GetFollowTarget() : null;
+                    line += $" owner={zdo.GetLong(OwnerKey)} follow='{zdo.GetString(ZDOVars.s_follow)}' " +
+                            $"target={(target ? target.name : "-")} dist={Vector3.Distance(e.Body.transform.position, player.transform.position):0.#}";
+                }
+                lines.Add(line);
+            }
+            return string.Join("; ", lines);
+        }
+
+        // State text (contract section 1): Spawning, Respawn Ns (ceil(cdUntil - now)), Off, No reserve, Respawning, Stay.
+        private static string StatusText(Entry e, bool live)
+        {
+            switch (e.State)
+            {
+                case SlotState.Spawning:
+                    return "Spawning";
+                case SlotState.Dead:
+                    if (!live)
+                        return "Respawn";
+                    var now = ZNet.instance ? ZNet.instance.GetTimeSeconds() : 0d;
+                    return $"Respawn {Mathf.Max(0, Mathf.CeilToInt((float)(e.CdUntil - now)))}s";
+                case SlotState.Off:
+                    return "Off";
+                case SlotState.NoReserve:
+                    return "No reserve";
+                case SlotState.Waiting:
+                    return "Respawning";
+                default:
+                    return e.Stay ? "Stay" : "";
+            }
         }
 
         private Frame MakeFrame(int index)
@@ -195,22 +351,16 @@ namespace Auga
             var outline = NewRect(slot, "Outline", Vector2.zero, Vector2.one);
             NewImage(outline, _outline, OutlineColor, Image.Type.Simple);
 
-            var stars = NewRect(slot, "Stars", new Vector2(0f, 1f), new Vector2(1f, 1f));
-            stars.pivot = new Vector2(0.5f, 1f);
-            stars.sizeDelta = new Vector2(0f, 12f);
-            stars.anchoredPosition = new Vector2(0f, -2f);
-            frame.Stars = new GameObject[MaxStars];
-            for (var s = 0; s < MaxStars; s++)
-            {
-                var star = NewRect(stars, "star", new Vector2(0f, 1f), new Vector2(0f, 1f));
-                star.pivot = new Vector2(0f, 1f);
-                star.sizeDelta = new Vector2(11f, 11f);
-                star.anchoredPosition = new Vector2(3f + s * 11f, 0f);
-                NewImage(star, _star, new Color(1f, 0.75f, 0.11f, 1f), Image.Type.Simple).preserveAspect = true; // Auga BrightestGold
-                frame.Stars[s] = star.gameObject;
-            }
-            frame.Level = NewText(stars, "Many", 12f, TextAlignmentOptions.TopRight);
-            frame.Level.rectTransform.offsetMax = new Vector2(-3f, 0f);
+            // State text across the slot's lower edge, over the icon.
+            frame.Status = NewText(slot, "Status", 10f, TextAlignmentOptions.Bottom);
+            frame.Status.rectTransform.offsetMin = new Vector2(1f, 2f);
+            frame.Status.rectTransform.offsetMax = new Vector2(-1f, 0f);
+            frame.Status.textWrappingMode = TextWrappingModes.Normal;
+            frame.Status.enableAutoSizing = true;
+            frame.Status.fontSizeMin = 7f;
+            frame.Status.fontSizeMax = 10f;
+            frame.Status.outlineWidth = 0.2f;
+            frame.Status.outlineColor = Color.black;
 
             var bar = NewRect(root, "Health", new Vector2(0f, 0f), new Vector2(1f, 0f));
             bar.pivot = new Vector2(0.5f, 0f);
@@ -218,50 +368,53 @@ namespace Auga
             NewImage(bar, _bar, TrackColor, Image.Type.Sliced);
             frame.Fill = NewRect(bar, "fill", Vector2.zero, Vector2.one);
             NewImage(frame.Fill, _bar, HealthColor, Image.Type.Sliced);
+            // Energy shield over the upper half of the health bar, from the left like the health fill.
+            frame.ShieldFill = NewRect(bar, "shield", new Vector2(0f, 0.5f), Vector2.one);
+            NewImage(frame.ShieldFill, _bar, AugaStatBars.EnergyShieldColor, Image.Type.Sliced);
             return frame;
         }
 
-        private void Fill(Frame frame, Character c)
+        private void Fill(Frame frame, Entry e)
         {
             frame.Root.gameObject.SetActive(true);
-            if (frame.Character != c)
+            frame.Used = true;
+            frame.Key = e.Key;
+            if (frame.Prefab != e.Prefab)
             {
-                frame.Character = c;
-                var icon = IconFor(c);
+                frame.Prefab = e.Prefab;
+                var icon = e.Prefab ? IconFor(e.Prefab) : null;
                 frame.Icon.sprite = icon;
                 frame.Icon.enabled = icon;
                 frame.Letter.gameObject.SetActive(!icon);
                 if (!icon)
                 {
-                    var name = Localization.instance.Localize(c.m_name);
+                    var name = e.Prefab && e.Prefab.TryGetComponent<Character>(out var c) ? Localization.instance.Localize(c.m_name) : null;
                     frame.Letter.text = string.IsNullOrEmpty(name) ? "?" : name.Substring(0, 1).ToUpperInvariant();
                 }
             }
-            var max = c.GetMaxHealth();
-            var fraction = max > 0f ? Mathf.Clamp01(c.GetHealth() / max) : 0f;
-            frame.Fill.anchorMax = new Vector2(fraction, 1f);
-            // Stars = level - 1 as on the enemy HUD (EnemyHud.cs:191-199); past MaxStars one star with "x N" like
-            // Auga's level_X (EnemyHud_Setup.UpdateExtraLevels).
-            var stars = Mathf.Max(0, c.GetLevel() - 1);
-            var many = stars > MaxStars;
-            for (var s = 0; s < frame.Stars.Length; s++)
-                frame.Stars[s].SetActive(many ? s == 0 : s < stars);
-            frame.Level.gameObject.SetActive(many);
-            if (many)
-                frame.Level.text = $"x {stars}";
+            var active = e.State == SlotState.Alive || e.State == SlotState.Spawning;
+            frame.Icon.color = active ? Color.white : InactiveIconColor;
+            frame.Letter.color = active ? Color.white : InactiveIconColor;
+            frame.Status.text = StatusText(e, true);
+            frame.Fill.anchorMax = new Vector2(e.Health, 1f);
+            frame.ShieldFill.gameObject.SetActive(e.HasShield && e.Shield > 0f);
+            frame.ShieldFill.anchorMax = new Vector2(e.Shield, 1f);
         }
 
         // Creature icon = its trophy (the only per-creature art in the game: Trophies panel, Compendium). Summon
         // variants drop nothing (Skeleton_Friendly, Troll_Summoned, ...), so the trophy of the creature they are a
         // variant of: the prefab whose Character.m_name is the longest prefix of this one ("$enemy_skeleton" of
         // "$enemy_skeleton_summoned"). No trophy: null, the frame shows the name's first letter.
-        public static Sprite IconFor(Character c)
+        public static Sprite IconFor(Character c) => c ? IconFor(c.gameObject) : null;
+
+        public static Sprite IconFor(GameObject creature)
         {
-            var key = Utils.GetPrefabName(c.gameObject);
+            var key = Utils.GetPrefabName(creature);
             if (Icons.TryGetValue(key, out var icon))
                 return icon;
-            icon = Trophy(c.gameObject);
-            if (!icon && ZNetScene.instance)
+            icon = Trophy(creature);
+            var name = creature.TryGetComponent<Character>(out var c) ? c.m_name : null;
+            if (!icon && ZNetScene.instance && !string.IsNullOrEmpty(name))
             {
                 var bestLength = 0;
                 foreach (var prefab in ZNetScene.instance.m_prefabs)
@@ -269,7 +422,7 @@ namespace Auga
                     if (!prefab || !prefab.TryGetComponent<Character>(out var other) || string.IsNullOrEmpty(other.m_name))
                         continue;
                     var length = other.m_name.Length;
-                    if (length <= bestLength || length >= c.m_name.Length || !c.m_name.StartsWith(other.m_name, System.StringComparison.Ordinal))
+                    if (length <= bestLength || length >= name.Length || !name.StartsWith(other.m_name, System.StringComparison.Ordinal))
                         continue;
                     var trophy = Trophy(prefab);
                     if (!trophy)
