@@ -83,6 +83,7 @@ namespace Auga
             // buffer, Hud.cs:993/1007), so the anchor sits 8 px left of the bar's visible start.
             Slot(panel, prefab, Stamina, hud.m_staminaBar2Root, hud.m_staminaBar2Slow, hud.m_staminaBar2Fast, hud.m_staminaText);
             Slot(panel, prefab, Eitr, hud.m_eitrBarRoot, hud.m_eitrBarSlow, hud.m_eitrBarFast, hud.m_eitrText);
+            ReservedSegment(hud.m_eitrBarFast);
             Adrenaline(hud, panel);
 
             // Food: Auga diamond frames in a diagonal column, the vanilla timer to the left of each icon.
@@ -463,6 +464,89 @@ namespace Auga
             SetShieldText(energy, shield);
         }
 
+        // Reserved eitr (MorgottTweaks PoolReservation: auras, summons, broods; user 2026-10-20): the bar spans the
+        // unreserved max, the eitr fill runs over the available part and a dark segment of the eitr colour covers the
+        // reserved rest at the bar's end. Vanilla Hud.UpdateEitr (Hud.cs:1163-1188) stays the driver: its one
+        // GetMaxEitr read is replaced by EitrBarMax (max + reserved), so the length (SetEitrBarSize), the fill value
+        // (eitr / total) and the hide timer (eitr < total: the bar stays up while eitr is reserved) all follow the
+        // full pool. The reserved amount is MorgottTweaks' cut of the same food update that set m_maxEitr.
+        private static readonly Color ReservedShade = new Color(0.32f, 0.32f, 0.32f, 1f);
+        private static RectTransform _reservedRect;
+        private static GuiBar _eitrFast;
+        private static System.Func<Player, float> _reservedEitr;
+        private static bool _reservedLookedUp;
+
+        private static void ReservedSegment(GuiBar fast)
+        {
+            _eitrFast = fast;
+            var bar = fast.m_bar;
+            var rt = new GameObject("AugaEitrReserved", typeof(RectTransform)).GetComponent<RectTransform>();
+            rt.SetParent(bar.parent, false);
+            rt.SetSiblingIndex(bar.GetSiblingIndex()); // under the fill, inside the slanted fill mask
+            rt.anchorMin = bar.anchorMin;
+            rt.anchorMax = bar.anchorMax;
+            rt.pivot = new Vector2(0f, bar.pivot.y);
+            var image = rt.gameObject.AddComponent<Image>();
+            if (bar.TryGetComponent<Image>(out var fill))
+            {
+                AugaStyle.CopyImage(image, fill);
+                var c = fill.color;
+                image.color = new Color(c.r * ReservedShade.r, c.g * ReservedShade.g, c.b * ReservedShade.b, c.a);
+            }
+            image.raycastTarget = false;
+            _reservedRect = rt;
+            rt.gameObject.SetActive(false);
+        }
+
+        // MorgottTweaks.PoolReservation.ReservedEitr(Player) when MorgottTweaks is loaded; else no reservation.
+        public static float ReservedEitr(Player player)
+        {
+            if (!_reservedLookedUp)
+            {
+                _reservedLookedUp = true;
+                var m = AccessTools.Method("MorgottTweaks.PoolReservation:ReservedEitr", new[] { typeof(Player) });
+                if (m != null)
+                    _reservedEitr = AccessTools.MethodDelegate<System.Func<Player, float>>(m);
+            }
+            return _reservedEitr == null ? 0f : Mathf.Max(0f, _reservedEitr(player));
+        }
+
+        // Replaces vanilla's GetMaxEitr read in Hud.UpdateEitr.
+        public static float EitrBarMax(Player player) => player.GetMaxEitr() + ReservedEitr(player);
+
+        // Postfix of Hud.UpdateEitr: the reserved segment from the end of the available part to the bar's end,
+        // in the fill's own pixels (the width vanilla just gave the GuiBar through SetEitrBarSize + Length).
+        public static void UpdateReserved(Player player)
+        {
+            if (!_reservedRect || !_eitrFast)
+                return;
+            var reserved = ReservedEitr(player);
+            var total = player.GetMaxEitr() + reserved;
+            var show = reserved > 0f && total > 0f;
+            if (_reservedRect.gameObject.activeSelf != show)
+                _reservedRect.gameObject.SetActive(show);
+            if (!show)
+                return;
+            var bar = _eitrFast.m_bar;
+            var width = Length(Eitr, total / 25f * 32f);
+            // Parent-local left edge of the fill (anchor-independent), the segment's pivot is its left edge.
+            var left = bar.localPosition.x - bar.pivot.x * bar.rect.width;
+            var part = width * Mathf.Clamp01(reserved / total);
+            _reservedRect.SetSizeWithCurrentAnchors(RectTransform.Axis.Horizontal, part);
+            _reservedRect.SetSizeWithCurrentAnchors(RectTransform.Axis.Vertical, bar.rect.height);
+            _reservedRect.localPosition = new Vector3(left + width - part, bar.localPosition.y, 0f);
+        }
+
+        // Reserved segment width / bar width and reserved / total, for the autotest.
+        public static (float segment, float expected) ReservedProbe(Player player)
+        {
+            var reserved = ReservedEitr(player);
+            var total = player.GetMaxEitr() + reserved;
+            var width = Length(Eitr, total / 25f * 32f);
+            var seg = _reservedRect && _reservedRect.gameObject.activeInHierarchy ? _reservedRect.rect.width : 0f;
+            return (width > 0f ? seg / width : 0f, total > 0f ? reserved / total : 0f);
+        }
+
         // Adrenaline (1.0.x trinkets): the vanilla adrenaline bar (Hud.cs:1122-1161) becomes a thin strip along the
         // bottom of the stamina bar. Vanilla keeps sizing it (its length prefix below matches it to the stamina fill),
         // placing it at (0,130), filling it and hiding it at zero (Hud.cs:1130-1133). A full bar gets an amber rim.
@@ -580,7 +664,31 @@ namespace Auga
         private static IEnumerable<CodeInstruction> StaminaLift(IEnumerable<CodeInstruction> code) => Lift(code, 320f, "UpdateStamina");
 
         [HarmonyPatch(nameof(Hud.UpdateEitr)), HarmonyTranspiler, UsedImplicitly]
-        private static IEnumerable<CodeInstruction> EitrLift(IEnumerable<CodeInstruction> code) => Lift(code, 285f, "UpdateEitr");
+        private static IEnumerable<CodeInstruction> EitrLift(IEnumerable<CodeInstruction> code) =>
+            EitrBarMax(Lift(code, 285f, "UpdateEitr"));
+
+        // Hud.UpdateEitr's one `player.GetMaxEitr()` (Hud.cs:1166) -> AugaStatBars.EitrBarMax(player): max + reserved.
+        private static IEnumerable<CodeInstruction> EitrBarMax(IEnumerable<CodeInstruction> code)
+        {
+            var target = AccessTools.Method(typeof(AugaStatBars), nameof(AugaStatBars.EitrBarMax));
+            var hits = 0;
+            foreach (var instruction in code)
+            {
+                if ((instruction.opcode == OpCodes.Callvirt || instruction.opcode == OpCodes.Call) &&
+                    instruction.operand is System.Reflection.MethodInfo m && m.Name == nameof(Character.GetMaxEitr))
+                {
+                    instruction.opcode = OpCodes.Call;
+                    instruction.operand = target;
+                    hits++;
+                }
+                yield return instruction;
+            }
+            if (hits != 1)
+                Debug.LogError($"[Auga] UpdateEitr transpiler: expected 1 GetMaxEitr call, got {hits}");
+        }
+
+        [HarmonyPatch(nameof(Hud.UpdateEitr)), HarmonyPostfix, UsedImplicitly]
+        private static void ReservedUpdate(Player player) => AugaStatBars.UpdateReserved(player);
 
         // Same lift for the adrenaline strip, which rides on the stamina bar (Hud.cs:1150-1153).
         [HarmonyPatch(nameof(Hud.UpdateAdrenaline)), HarmonyTranspiler, UsedImplicitly]

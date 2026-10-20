@@ -1,3 +1,7 @@
+### 2.2.3 - Reserved eitr on the eitr bar
+
+* The eitr bar spans the full (unreserved) max eitr; the eitr reserved by MorgottTweaks (auras, summons, broods; 1.104.0) is a dark segment of the eitr colour at its end, and the bar stays shown while eitr is reserved.
+
 ### 2.2.2 - Summon slot frames
 
 * Summon frames under the hotbar follow the MorgottTweaks 1.98.0 summon slots: one frame per slot with its state (Respawn Ns / No reserve / Stay / Off), a cyan energy shield overlay, and no level stars (summons stay level 1).
