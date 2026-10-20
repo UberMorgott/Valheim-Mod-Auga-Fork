@@ -1,3 +1,7 @@
+### Unreleased - Static Source Sans Pro Bold atlas
+
+* `SourceSansPro-Bold SDF` (4096x4096 Alpha8) is a Static TMP font asset with a non-readable atlas: its 16 MiB CPU copy is gone. It was Dynamic with 584 baked characters (18 Cyrillic) and filled the rest in at runtime; now it holds all 1296 renderable codepoints of the font (150 Cyrillic, Latin, Greek, punctuation), the 584 old glyphs unchanged in pixels, rects and metrics, the new ones baked by the same FontEngine path at the same settings (108 pt, padding 11, SDFAA). Kerning/ligature tables unchanged (already cover the whole font). Built by the new `tools/static_font_atlas.py` + `tools/unity/FontAtlasBake.cs`.
+
 ### 2.2.5 - Compressed UI textures
 
 * The 22 large UI textures of the Auga bundle (panel backgrounds, loading-screen art, logos, ship HUD art) are BC7 instead of uncompressed RGBA32/RGB24: GPU memory of the bundle's textures 141.6 -> 70.4 MiB, bundle 28.5 -> 18.4 MB. Odd-sized textures are padded to a multiple of 4 with their edge texels (same sampling), sprites keep their pixel rects. Built by the new `tools/compress_augaassets.py` (run after `strip_augaassets.py`).
