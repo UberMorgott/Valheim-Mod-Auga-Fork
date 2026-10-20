@@ -53,7 +53,15 @@ namespace Auga
             { "Utility2", "ring" },
             { "Utility3", "ring" },
             { "Trinket", "trinket" },
+            { LightCell, "light" },
         };
+
+        // MorgottTweaks [Compat] EaqsLightSlot: an EAQS custom cell (API.AddSlot("Light") -> ID "CustomLight") that is a
+        // worn slot (Wisplight, Wishbone, lanterns), so it joins the paper doll in its free corner, column 3 / row 3 (the
+        // spot an equipment Index 16 would take; EAQS equipment cells are Index 8..15), instead of the custom group.
+        // light.png = the vanilla Lantern item icon's shape (white on transparent like the others).
+        private const string LightCell = "CustomLight";
+        private const int LightColumn = 2, LightRow = 2;
 
         private const string SilhouetteName = "AugaSlotSilhouette";
         // Faint white: reads as an engraving on the dark cell, clearly empty.
@@ -139,6 +147,11 @@ namespace Auga
                     }
                     else if ((bool)_isQuick.GetValue(slot))
                         placed.Add((element, Quick, index, 0));
+                    else if ((bool)_isCustom.GetValue(slot) && (string)_id.GetValue(slot) == LightCell)
+                    {
+                        placed.Add((element, Equipment, LightColumn, LightRow));
+                        UpdateSilhouette(element, LightCell);
+                    }
                     else if ((bool)_isCustom.GetValue(slot))
                     {
                         placed.Add((element, Custom, customOrder % CustomPerRow, customOrder / CustomPerRow));
@@ -191,7 +204,17 @@ namespace Auga
                 for (var g = 0; g < 3; g++)
                 {
                     var bkg = panel.Find(Backgrounds[g]) as RectTransform;
-                    if (!bkg || !bkg.gameObject.activeSelf || !Bounds(panel, GroupCells[g], out var min, out var max))
+                    if (!bkg || !bkg.gameObject.activeSelf)
+                        continue;
+                    // EAQS shows the custom background for every active custom cell (EquipmentPanel: SyncBackground
+                    // of customBackground, num > 0); the light cell sits in the paper doll, so with no other custom
+                    // cell that background frames nothing.
+                    if (g == Custom && GroupCells[g].Count == 0)
+                    {
+                        bkg.gameObject.SetActive(false);
+                        continue;
+                    }
+                    if (!Bounds(panel, GroupCells[g], out var min, out var max))
                         continue;
 
                     // EAQS CreateBackground: anchor at the panel's top-left corner, pivot centred.
