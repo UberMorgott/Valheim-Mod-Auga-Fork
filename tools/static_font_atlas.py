@@ -14,7 +14,8 @@ CPU copy of the atlas next to the GPU one. Freezing it needs every glyph text ca
    Baked glyphs keep their pixels, rects and metrics; new ones go into the free rects.
 3. splice: write the result back: glyph/character tables and rects replaced, AtlasPopulationMode Static, source font
    reference cleared (what TMP's editor setter does for Static), atlas pixels replaced and m_IsReadable off. Font
-   feature tables (kerning, ligatures, marks) already cover the whole font and stay as they are.
+   feature tables (kerning, ligatures, marks) keep their records and get the ones the bake pulled for the new glyphs:
+   the game's TMP Settings have GetFontFeaturesAtRuntime on, so runtime adds pulled exactly those.
 
 Usage:
   python tools/static_font_atlas.py prepare <bundle> "<font asset name>" <font ttf> <workdir>
@@ -88,6 +89,56 @@ def prepare(src, name, ttf, work):
           f"{len(add)} cmap codepoints to add; bake with {cs['pointSize']} pt pad {cs['padding']} render mode {cs['renderMode']}")
 
 
+# Lookup key per record as TMP builds its dictionaries (FontFeatureTable / TMP_FontAsset.Add*Records): a record whose
+# key is already present is skipped, so the asset's own records win, as they do at runtime.
+FEATURE_KEYS = {
+    "m_LigatureSubstitutionRecords": lambda r: (tuple(r["m_ComponentGlyphIDs"]), r["m_LigatureGlyphID"]),
+    "m_GlyphPairAdjustmentRecords": lambda r: (r["m_FirstAdjustmentRecord"]["m_GlyphIndex"], r["m_SecondAdjustmentRecord"]["m_GlyphIndex"]),
+    "m_MarkToBaseAdjustmentRecords": lambda r: (r["m_BaseGlyphID"], r["m_MarkGlyphID"]),
+    "m_MarkToMarkAdjustmentRecords": lambda r: (r["m_BaseMarkGlyphID"], r["m_CombiningMarkGlyphID"]),
+    "m_MultipleSubstitutionRecords": lambda r: json.dumps(r, sort_keys=True),
+}
+
+
+def shape(v):
+    return {k: shape(x) for k, x in v.items()} if isinstance(v, dict) else type(v).__name__ if not isinstance(v, list) else "list"
+
+
+def glyph_ids(v):
+    if isinstance(v, dict):
+        return [g for k, x in v.items() for g in ([x] if k.endswith(("GlyphID", "GlyphIndex")) else glyph_ids(x))]
+    return [g for x in v for g in (glyph_ids(x) if isinstance(x, (dict, list)) else [x])] if isinstance(v, list) else []
+
+
+def merged_features(old, baked, old_glyphs):
+    """Asset records + the records the bake pulled for the new glyphs (what runtime adds would have pulled).
+
+    Runtime adds call FontEngine.Get*Records(newly added glyphs), which returns the records that involve one of them;
+    a record made only of baked glyphs never reaches the asset at runtime (a repack bake pulls those too), so drop it.
+    """
+    if set(old) != set(baked):
+        sys.exit(f"feature table fields differ: {sorted(old)} vs {sorted(baked)}")
+    out, added = {}, {}
+    for table, records in old.items():
+        key = FEATURE_KEYS[table]
+        seen = {key(r) for r in records}
+        new = []
+        for r in baked[table]:
+            if records and shape(r).keys() != shape(records[0]).keys():
+                sys.exit(f"{table}: baked record fields {sorted(r)} != {sorted(records[0])}")
+            ids = glyph_ids(r)
+            if not ids:
+                sys.exit(f"{table}: no glyph ids in {r}")
+            if all(g in old_glyphs for g in ids):
+                continue
+            if key(r) not in seen:
+                seen.add(key(r))
+                new.append(r)
+        out[table] = records + new
+        added[table.removeprefix("m_").removesuffix("Records")] = len(new)
+    return out, added
+
+
 def splice(src, name, work, dst):
     work = pathlib.Path(work)
     bundle, objs, fobj, fa = load(src, name)
@@ -114,21 +165,37 @@ def splice(src, name, work, dst):
                "m_GlyphRect": unrect(g["r"]), "m_Scale": g["s"], "m_AtlasIndex": g["a"], "m_ClassDefinitionType": 0}
         old = old_glyphs.get(g["i"])
         if old is not None:
-            if (old["m_Metrics"], old["m_GlyphRect"], old["m_Scale"], old["m_AtlasIndex"]) != (new["m_Metrics"], new["m_GlyphRect"], new["m_Scale"], new["m_AtlasIndex"]):
+            if (old["m_Metrics"], old["m_Scale"], old["m_AtlasIndex"]) != (new["m_Metrics"], new["m_Scale"], new["m_AtlasIndex"]) or \
+                    (old["m_GlyphRect"]["m_Width"], old["m_GlyphRect"]["m_Height"]) != (new["m_GlyphRect"]["m_Width"], new["m_GlyphRect"]["m_Height"]):
                 sys.exit(f"glyph {g['i']} changed in the bake")
             new["m_ClassDefinitionType"] = old["m_ClassDefinitionType"]
         glyphs.append(new)
     chars = [{"m_ElementType": 1, "m_Unicode": c["u"], "m_GlyphIndex": c["g"], "m_Scale": c["s"]} for c in bake["chars"]]
     if any(old_chars[c["m_Unicode"]] != c["m_GlyphIndex"] for c in chars if c["m_Unicode"] in old_chars) or len(set(old_chars) - {c["m_Unicode"] for c in chars}):
         sys.exit("baked character table lost or remapped a baked character")
+    # Every baked glyph: its texels plus the padding around them (what the SDF shader samples) byte-identical,
+    # wherever the bake put the glyph (a repack moves them).
     old_atlas = bytes(tex["image data"])
-    width = tex["m_Width"]
-    for g in fa["m_UsedGlyphRects"]:
-        for y in range(g["m_Y"], g["m_Y"] + g["m_Height"]):
-            row = slice(y * width + g["m_X"], y * width + g["m_X"] + g["m_Width"])
-            if old_atlas[row] != atlas[row]:
-                sys.exit(f"baked atlas changed pixels of used rect {g}")
+    width, height, pad = tex["m_Width"], tex["m_Height"], fa["m_AtlasPadding"]
+    new_rects = {g["m_Index"]: g["m_GlyphRect"] for g in glyphs}
+    moved = 0
+    for i, g in old_glyphs.items():
+        a, b = g["m_GlyphRect"], new_rects[i]
+        moved += (a["m_X"], a["m_Y"]) != (b["m_X"], b["m_Y"])
+        if not a["m_Width"]:
+            continue
+        for dy in range(-pad, a["m_Height"] + pad):
+            ya, yb = a["m_Y"] + dy, b["m_Y"] + dy
+            xa, xb, n = a["m_X"] - pad, b["m_X"] - pad, a["m_Width"] + 2 * pad
+            if not (0 <= ya < height and 0 <= yb < height and min(xa, xb) >= 0 and max(xa, xb) + n <= width):
+                sys.exit(f"glyph {i}: padded block leaves the atlas")
+            if old_atlas[ya * width + xa:ya * width + xa + n] != atlas[yb * width + xb:yb * width + xb + n]:
+                sys.exit(f"glyph {i}: baked pixels differ from the bundle's")
 
+    features, added = merged_features(fa["m_FontFeatureTable"], json.loads((work / "asset.json").read_text())["MonoBehaviour"]["m_FontFeatureTable"],
+                                      set(old_glyphs))
+
+    fa["m_FontFeatureTable"] = features
     fa["m_GlyphTable"] = glyphs
     fa["m_CharacterTable"] = chars
     fa["m_UsedGlyphRects"] = [unrect(r) for r in bake["used"]]
@@ -142,9 +209,10 @@ def splice(src, name, work, dst):
     tobj.save_typetree(tex)
 
     cyr = sum(1 for c in chars if 0x400 <= c["m_Unicode"] <= 0x52F)
-    print(f"{name}: {len(old_chars)} -> {len(chars)} chars ({cyr} Cyrillic), {len(old_glyphs)} -> {len(glyphs)} glyphs, Static; "
+    print(f"{name}: {len(old_chars)} -> {len(chars)} chars ({cyr} Cyrillic), {len(old_glyphs)} -> {len(glyphs)} glyphs "
+          f"({moved} baked glyphs moved, pixels identical), Static; "
           f"atlas {tex['m_Width']}x{tex['m_Height']} Alpha8 {len(atlas)} B readable -> non-readable; "
-          f"cmap codepoints not baked: {[hex(u) for u in bake['missing']]}")
+          f"cmap codepoints not baked: {[hex(u) for u in bake['missing']]}; feature records added {added}")
     data = bundle.save(packer="original")
     pathlib.Path(dst).write_bytes(data)
     print(f"wrote {dst}: {len(data)} bytes")

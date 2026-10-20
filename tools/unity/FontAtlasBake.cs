@@ -14,10 +14,11 @@ using UnityEngine.TextCore;
 using UnityEngine.TextCore.LowLevel;
 
 // Step 2 of tools/static_font_atlas.py (editor script, Unity 6000.0.75f1, com.unity.ugui 2.0 + TMP shaders).
-// Unity.exe -batchmode -quit -nographics -projectPath <p> -executeMethod FontAtlasBake.Run -bakeOut <workdir> -bakeFont Assets/<ttf>
+// Unity.exe -batchmode -quit -nographics -projectPath <p> -executeMethod FontAtlasBake.Run -bakeOut <workdir> -bakeFont Assets/<ttf> [-bakeRepack]
 // <workdir> holds old_atlas.bin, inject.json and order.txt from "prepare". Recreates the bundle font asset's state
 // (creation settings, atlas pixels, glyph/character tables, packer rects) in a Dynamic asset, adds the codepoints of
-// order.txt through TryAddCharacters (the FontEngine path the game uses at runtime) and writes new_atlas.bin + bake.json.
+// order.txt through TryAddCharacters (the FontEngine path the game uses at runtime) and writes new_atlas.bin,
+// bake.json and asset.json (the asset's serialized state, for the font feature records of the new glyphs).
 public static class FontAtlasBake
 {
     [Serializable] public class R { public int x, y, w, h; }
@@ -57,6 +58,16 @@ public static class FontAtlasBake
         tex.LoadRawTextureData(File.ReadAllBytes(Path.Combine(dir, "old_atlas.bin")));
         tex.Apply(false, false);
 
+        if (Environment.GetCommandLineArgs().Contains("-bakeRepack"))
+        {
+            // Repack: render every glyph afresh (baked characters first). Same FontEngine + settings render the baked
+            // glyphs byte-identical; splice checks that per glyph and moves nothing else.
+            tex.LoadRawTextureData(new byte[st.width * st.height]);
+            tex.Apply(false, false);
+            add = inj.chars.Select(c => c.u).Concat(add).ToArray();
+            Done(dir, fa, tex, add, inj.chars.Count);
+            return;
+        }
         var glyphs = inj.glyphs.Select(g => new Glyph(g.i, new GlyphMetrics(g.w, g.h, g.bx, g.by, g.adv), Rect(g.r), g.s, g.a)).ToList();
         var byIndex = glyphs.ToDictionary(g => g.index);
         Field("m_GlyphTable").SetValue(fa, glyphs);
@@ -64,10 +75,16 @@ public static class FontAtlasBake
         Field("m_UsedGlyphRects").SetValue(fa, inj.used.Select(Rect).ToList());
         Field("m_FreeGlyphRects").SetValue(fa, inj.free.Select(Rect).ToList());
         fa.ReadFontAssetDefinition();
+        Done(dir, fa, tex, add, inj.chars.Count);
+    }
 
-        bool all = fa.TryAddCharacters(add, out uint[] missing, false);
+    static void Done(string dir, TMP_FontAsset fa, Texture2D tex, uint[] add, int before)
+    {
+        // includeFontFeatures: the game's TMP Settings have m_GetFontFeaturesAtRuntime on, so a runtime add also
+        // pulls the GSUB/GPOS records of the new glyphs (FontEngine.Get*Records(newly added)); the bake does the same.
+        bool all = fa.TryAddCharacters(add, out uint[] missing, true);
         missing ??= new uint[0];
-        Debug.Log($"FontAtlasBake: {inj.chars.Count} -> {fa.characterTable.Count} chars, all={all}, not added={missing.Length}");
+        Debug.Log($"FontAtlasBake: {before} -> {fa.characterTable.Count} chars, all={all}, not added={missing.Length}");
 
         File.WriteAllBytes(Path.Combine(dir, "new_atlas.bin"), tex.GetRawTextureData());
         var ci = CultureInfo.InvariantCulture;
@@ -84,5 +101,7 @@ public static class FontAtlasBake
         sb.Append("],\"used\":[").Append(string.Join(",", ((List<GlyphRect>)Field("m_UsedGlyphRects").GetValue(fa)).Select(Rs)));
         sb.Append("],\"free\":[").Append(string.Join(",", ((List<GlyphRect>)Field("m_FreeGlyphRects").GetValue(fa)).Select(Rs))).Append("]}");
         File.WriteAllText(Path.Combine(dir, "bake.json"), sb.ToString());
+        // Serialized field names match the bundle type tree; splice reads m_FontFeatureTable from it.
+        File.WriteAllText(Path.Combine(dir, "asset.json"), EditorJsonUtility.ToJson(fa));
     }
 }
