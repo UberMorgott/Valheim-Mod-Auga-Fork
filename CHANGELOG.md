@@ -1,3 +1,8 @@
+### 2.2.5 - Compressed UI textures, lighter startup
+
+* The 22 large UI textures of the Auga bundle (panel backgrounds, loading-screen art, logos, ship HUD art) are BC7 instead of uncompressed RGBA32/RGB24: GPU memory of the bundle's textures 141.6 -> 70.4 MiB, bundle 28.5 -> 18.4 MB. Odd-sized textures are padded to a multiple of 4 with their edge texels (same sampling), sprites keep their pixel rects. Built by the new `tools/compress_augaassets.py` (run after `strip_augaassets.py`).
+* Bundle assets load on first use instead of all in the plugin Awake: in-world prefabs (HUD, inventory, enemy HUD, store, barber, build HUD, ...) load behind the world loading screen.
+
 ### 2.2.4 - Green health bar for friendly creatures
 
 * World HP bars of tamed creatures and summons (own or another player's) are green like player bars: Auga's EnemyHud templates get vanilla's `health_fast_friendly` bar, toggled by vanilla's own `BaseAI.IsEnemy` check. Hostile creatures stay red.
