@@ -57,6 +57,8 @@ namespace Auga
             hud.m_maxShowDistanceBoss = auga.m_maxShowDistanceBoss;
             hud.m_hoverShowDuration = auga.m_hoverShowDuration;
 
+            AddFriendlyBars(oldTemplates, new[] { hud.m_baseHud, hud.m_baseHudBoss, hud.m_baseHudPlayer, hud.m_baseHudMount }, hud.m_baseHudPlayer);
+
             foreach (var template in oldTemplates)
             {
                 if (template != null && !template.transform.IsChildOf(oldRoot.transform))
@@ -68,6 +70,52 @@ namespace Auga
             Object.DestroyImmediate(oldRoot);
 
             MirrorVanillaStars(newRoot);
+        }
+
+        // Vanilla shows a second fast health bar, "Health/health_fast_friendly", instead of "Health/health_fast" for every
+        // creature that is no enemy of the local player (EnemyHud.cs:138-142 caches it, :214-221 toggles the pair by
+        // BaseAI.IsEnemy(player, c)): tamed creatures and every summon (BaseAI.cs:1210-1220), own or another player's.
+        // Auga's templates have no such bar, so vanilla falls back to the enemy bar for all of them. Every Auga template
+        // whose vanilla counterpart has the friendly bar gets one: a copy of its own health_fast in the colour of the
+        // Auga player bar (HudBasePlayer health_fast), so vanilla's own toggle shows friends green.
+        private static void AddFriendlyBars(GameObject[] vanillaTemplates, GameObject[] augaTemplates, GameObject augaPlayer)
+        {
+            const string fastPath = "Health/health_fast";
+            const string friendlyName = "health_fast_friendly";
+            var playerBar = augaPlayer != null ? augaPlayer.transform.Find(fastPath)?.GetComponent<GuiBar>() : null;
+            var playerImage = playerBar != null && playerBar.m_bar != null ? playerBar.m_bar.GetComponent<Image>() : null;
+            if (playerImage == null)
+            {
+                Auga.LogWarning("EnemyHud: Auga player HUD has no health_fast bar image, friendly health bars stay red");
+                return;
+            }
+
+            for (var i = 0; i < vanillaTemplates.Length; i++)
+            {
+                var vanilla = vanillaTemplates[i];
+                var auga = augaTemplates[i];
+                if (vanilla == null || auga == null || vanilla.transform.Find(fastPath + "_friendly") == null
+                    || auga.transform.Find(fastPath + "_friendly") != null)
+                {
+                    continue;
+                }
+
+                var fast = auga.transform.Find(fastPath);
+                if (fast == null)
+                {
+                    continue;
+                }
+
+                var friendly = Object.Instantiate(fast.gameObject, fast.parent, false);
+                friendly.name = friendlyName;
+                friendly.transform.SetSiblingIndex(fast.GetSiblingIndex() + 1);
+                var bar = friendly.GetComponent<GuiBar>();
+                var image = bar != null && bar.m_bar != null ? bar.m_bar.GetComponent<Image>() : null;
+                if (image != null)
+                {
+                    image.color = playerImage.color;
+                }
+            }
         }
 
         // The same object inside the instantiated copy of Auga's HudRoot.

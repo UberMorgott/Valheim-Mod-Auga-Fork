@@ -1,3 +1,7 @@
+### 2.2.4 - Green health bar for friendly creatures
+
+* World HP bars of tamed creatures and summons (own or another player's) are green like player bars: Auga's EnemyHud templates get vanilla's `health_fast_friendly` bar, toggled by vanilla's own `BaseAI.IsEnemy` check. Hostile creatures stay red.
+
 ### 2.2.3 - Reserved eitr on the eitr bar
 
 * The eitr bar spans the full (unreserved) max eitr; the eitr reserved by MorgottTweaks (auras, summons, broods; 1.104.0) is a dark segment of the eitr colour at its end, and the bar stays shown while eitr is reserved.
