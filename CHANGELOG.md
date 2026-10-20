@@ -1,3 +1,8 @@
+### Unreleased - Static font atlases
+
+* `SourceSansPro-Bold SDF` (4096x4096), `Norse SDF` and `rune SDF` (2048x2048, Alpha8) are Static TMP font assets with non-readable atlases: their CPU copies (16 + 4 + 4 MiB) are gone. They were Dynamic and filled glyphs in at runtime; now they hold every codepoint their font has (Bold 584 -> 1296 chars, all but 2 private-use; Norse 406 -> 516; rune 208 -> 316; Cyrillic 150 / 74 / 74). Old glyphs keep their pixels, rects and metrics; new ones are baked by the same FontEngine path at each asset's settings, with the kerning/ligature/mark records a runtime add would pull (the game's TMP Settings fetch font features at runtime). Built by the new `tools/static_font_atlas.py` + `tools/unity/FontAtlasBake.cs`.
+* `SourceSansPro-Regular SDF` and `Norsebold SDF` stay Dynamic: their 2048x2048 atlases cannot hold the font's whole character set (Regular: 15 more glyphs fit, Norsebold: all but 14), so a Static asset would send more characters to the fallback fonts.
+
 ### 2.2.6 - Light cell on the paper doll
 
 * MorgottTweaks' EAQS light slot (1.112.0, `[Compat] EaqsLightSlot`) gets its cell in the paper doll's free corner (equipment column 3 / row 3) with a lantern silhouette; EAQS's custom background is hidden when no other custom cell is left.
