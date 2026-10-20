@@ -1,3 +1,7 @@
+### 2.2.6 - Light cell on the paper doll
+
+* MorgottTweaks' EAQS light slot (1.112.0, `[Compat] EaqsLightSlot`) gets its cell in the paper doll's free corner (equipment column 3 / row 3) with a lantern silhouette; EAQS's custom background is hidden when no other custom cell is left.
+
 ### 2.2.5 - Compressed UI textures
 
 * The 22 large UI textures of the Auga bundle (panel backgrounds, loading-screen art, logos, ship HUD art) are BC7 instead of uncompressed RGBA32/RGB24: GPU memory of the bundle's textures 141.6 -> 70.4 MiB, bundle 28.5 -> 18.4 MB. Odd-sized textures are padded to a multiple of 4 with their edge texels (same sampling), sprites keep their pixel rects. Built by the new `tools/compress_augaassets.py` (run after `strip_augaassets.py`).
