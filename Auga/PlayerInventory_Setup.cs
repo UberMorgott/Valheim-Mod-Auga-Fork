@@ -21,12 +21,19 @@ namespace Auga
             // The Auga store (Phase 4) still tints its item icons with the vanilla icon material.
             AddItemIconMaterialFrom(__instance);
 
-            AugaStyle.Restyle(__instance.transform);
+            // RuneSkin owns the inventory layout (Compat\RuneSkinOwnership.Inventory): its player panel (with the
+            // container under it), the info header and the grid slot templates are RuneSkin's; AugaSkin keeps
+            // styling the rest of the screen (crafting, skills, texts, trophies, achievements, split/variant dialogs).
+            var runeInventory = Compat.RuneSkinOwnership.Inventory;
+            if (runeInventory)
+                RestyleExcept(__instance.transform, __instance);
+            else
+                AugaStyle.Restyle(__instance.transform);
             // Templates vanilla instantiates at runtime: grid slots (InventoryGrid.UpdateGui), recipe rows
             // (InventoryGui.AddRecipeToList), trophies and achievements, the drag icon.
             foreach (var template in new[]
                      {
-                         __instance.m_playerGrid.m_elementPrefab, __instance.m_containerGrid.m_elementPrefab,
+                         runeInventory ? null : __instance.m_playerGrid.m_elementPrefab, runeInventory ? null : __instance.m_containerGrid.m_elementPrefab,
                          __instance.m_recipeElementPrefab, __instance.m_trophieElementPrefab,
                          __instance.m_achievementsElementPrefab, __instance.m_dragItemPrefab,
                          // skill rows, instantiated by SkillsDialog.Setup (SkillsDialog.cs:119)
@@ -36,11 +43,27 @@ namespace Auga
                     AugaStyle.Restyle(template.transform);
             // Equipped / queued marks of the grid slots: Auga's own slot prefab (bundle Inventory_screen grid).
             var augaGrid = Auga.Assets.InventoryScreen ? Auga.Assets.InventoryScreen.GetComponentInChildren<InventoryGrid>(true) : null;
-            foreach (var grid in new[] { __instance.m_playerGrid, __instance.m_containerGrid })
-                AugaStyle.SlotMarks(grid.m_elementPrefab ? grid.m_elementPrefab.transform : null, augaGrid ? augaGrid.m_elementPrefab : null);
+            if (!runeInventory)
+                foreach (var grid in new[] { __instance.m_playerGrid, __instance.m_containerGrid })
+                    AugaStyle.SlotMarks(grid.m_elementPrefab ? grid.m_elementPrefab.transform : null, augaGrid ? augaGrid.m_elementPrefab : null);
 
             // 5th Info button + character stats window, cloned from the restyled vanilla ones.
             CharacterStatsPanel.Create(__instance);
+        }
+
+        // Restyle of the InventoryGui hierarchy minus RuneSkin's subtrees: walks down only along ancestors of an owned
+        // panel and restyles every other subtree whole.
+        private static void RestyleExcept(Transform t, InventoryGui gui)
+        {
+            foreach (Transform child in t)
+            {
+                if (child == gui.m_player || child == gui.m_info || Compat.RuneSkinOwnership.IsRuneSkinObject(child))
+                    continue;
+                if (gui.m_player.IsChildOf(child) || gui.m_info.IsChildOf(child))
+                    RestyleExcept(child, gui);
+                else
+                    AugaStyle.Restyle(child);
+            }
         }
 
         private static void AddItemIconMaterialFrom(InventoryGui gui)

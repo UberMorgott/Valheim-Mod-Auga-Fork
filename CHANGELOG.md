@@ -1,3 +1,7 @@
+### 2.2.11 - Yields the inventory layout to RuneSkin
+
+* When RuneSkin owns the `Inventory` family it lays out the inventory screen itself: AugaSkin skips the EAQS slot panel layout and backgrounds, the MorgottTweaks trash plate icon, the grid slot templates and slot marks, and does not restyle the player panel (with the container under it) or the info header. AugaSkin keeps styling crafting, skills, texts, trophies, achievements and the split / variant dialogs. Without RuneSkin nothing changes.
+
 ### 2.2.10 - Yields the player HUD to RuneSkin
 
 * When RuneSkin owns the `Hud` family it draws the player HUD cluster itself: AugaSkin skips its stat-bar layout (AugaStatBars setup, bar-size prefixes and lift transpilers), the hotbar slot restyle, the movable offsets of hotbar / health panel / status effects / guardian power, the EAQS quick-slot reposition, and never restyles RuneSkin's own hudroot children. The rest of hudroot (minimap, build HUD, ship HUD, crosshair) stays AugaSkin's. Without RuneSkin nothing changes.

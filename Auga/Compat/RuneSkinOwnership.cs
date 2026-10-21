@@ -20,6 +20,9 @@ namespace Auga.Compat
         // Player HUD cluster (bars, food, status effects, hotbar placement): RuneSkin draws its own and hides the
         // vanilla parts; AugaSkin keeps the rest of hudroot (minimap, build HUD, ship HUD, crosshair...).
         public static bool Hud { get; private set; }
+        // Inventory screen layout (RuneSkin M2): player panel, doll / EAQS cells, grid cells, container dock, info
+        // header and the crafting panel's place. AugaSkin keeps styling crafting, skills, texts, trophies and dialogs.
+        public static bool Inventory { get; private set; }
 
         public static void Freeze()
         {
@@ -35,14 +38,19 @@ namespace Auga.Compat
             Menu = (bool)isOwned.Invoke(null, new object[] { "Menu" });
             Tooltips = (bool)isOwned.Invoke(null, new object[] { "Tooltips" });
             Hud = (bool)isOwned.Invoke(null, new object[] { "Hud" });
-            Debug.Log($"[Auga] RuneSkin owns: Menu={Menu} Tooltips={Tooltips} Hud={Hud} (AugaSkin yields those)");
+            Inventory = (bool)isOwned.Invoke(null, new object[] { "Inventory" });
+            Debug.Log($"[Auga] RuneSkin owns: Menu={Menu} Tooltips={Tooltips} Hud={Hud} Inventory={Inventory} (AugaSkin yields those)");
         }
 
         // Patch classes not installed while RuneSkin owns their family.
         // Hud: the stat-bar size prefixes and lift transpilers (AugaStatBars_Size_Patch).
+        // Inventory: EAQS cell layout + backgrounds (EaqsSlotPanel grid/update patches), MT trash plate icon.
         public static bool Skips(Type patchClass) =>
             (Tooltips && patchClass == typeof(UITooltip_OnHoverStart_Patch)) ||
-            (Hud && patchClass == typeof(AugaStatBars_Size_Patch));
+            (Hud && patchClass == typeof(AugaStatBars_Size_Patch)) ||
+            (Inventory && (patchClass == typeof(EaqsSlotPanel.InventoryGrid_UpdateGui_Patch) ||
+                           patchClass == typeof(EaqsSlotPanel.InventoryGui_Update_Patch) ||
+                           patchClass == typeof(TrashPlate_Skin)));
 
         // RuneSkin's own objects under hudroot (RuneSkinHud, RuneSkinVanillaHidden): never restyled by AugaSkin.
         public static bool IsRuneSkinObject(UnityEngine.Transform t) => t && t.name.StartsWith("RuneSkin", StringComparison.Ordinal);
