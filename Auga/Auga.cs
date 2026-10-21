@@ -82,10 +82,13 @@ namespace Auga
     [BepInPlugin(PluginID, "AugaSkin", Version)]
     [BepInDependency("Menthus.bepinex.plugins.BetterTrader", BepInDependency.DependencyFlags.SoftDependency)]
     [BepInDependency("redseiko.valheim.chatter", BepInDependency.DependencyFlags.SoftDependency)]
+    // Load order only: RuneSkin must freeze its screen ownership before this Awake. RuneSkin has no dependency on
+    // AugaSkin (no cycle).
+    [BepInDependency(Compat.RuneSkinOwnership.Guid, BepInDependency.DependencyFlags.SoftDependency)]
     public class Auga : BaseUnityPlugin
     {
         public const string PluginID = "morgott.valheim.augaskin";
-        public const string Version = "2.2.8";
+        public const string Version = "2.2.9";
         // Embedded resources are named by the project's RootNamespace (Auga), not by the assembly name.
         private const string ResourcePrefix = "Auga.";
 
@@ -161,7 +164,13 @@ namespace Auga
             HasBetterTrader = Chainloader.PluginInfos.ContainsKey("Menthus.bepinex.plugins.BetterTrader");
             HasChatter = Chainloader.PluginInfos.TryGetValue("redseiko.valheim.chatter", out var chatterPlugin);
 
-            _harmony = Harmony.CreateAndPatchAll(Assembly.GetExecutingAssembly(), PluginID);
+            // Families RuneSkin took are frozen before any patch goes in (Compat\RuneSkinOwnership). Same as
+            // Harmony.CreateAndPatchAll (one class processor per type) minus the yielded patch classes.
+            Compat.RuneSkinOwnership.Freeze();
+            _harmony = new Harmony(PluginID);
+            foreach (var type in AccessTools.GetTypesFromAssembly(Assembly.GetExecutingAssembly()))
+                if (!Compat.RuneSkinOwnership.Skips(type))
+                    _harmony.CreateClassProcessor(type).Patch();
             JotunnGui.Init(_harmony);
             EpicLootEnchanting.Init(_harmony);
             Compat.Almanac.Init(_harmony);

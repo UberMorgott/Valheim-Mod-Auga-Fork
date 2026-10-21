@@ -1,3 +1,7 @@
+### 2.2.9 - Yields screens to RuneSkin
+
+* When RuneSkin (`morgott.valheim.runeskin`) is installed and owns a screen family, AugaSkin does not style it: ownership is read once at startup before any Harmony patch (soft dependency, so RuneSkin decides first). Tooltips owned = the tooltip restyle patch is not installed; pause menu owned = its restyle is skipped, the Compendium entry stays. Without RuneSkin nothing changes.
+
 ### 2.2.7 - Static font atlases
 
 * `SourceSansPro-Bold SDF` (4096x4096), `Norse SDF` and `rune SDF` (2048x2048, Alpha8) are Static TMP font assets with non-readable atlases: their CPU copies (16 + 4 + 4 MiB) are gone. They were Dynamic and filled glyphs in at runtime; now they hold every codepoint their font has (Bold 584 -> 1296 chars, all but 2 private-use; Norse 406 -> 516; rune 208 -> 316; Cyrillic 150 / 74 / 74). Old glyphs keep their pixels, rects and metrics; new ones are baked by the same FontEngine path at each asset's settings, with the kerning/ligature/mark records a runtime add would pull (the game's TMP Settings fetch font features at runtime). Built by the new `tools/static_font_atlas.py` + `tools/unity/FontAtlasBake.cs`.

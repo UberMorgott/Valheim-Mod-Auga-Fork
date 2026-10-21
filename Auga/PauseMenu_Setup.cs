@@ -20,7 +20,9 @@ namespace Auga
             public static void Postfix(Menu __instance)
             {
                 AddCompendium(__instance);
-                AugaStyle.Restyle(__instance.transform);
+                // RuneSkin owns the menu's look (Compat\RuneSkinOwnership); the Compendium entry stays an AugaSkin feature.
+                if (!Compat.RuneSkinOwnership.Menu)
+                    AugaStyle.Restyle(__instance.transform);
             }
 
             // Compendium = the vanilla Texts dialog (InventoryGui.m_textsDialog, scene Inventory_screen/root/Texts).
