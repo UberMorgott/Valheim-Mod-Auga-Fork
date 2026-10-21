@@ -35,10 +35,11 @@ namespace Auga
             foreach (var template in new[]
                      {
                          runeInventory ? null : __instance.m_playerGrid.m_elementPrefab, runeInventory ? null : __instance.m_containerGrid.m_elementPrefab,
-                         Compat.RuneSkinOwnership.Crafting ? null : __instance.m_recipeElementPrefab, __instance.m_trophieElementPrefab,
+                         Compat.RuneSkinOwnership.Crafting ? null : __instance.m_recipeElementPrefab,
+                         Compat.RuneSkinOwnership.Trophies ? null : __instance.m_trophieElementPrefab,
                          __instance.m_achievementsElementPrefab, __instance.m_dragItemPrefab,
                          // skill rows, instantiated by SkillsDialog.Setup (SkillsDialog.cs:119)
-                         __instance.m_skillsDialog ? __instance.m_skillsDialog.m_elementPrefab : null,
+                         __instance.m_skillsDialog && !Compat.RuneSkinOwnership.Skills ? __instance.m_skillsDialog.m_elementPrefab : null,
                      })
                 if (template)
                     AugaStyle.Restyle(template.transform);
@@ -59,7 +60,9 @@ namespace Auga
             foreach (Transform child in t)
             {
                 if (child == gui.m_player || child == gui.m_info || Compat.RuneSkinOwnership.IsRuneSkinObject(child) ||
-                    Compat.RuneSkinOwnership.Crafting && child == gui.m_crafting)
+                    Compat.RuneSkinOwnership.Crafting && child == gui.m_crafting ||
+                    Compat.RuneSkinOwnership.Skills && gui.m_skillsDialog && child == gui.m_skillsDialog.transform ||
+                    Compat.RuneSkinOwnership.Trophies && gui.m_trophiesPanel && child == gui.m_trophiesPanel.transform)
                     continue;
                 if (gui.m_player.IsChildOf(child) || gui.m_info.IsChildOf(child))
                     RestyleExcept(child, gui);

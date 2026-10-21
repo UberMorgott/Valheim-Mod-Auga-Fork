@@ -25,6 +25,9 @@ namespace Auga.Compat
         public static bool Inventory { get; private set; }
         // Crafting column (RuneSkin M3, needs Inventory): InventoryGui.m_crafting subtree and the recipe row template.
         public static bool Crafting { get; private set; }
+        // Skills dialog / trophies panel (RuneSkin M3, need Inventory): their subtrees and row templates.
+        public static bool Skills { get; private set; }
+        public static bool Trophies { get; private set; }
 
         public static void Freeze()
         {
@@ -43,7 +46,9 @@ namespace Auga.Compat
             Inventory = (bool)isOwned.Invoke(null, new object[] { "Inventory" });
             // RuneSkin before M3 throws nothing for an unknown family (false): AugaSkin then keeps crafting.
             Crafting = Inventory && (bool)isOwned.Invoke(null, new object[] { "Crafting" });
-            Debug.Log($"[Auga] RuneSkin owns: Menu={Menu} Tooltips={Tooltips} Hud={Hud} Inventory={Inventory} Crafting={Crafting} (AugaSkin yields those)");
+            Skills = Inventory && (bool)isOwned.Invoke(null, new object[] { "Skills" });
+            Trophies = Inventory && (bool)isOwned.Invoke(null, new object[] { "Trophies" });
+            Debug.Log($"[Auga] RuneSkin owns: Menu={Menu} Tooltips={Tooltips} Hud={Hud} Inventory={Inventory} Crafting={Crafting} Skills={Skills} Trophies={Trophies} (AugaSkin yields those)");
         }
 
         // Patch classes not installed while RuneSkin owns their family.
