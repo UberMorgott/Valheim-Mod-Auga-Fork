@@ -21,8 +21,10 @@ namespace Auga.Compat
         // vanilla parts; AugaSkin keeps the rest of hudroot (minimap, build HUD, ship HUD, crosshair...).
         public static bool Hud { get; private set; }
         // Inventory screen layout (RuneSkin M2): player panel, doll / EAQS cells, grid cells, container dock, info
-        // header and the crafting panel's place. AugaSkin keeps styling crafting, skills, texts, trophies and dialogs.
+        // header and the crafting panel's place. AugaSkin keeps styling skills, texts, trophies and dialogs.
         public static bool Inventory { get; private set; }
+        // Crafting column (RuneSkin M3, needs Inventory): InventoryGui.m_crafting subtree and the recipe row template.
+        public static bool Crafting { get; private set; }
 
         public static void Freeze()
         {
@@ -39,7 +41,9 @@ namespace Auga.Compat
             Tooltips = (bool)isOwned.Invoke(null, new object[] { "Tooltips" });
             Hud = (bool)isOwned.Invoke(null, new object[] { "Hud" });
             Inventory = (bool)isOwned.Invoke(null, new object[] { "Inventory" });
-            Debug.Log($"[Auga] RuneSkin owns: Menu={Menu} Tooltips={Tooltips} Hud={Hud} Inventory={Inventory} (AugaSkin yields those)");
+            // RuneSkin before M3 throws nothing for an unknown family (false): AugaSkin then keeps crafting.
+            Crafting = Inventory && (bool)isOwned.Invoke(null, new object[] { "Crafting" });
+            Debug.Log($"[Auga] RuneSkin owns: Menu={Menu} Tooltips={Tooltips} Hud={Hud} Inventory={Inventory} Crafting={Crafting} (AugaSkin yields those)");
         }
 
         // Patch classes not installed while RuneSkin owns their family.

@@ -23,7 +23,8 @@ namespace Auga
 
             // RuneSkin owns the inventory layout (Compat\RuneSkinOwnership.Inventory): its player panel (with the
             // container under it), the info header and the grid slot templates are RuneSkin's; AugaSkin keeps
-            // styling the rest of the screen (crafting, skills, texts, trophies, achievements, split/variant dialogs).
+            // styling the rest of the screen (skills, texts, trophies, achievements, split/variant dialogs; crafting too
+            // unless RuneSkin also owns Crafting, M3).
             var runeInventory = Compat.RuneSkinOwnership.Inventory;
             if (runeInventory)
                 RestyleExcept(__instance.transform, __instance);
@@ -34,7 +35,7 @@ namespace Auga
             foreach (var template in new[]
                      {
                          runeInventory ? null : __instance.m_playerGrid.m_elementPrefab, runeInventory ? null : __instance.m_containerGrid.m_elementPrefab,
-                         __instance.m_recipeElementPrefab, __instance.m_trophieElementPrefab,
+                         Compat.RuneSkinOwnership.Crafting ? null : __instance.m_recipeElementPrefab, __instance.m_trophieElementPrefab,
                          __instance.m_achievementsElementPrefab, __instance.m_dragItemPrefab,
                          // skill rows, instantiated by SkillsDialog.Setup (SkillsDialog.cs:119)
                          __instance.m_skillsDialog ? __instance.m_skillsDialog.m_elementPrefab : null,
@@ -57,7 +58,8 @@ namespace Auga
         {
             foreach (Transform child in t)
             {
-                if (child == gui.m_player || child == gui.m_info || Compat.RuneSkinOwnership.IsRuneSkinObject(child))
+                if (child == gui.m_player || child == gui.m_info || Compat.RuneSkinOwnership.IsRuneSkinObject(child) ||
+                    Compat.RuneSkinOwnership.Crafting && child == gui.m_crafting)
                     continue;
                 if (gui.m_player.IsChildOf(child) || gui.m_info.IsChildOf(child))
                     RestyleExcept(child, gui);
