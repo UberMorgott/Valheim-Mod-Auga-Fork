@@ -1,3 +1,7 @@
+### 2.2.10 - Yields the player HUD to RuneSkin
+
+* When RuneSkin owns the `Hud` family it draws the player HUD cluster itself: AugaSkin skips its stat-bar layout (AugaStatBars setup, bar-size prefixes and lift transpilers), the hotbar slot restyle, the movable offsets of hotbar / health panel / status effects / guardian power, the EAQS quick-slot reposition, and never restyles RuneSkin's own hudroot children. The rest of hudroot (minimap, build HUD, ship HUD, crosshair) stays AugaSkin's. Without RuneSkin nothing changes.
+
 ### 2.2.9 - Yields screens to RuneSkin
 
 * When RuneSkin (`morgott.valheim.runeskin`) is installed and owns a screen family, AugaSkin does not style it: ownership is read once at startup before any Harmony patch (soft dependency, so RuneSkin decides first). Tooltips owned = the tooltip restyle patch is not installed; pause menu owned = its restyle is skipped, the Compendium entry stays. Without RuneSkin nothing changes.

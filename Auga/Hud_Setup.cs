@@ -24,7 +24,9 @@ namespace Auga
             AugaStyle.Restyle(__instance.m_pieceIconPrefab.transform);
             // Hotbar slots are instantiated from this template (HotkeyBar.cs:29 m_elementPrefab), outside hudroot.
             var hotkeyBar = __instance.GetComponentInChildren<HotkeyBar>(true);
-            if (hotkeyBar)
+            // RuneSkin owns the HUD cluster (Compat\RuneSkinOwnership): its hotbar slots, bars, food and status effects.
+            var runeHud = Compat.RuneSkinOwnership.Hud;
+            if (hotkeyBar && !runeHud)
             {
                 AugaStyle.Restyle(hotkeyBar.m_elementPrefab.transform);
                 var augaBar = Auga.Assets.Hud ? Auga.Assets.Hud.GetComponentInChildren<HotkeyBar>(true) : null;
@@ -33,7 +35,8 @@ namespace Auga
 
             // Auga's bar cluster (health, stamina, eitr and the food diamonds) built from the vanilla objects; it lives
             // in m_healthPanel, so the HealthPanel offset moves the whole cluster.
-            AugaStatBars.Setup(__instance);
+            if (!runeHud)
+                AugaStatBars.Setup(__instance);
             // Bar fills and the ship HUD (sprite sets Restyle does not map).
             HudParts.Setup(__instance);
             // Frames of the local player's summons, under the hotkey bar (Phase 3).
@@ -43,11 +46,14 @@ namespace Auga
             if (__instance.m_loadingScreen)
                 AugaStyle.Restyle(__instance.m_loadingScreen.transform);
 
-            Movable(__instance.GetComponentInChildren<HotkeyBar>(true)?.transform, "HotKeyBar");
+            if (!runeHud)
+            {
+                Movable(__instance.GetComponentInChildren<HotkeyBar>(true)?.transform, "HotKeyBar");
+                Movable(__instance.m_statusEffectListRoot, "StatusEffects");
+                Movable(__instance.m_healthPanel, "HealthPanel");
+                Movable(__instance.m_gpRoot, "GuardianPower");
+            }
             Movable(__instance.GetComponentInChildren<KeyHints>(true)?.transform, "KeyHints");
-            Movable(__instance.m_statusEffectListRoot, "StatusEffects");
-            Movable(__instance.m_healthPanel, "HealthPanel");
-            Movable(__instance.m_gpRoot, "GuardianPower");
             Movable(__instance.m_eventBar.transform, "EventBar");
             Movable(__instance.m_actionBarRoot.transform, "ActionProgress");
             Movable(__instance.m_staggerAnimator.transform, "StaggerPanel");
@@ -78,7 +84,7 @@ namespace Auga
         {
             foreach (Transform child in __instance.m_rootObject.transform)
             {
-                if (!Seen.Add(child.GetInstanceID()) || child.name.StartsWith("BA_"))
+                if (!Seen.Add(child.GetInstanceID()) || child.name.StartsWith("BA_") || Compat.RuneSkinOwnership.IsRuneSkinObject(child))
                     continue;
                 AugaStyle.RestyleAll(child);
             }

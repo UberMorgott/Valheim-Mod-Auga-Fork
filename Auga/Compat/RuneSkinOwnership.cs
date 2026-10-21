@@ -17,6 +17,9 @@ namespace Auga.Compat
 
         public static bool Menu { get; private set; }
         public static bool Tooltips { get; private set; }
+        // Player HUD cluster (bars, food, status effects, hotbar placement): RuneSkin draws its own and hides the
+        // vanilla parts; AugaSkin keeps the rest of hudroot (minimap, build HUD, ship HUD, crosshair...).
+        public static bool Hud { get; private set; }
 
         public static void Freeze()
         {
@@ -31,11 +34,17 @@ namespace Auga.Compat
             }
             Menu = (bool)isOwned.Invoke(null, new object[] { "Menu" });
             Tooltips = (bool)isOwned.Invoke(null, new object[] { "Tooltips" });
-            Debug.Log($"[Auga] RuneSkin owns: Menu={Menu} Tooltips={Tooltips} (AugaSkin yields those)");
+            Hud = (bool)isOwned.Invoke(null, new object[] { "Hud" });
+            Debug.Log($"[Auga] RuneSkin owns: Menu={Menu} Tooltips={Tooltips} Hud={Hud} (AugaSkin yields those)");
         }
 
         // Patch classes not installed while RuneSkin owns their family.
+        // Hud: the stat-bar size prefixes and lift transpilers (AugaStatBars_Size_Patch).
         public static bool Skips(Type patchClass) =>
-            Tooltips && patchClass == typeof(UITooltip_OnHoverStart_Patch);
+            (Tooltips && patchClass == typeof(UITooltip_OnHoverStart_Patch)) ||
+            (Hud && patchClass == typeof(AugaStatBars_Size_Patch));
+
+        // RuneSkin's own objects under hudroot (RuneSkinHud, RuneSkinVanillaHidden): never restyled by AugaSkin.
+        public static bool IsRuneSkinObject(UnityEngine.Transform t) => t && t.name.StartsWith("RuneSkin", StringComparison.Ordinal);
     }
 }

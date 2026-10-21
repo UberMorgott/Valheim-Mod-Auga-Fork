@@ -241,7 +241,8 @@ namespace Auga
             [HarmonyAfter(EaqsGuid)]
             public static void Postfix(Hud __instance)
             {
-                if (!Chainloader.PluginInfos.ContainsKey(EaqsGuid))
+                // RuneSkin places the quick slots in its own HUD cluster (Compat\RuneSkinOwnership.Hud).
+                if (!Chainloader.PluginInfos.ContainsKey(EaqsGuid) || Compat.RuneSkinOwnership.Hud)
                     return;
                 var config = AccessTools.TypeByName("EquipmentAndQuickSlots.ValConfig");
                 var anchor = config == null ? null : AccessTools.Field(config, "QuickSlotsAnchor")?.GetValue(null) as BepInEx.Configuration.ConfigEntry<TextAnchor>;
