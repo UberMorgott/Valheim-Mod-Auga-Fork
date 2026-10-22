@@ -1,3 +1,7 @@
+### 2.2.24 - Yields the last-hit tracker with the message log to RuneSkin
+
+* When RuneSkin owns `MessageHud`, AugaSkin no longer adds its last-hit tracker to the player on every hit: its only reader was AugaSkin's message log death line, which is off under RuneSkin already (MorgottTweaks' death messages announce deaths). The other AugaSkin-only parts (tooltip, text casing, button sounds, filled bars, key binding display, HUD offsets, audit console, translations) only act on AugaSkin's own windows and stay until AugaSkin is removed. Without RuneSkin nothing changes.
+
 ### 2.2.23 - Yields the pause-menu Compendium entry, summon frames, player shield strips and the cursor to RuneSkin
 
 * When RuneSkin 0.13.0 or newer owns `MenuCompendium`, `SummonFrames`, `PlayerShields` or `Cursor`, it draws these former AugaSkin features itself, so AugaSkin no longer adds its Compendium entry to the pause menu (nor splices it into the gamepad chain), builds no summon frames under the hotbar, adds no energy shield / absorb shield strips under other players' overhead bars and leaves the mouse cursor alone. Without RuneSkin (or with an older RuneSkin) nothing changes.

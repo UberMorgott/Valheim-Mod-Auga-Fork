@@ -158,7 +158,9 @@ namespace Auga.Compat
         // Hud: the stat-bar size prefixes and lift transpilers (AugaStatBars_Size_Patch).
         // Inventory: EAQS cell layout + backgrounds (EaqsSlotPanel grid/update patches), MT trash plate icon.
         // Almanac: the Almanac window restyle (Compat.Almanac: InventoryGui.Awake postfix + lazy AlmanacPanel.Start patch).
-        // MessageHud also drops the AugaLog hooks: AugaMessageLog lives in the skipped MessageHud swap.
+        // MessageHud also drops the AugaLog hooks: AugaMessageLog lives in the skipped MessageHud swap; with them the
+        // LastHitTracker feed (Player.OnDamaged postfix adding a component per hit), whose only reader is AugaLog's death
+        // line (RuneSkin batch P: the message log is not ported, MorgottTweaks DeathMessages announces deaths).
         // Minimap / EnemyHud / MessageHud / DamageText: the whole *_Setup class with its nested patch classes (Harmony
         // processes each nested type on its own, so the declaring chain is checked).
         // MainMenu: the FejdStartup Start / ServerListGui / UnifiedPopup restyles (FejdStartup.Awake keeps its features:
@@ -193,7 +195,8 @@ namespace Auga.Compat
             (Connection && patchClass == typeof(ZNet_Awake_Patch)) ||
             (Minimap && Within(patchClass, typeof(Minimap_Setup))) ||
             (EnemyHud && Within(patchClass, typeof(EnemyHud_Setup))) ||
-            (MessageHud && (Within(patchClass, typeof(MessageHud_Setup)) || Array.IndexOf(AugaLog_Patches.All, patchClass) >= 0)) ||
+            (MessageHud && (Within(patchClass, typeof(MessageHud_Setup)) || Array.IndexOf(AugaLog_Patches.All, patchClass) >= 0 ||
+                            patchClass == typeof(Player_OnDamaged_Patch))) ||
             (DamageText && Within(patchClass, typeof(DamageText_Setup))) ||
             (Almanac && patchClass == typeof(global::Auga.Compat.Almanac)) ||
             (Tooltips && patchClass == typeof(UITooltip_OnHoverStart_Patch)) ||
