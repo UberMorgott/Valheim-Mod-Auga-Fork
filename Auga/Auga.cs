@@ -88,7 +88,7 @@ namespace Auga
     public class Auga : BaseUnityPlugin
     {
         public const string PluginID = "morgott.valheim.augaskin";
-        public const string Version = "2.2.17";
+        public const string Version = "2.2.18";
         // Embedded resources are named by the project's RootNamespace (Auga), not by the assembly name.
         private const string ResourcePrefix = "Auga.";
 

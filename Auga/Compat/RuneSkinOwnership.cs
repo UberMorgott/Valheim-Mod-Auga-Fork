@@ -43,6 +43,15 @@ namespace Auga.Compat
         public static bool MainMenu { get; private set; }
         public static bool Settings { get; private set; }
         public static bool Connection { get; private set; }
+        // RuneSkin M6 in-game HUD parts (restyled in place): build menu + selected-piece strip (BuildHud), crosshair /
+        // hover / piece health / stealth (Crosshair), action progress / stagger / event line / mount panel (ActionHud),
+        // ship HUD (ShipHud), key hints (KeyHints). AugaSkin leaves those hudroot subtrees, their movable offsets and
+        // their patches alone.
+        public static bool BuildHud { get; private set; }
+        public static bool Crosshair { get; private set; }
+        public static bool ActionHud { get; private set; }
+        public static bool ShipHud { get; private set; }
+        public static bool KeyHints { get; private set; }
 
         public static void Freeze()
         {
@@ -73,7 +82,13 @@ namespace Auga.Compat
             MainMenu = (bool)isOwned.Invoke(null, new object[] { "MainMenu" });
             Settings = (bool)isOwned.Invoke(null, new object[] { "Settings" });
             Connection = (bool)isOwned.Invoke(null, new object[] { "Connection" });
-            Debug.Log($"[Auga] RuneSkin owns: Menu={Menu} Tooltips={Tooltips} Hud={Hud} Inventory={Inventory} Crafting={Crafting} Skills={Skills} Trophies={Trophies} Almanac={Almanac} Minimap={Minimap} EnemyHud={EnemyHud} MessageHud={MessageHud} DamageText={DamageText} MainMenu={MainMenu} Settings={Settings} Connection={Connection} (AugaSkin yields those)");
+            // RuneSkin before M6 returns false: AugaSkin keeps them.
+            BuildHud = (bool)isOwned.Invoke(null, new object[] { "BuildHud" });
+            Crosshair = (bool)isOwned.Invoke(null, new object[] { "Crosshair" });
+            ActionHud = (bool)isOwned.Invoke(null, new object[] { "ActionHud" });
+            ShipHud = (bool)isOwned.Invoke(null, new object[] { "ShipHud" });
+            KeyHints = (bool)isOwned.Invoke(null, new object[] { "KeyHints" });
+            Debug.Log($"[Auga] RuneSkin owns: Menu={Menu} Tooltips={Tooltips} Hud={Hud} Inventory={Inventory} Crafting={Crafting} Skills={Skills} Trophies={Trophies} Almanac={Almanac} Minimap={Minimap} EnemyHud={EnemyHud} MessageHud={MessageHud} DamageText={DamageText} MainMenu={MainMenu} Settings={Settings} Connection={Connection} BuildHud={BuildHud} Crosshair={Crosshair} ActionHud={ActionHud} ShipHud={ShipHud} KeyHints={KeyHints} (AugaSkin yields those)");
         }
 
         // Patch classes not installed while RuneSkin owns their family.
@@ -86,7 +101,10 @@ namespace Auga.Compat
         // MainMenu: the FejdStartup Start / ServerListGui / UnifiedPopup restyles (FejdStartup.Awake keeps its features:
         // the cinematics button stays hidden, game font fallbacks stay linked; only its restyle is skipped there).
         // Settings: Settings.Awake restyle. Connection: the ZNet dialog prefab swap.
+        // BuildHud: the BuildUi template restyle and the gold build-hint anchor. Crosshair: the hover colour patch.
         public static bool Skips(Type patchClass) =>
+            (BuildHud && (patchClass == typeof(BuildUi_Awake_Patch) || patchClass == typeof(Hud_UpdateBuild_Patch))) ||
+            (Crosshair && patchClass == typeof(Hud_UpdateCrosshair_Patch)) ||
             (MainMenu && (patchClass == typeof(FejdStartup_Awake_Patch.FejdStartup_Start_Patch) ||
                           patchClass == typeof(FejdStartup_Awake_Patch.ServerListGui_Awake_Patch) ||
                           patchClass == typeof(FejdStartup_Awake_Patch.UnifiedPopup_Awake_Patch))) ||
@@ -109,6 +127,20 @@ namespace Auga.Compat
                 if (t == outer)
                     return true;
             return false;
+        }
+
+        // hudroot children RuneSkin owns (M6 families): Hud_Setup restyles hudroot child by child without them, gives
+        // them no movable offset, and HudParts leaves their bars / ship icons.
+        public static bool OwnsHudPart(Hud hud, Transform child)
+        {
+            if (!hud || !child) return false;
+            bool Under(Component c) => c && (c.transform == child || c.transform.IsChildOf(child));
+            bool UnderGo(GameObject g) => g && (g.transform == child || g.transform.IsChildOf(child));
+            return (BuildHud && (Under(hud.m_buildUi) || UnderGo(hud.m_buildHud))) ||
+                   (Crosshair && Under(hud.m_crosshair)) ||
+                   (ActionHud && (UnderGo(hud.m_actionBarRoot) || Under(hud.m_staggerAnimator) || UnderGo(hud.m_eventBar) || UnderGo(hud.m_mountPanel))) ||
+                   (ShipHud && UnderGo(hud.m_shipHudRoot)) ||
+                   (KeyHints && Under(hud.GetComponentInChildren<KeyHints>(true)));
         }
 
         // RuneSkin's own objects under hudroot (RuneSkinHud, RuneSkinVanillaHidden): never restyled by AugaSkin.

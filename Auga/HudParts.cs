@@ -17,13 +17,15 @@ namespace Auga
 
         public static void Setup(Hud hud)
         {
-            Bars(hud.m_rootObject.transform);
-            Ship(hud);
+            Bars(hud, hud.m_rootObject.transform);
+            // RuneSkin draws its own ship ladder (Compat.RuneSkinOwnership.ShipHud).
+            if (!Compat.RuneSkinOwnership.ShipHud)
+                Ship(hud);
         }
 
         // Auga's bar body (bundle HUD crosshair/PieceHealthRoot/PieceHealthBar/bar: AugaProgressBarBody_Small, sliced
         // ends) under the colour vanilla gives the bar; the lit HUD material is the vanilla bar's own glow.
-        private static void Bars(Transform root)
+        private static void Bars(Hud hud, Transform root)
         {
             var body = AugaStyle.BundleSprite("AugaProgressBarBody_Small");
             if (!body)
@@ -31,6 +33,9 @@ namespace Auga
             foreach (var bar in root.GetComponentsInChildren<GuiBar>(true))
             {
                 if (!bar.m_bar || !bar.m_bar.TryGetComponent<Image>(out var fill) || !fill.sprite || !BarFills.Contains(fill.sprite.name))
+                    continue;
+                // Bars inside hudroot parts RuneSkin owns (crosshair piece health / stealth, action, stagger, mount).
+                if (OwnedByRuneSkin(hud, bar.transform))
                     continue;
                 fill.sprite = body;
                 fill.type = Image.Type.Sliced;
@@ -91,6 +96,15 @@ namespace Auga
                 else if (!first)
                     image.enabled = false;
             }
+        }
+
+        private static bool OwnedByRuneSkin(Hud hud, Transform t)
+        {
+            var root = hud.m_rootObject.transform;
+            for (var p = t; p && p.parent; p = p.parent)
+                if (p.parent == root)
+                    return Compat.RuneSkinOwnership.OwnsHudPart(hud, p);
+            return false;
         }
 
         private static bool Swap(Image image, string sprite, Color? color)

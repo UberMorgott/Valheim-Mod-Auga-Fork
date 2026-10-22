@@ -20,11 +20,16 @@ namespace Auga
             // MiniMap subtree (Minimap.m_smallRoot / m_largeRoot live there); it still goes into Seen below, so the
             // mod-parts pass skips it too.
             var hudRoot = __instance.m_rootObject.transform;
+            // RuneSkin M6 families (build menu, crosshair, action / event / mount, ship HUD, key hints) are left out the
+            // same way (Compat.RuneSkinOwnership.OwnsHudPart).
             var runeMap = Compat.RuneSkinOwnership.Minimap ? hudRoot.Find("MiniMap") : null;
-            if (runeMap)
+            var skipped = false;
+            foreach (Transform child in hudRoot)
+                skipped |= child == runeMap || Compat.RuneSkinOwnership.OwnsHudPart(__instance, child);
+            if (skipped)
             {
                 foreach (Transform child in hudRoot)
-                    if (child != runeMap)
+                    if (child != runeMap && !Compat.RuneSkinOwnership.OwnsHudPart(__instance, child))
                         AugaStyle.Restyle(child);
             }
             else
@@ -33,7 +38,8 @@ namespace Auga
             foreach (Transform child in __instance.m_rootObject.transform)
                 Hud_Awake_ModParts.Seen.Add(child.GetInstanceID());
             // Build-menu icons are instantiated from this template (Hud.cs:1210 UpdatePieceList).
-            AugaStyle.Restyle(__instance.m_pieceIconPrefab.transform);
+            if (!Compat.RuneSkinOwnership.BuildHud)
+                AugaStyle.Restyle(__instance.m_pieceIconPrefab.transform);
             // Hotbar slots are instantiated from this template (HotkeyBar.cs:29 m_elementPrefab), outside hudroot.
             var hotkeyBar = __instance.GetComponentInChildren<HotkeyBar>(true);
             // RuneSkin owns the HUD cluster (Compat\RuneSkinOwnership): its hotbar slots, bars, food and status effects.
@@ -65,12 +71,18 @@ namespace Auga
                 Movable(__instance.m_healthPanel, "HealthPanel");
                 Movable(__instance.m_gpRoot, "GuardianPower");
             }
-            Movable(__instance.GetComponentInChildren<KeyHints>(true)?.transform, "KeyHints");
-            Movable(__instance.m_eventBar.transform, "EventBar");
-            Movable(__instance.m_actionBarRoot.transform, "ActionProgress");
-            Movable(__instance.m_staggerAnimator.transform, "StaggerPanel");
-            Movable(__instance.m_mountPanel ? __instance.m_mountPanel.transform : null, "MountPanel");
-            Movable(__instance.m_shipHudRoot.transform, "ShipHud");
+            // RuneSkin places the parts of the M6 families it owns.
+            if (!Compat.RuneSkinOwnership.KeyHints)
+                Movable(__instance.GetComponentInChildren<KeyHints>(true)?.transform, "KeyHints");
+            if (!Compat.RuneSkinOwnership.ActionHud)
+            {
+                Movable(__instance.m_eventBar.transform, "EventBar");
+                Movable(__instance.m_actionBarRoot.transform, "ActionProgress");
+                Movable(__instance.m_staggerAnimator.transform, "StaggerPanel");
+                Movable(__instance.m_mountPanel ? __instance.m_mountPanel.transform : null, "MountPanel");
+            }
+            if (!Compat.RuneSkinOwnership.ShipHud)
+                Movable(__instance.m_shipHudRoot.transform, "ShipHud");
         }
 
         public static void Movable(Transform t, string name)

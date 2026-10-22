@@ -1,3 +1,7 @@
+### 2.2.18 - Yields the M6 in-game HUD parts to RuneSkin
+
+* When RuneSkin owns `BuildHud`, `Crosshair`, `ActionHud`, `ShipHud` or `KeyHints`, AugaSkin leaves those hudroot parts alone: no restyle of the build menu (BuildUi templates, gold build-hint anchor), crosshair / hover text (hover colour patch), action progress / stagger / event line / mount panel bars, ship HUD icons, key hints, and no movable offsets for them. Without RuneSkin (or with an older RuneSkin) nothing changes.
+
 ### 2.2.11 - Yields the inventory layout to RuneSkin
 
 * When RuneSkin owns the `Inventory` family it lays out the inventory screen itself: AugaSkin skips the EAQS slot panel layout and backgrounds, the MorgottTweaks trash plate icon, the grid slot templates and slot marks, and does not restyle the player panel (with the container under it) or the info header. AugaSkin keeps styling crafting, skills, texts, trophies, achievements and the split / variant dialogs. Without RuneSkin nothing changes.
