@@ -70,6 +70,17 @@ namespace Auga.Compat
         public static bool Feedback { get; private set; }
         // Compendium active effects page: RuneSkin >= 0.9.1 draws its own list there (RuneSkin ActiveEffectsPage, same
         // MtActiveEffectRowsV1 contract); with an older RuneSkin owning Compendium AugaSkin keeps its page.
+        // RuneSkin M7 (0.11.0, API 8): the fallback restyler for every UI no family owns (ModUi: Jotunn GUIManager
+        // windows, IMGUI fonts, Epic Loot popups, other mods' windows), Epic Loot's enchanting table / adventure board /
+        // tempering panel, other mods' HUD parts (ModHud), the achievements panel / variant dialog / drag icon
+        // (InventoryExtras) and the radial menus (Radial).
+        public static bool ModUi { get; private set; }
+        public static bool EpicLootEnchanting { get; private set; }
+        public static bool EpicLootBoard { get; private set; }
+        public static bool EpicLootTemper { get; private set; }
+        public static bool ModHud { get; private set; }
+        public static bool InventoryExtras { get; private set; }
+        public static bool Radial { get; private set; }
         public static bool ActiveEffects { get; private set; }
         public static readonly System.Version ActiveEffectsSince = new System.Version(0, 9, 1);
 
@@ -120,8 +131,16 @@ namespace Auga.Compat
             Barber = (bool)isOwned.Invoke(null, new object[] { "Barber" });
             DevPanels = (bool)isOwned.Invoke(null, new object[] { "DevPanels" });
             Feedback = (bool)isOwned.Invoke(null, new object[] { "Feedback" });
+            // RuneSkin before 0.11.0 (API 8) returns false: AugaSkin keeps them.
+            ModUi = (bool)isOwned.Invoke(null, new object[] { "ModUi" });
+            EpicLootEnchanting = (bool)isOwned.Invoke(null, new object[] { "EpicLootEnchanting" });
+            EpicLootBoard = (bool)isOwned.Invoke(null, new object[] { "EpicLootBoard" });
+            EpicLootTemper = (bool)isOwned.Invoke(null, new object[] { "EpicLootTemper" });
+            ModHud = (bool)isOwned.Invoke(null, new object[] { "ModHud" });
+            InventoryExtras = (bool)isOwned.Invoke(null, new object[] { "InventoryExtras" });
+            Radial = (bool)isOwned.Invoke(null, new object[] { "Radial" });
             ActiveEffects = Compendium && Chainloader.PluginInfos[Guid].Metadata.Version >= ActiveEffectsSince;
-            Debug.Log($"[Auga] RuneSkin owns: Menu={Menu} Tooltips={Tooltips} Hud={Hud} Inventory={Inventory} Crafting={Crafting} Skills={Skills} Trophies={Trophies} Almanac={Almanac} Minimap={Minimap} EnemyHud={EnemyHud} MessageHud={MessageHud} DamageText={DamageText} MainMenu={MainMenu} Settings={Settings} Connection={Connection} BuildHud={BuildHud} Crosshair={Crosshair} ActionHud={ActionHud} ShipHud={ShipHud} KeyHints={KeyHints} LoadScreen={LoadScreen} Chat={Chat} Popups={Popups} TextDialogs={TextDialogs} Compendium={Compendium} SplitDialog={SplitDialog} Store={Store} Barber={Barber} DevPanels={DevPanels} Feedback={Feedback} ActiveEffects={ActiveEffects} (AugaSkin yields those)");
+            Debug.Log($"[Auga] RuneSkin owns: Menu={Menu} Tooltips={Tooltips} Hud={Hud} Inventory={Inventory} Crafting={Crafting} Skills={Skills} Trophies={Trophies} Almanac={Almanac} Minimap={Minimap} EnemyHud={EnemyHud} MessageHud={MessageHud} DamageText={DamageText} MainMenu={MainMenu} Settings={Settings} Connection={Connection} BuildHud={BuildHud} Crosshair={Crosshair} ActionHud={ActionHud} ShipHud={ShipHud} KeyHints={KeyHints} LoadScreen={LoadScreen} Chat={Chat} Popups={Popups} TextDialogs={TextDialogs} Compendium={Compendium} SplitDialog={SplitDialog} Store={Store} Barber={Barber} DevPanels={DevPanels} Feedback={Feedback} ModUi={ModUi} EpicLootEnchanting={EpicLootEnchanting} EpicLootBoard={EpicLootBoard} EpicLootTemper={EpicLootTemper} ModHud={ModHud} InventoryExtras={InventoryExtras} Radial={Radial} ActiveEffects={ActiveEffects} (AugaSkin yields those)");
         }
 
         // Patch classes not installed while RuneSkin owns their family.
@@ -144,6 +163,8 @@ namespace Auga.Compat
         public static bool Skips(Type patchClass) =>
             (ActiveEffects && Within(patchClass, typeof(ActiveEffectsPage))) ||
             (Store && patchClass == typeof(Store_Setup)) ||
+            (EpicLootBoard && EpicLootTemper && patchClass == typeof(Store_EpicLootPanels)) ||
+            (ModHud && patchClass == typeof(Hud_Awake_ModParts)) ||
             (Barber && Within(patchClass, typeof(Barber_Setup))) ||
             (Chat && Within(patchClass, typeof(Chat_Setup))) ||
             (TextDialogs && (patchClass == typeof(TextInput_Setup) || Within(patchClass, typeof(TextViewer_Setup)))) ||
@@ -185,13 +206,32 @@ namespace Auga.Compat
                    (Crosshair && Under(hud.m_crosshair)) ||
                    (ActionHud && (UnderGo(hud.m_actionBarRoot) || Under(hud.m_staggerAnimator) || UnderGo(hud.m_eventBar) || UnderGo(hud.m_mountPanel))) ||
                    (ShipHud && UnderGo(hud.m_shipHudRoot)) ||
-                   (KeyHints && Under(hud.GetComponentInChildren<KeyHints>(true)));
+                   (KeyHints && Under(hud.GetComponentInChildren<KeyHints>(true))) ||
+                   (child.parent == hud.m_rootObject.transform && IsModHudPart(child));
         }
 
         // InventoryGui subtrees RuneSkin owns outside the inventory layout (M6 batch 2 dialogs): AugaSkin leaves them.
         public static bool OwnsInventoryPart(InventoryGui gui, Transform t) =>
             gui && t && ((Compendium && gui.m_textsDialog && t == gui.m_textsDialog.transform) ||
-                         (SplitDialog && gui.m_splitDialog && t == gui.m_splitDialog.transform));
+                         (SplitDialog && gui.m_splitDialog && t == gui.m_splitDialog.transform) ||
+                         (InventoryExtras && gui.m_achievementsPanel && t == gui.m_achievementsPanel.transform) ||
+                         (InventoryExtras && gui.m_variantDialog && t == gui.m_variantDialog.transform));
+
+        // hudroot children other mods add (no game component on the child itself, not AugaSkin's / RuneSkin's, not
+        // BossAwakening's BA_* boss bar): RuneSkin's ModHud family styles them.
+        public static bool IsModHudPart(Transform child)
+        {
+            if (!ModHud || !child || child.name.StartsWith("BA_", StringComparison.Ordinal) || IsRuneSkinObject(child)) return false;
+            var foreign = false;
+            foreach (var b in child.GetComponents<MonoBehaviour>())
+            {
+                if (!b) continue;
+                var asm = b.GetType().Assembly.GetName().Name;
+                if (asm.StartsWith("assembly_", StringComparison.Ordinal) || asm.StartsWith("UnityEngine", StringComparison.Ordinal) || asm.StartsWith("Unity.", StringComparison.Ordinal) || asm == "gui_framework") return false;
+                if (asm != "AugaSkin" && asm != "RuneSkin") foreign = true;
+            }
+            return foreign;
+        }
 
         // Vanilla panels RuneSkin's Popups family styles (VanillaPanels list).
         public static bool OwnsPopup(MonoBehaviour panel) =>

@@ -1,3 +1,7 @@
+### 2.2.22 - Yields mod UIs, Epic Loot panels, mod HUD parts and the inventory leftovers to RuneSkin
+
+* When RuneSkin 0.11.0 or newer owns `ModUi`, AugaSkin no longer restyles Jotunn GUIManager windows (StarLevelSystem, VNEI, Jotunn's mod compatibility window, colour pickers), IMGUI fonts (ConfigurationManager, ValheimBuildCamera badge) or Epic Loot's message / confirm popups. With `EpicLootEnchanting` / `EpicLootBoard` / `EpicLootTemper` it leaves Epic Loot's enchanting table window (and its augment / craft result scroll views), the adventure board at Haldor and the tempering panel at Hildir alone; with `ModHud` the HUD parts other mods add (Epic Loot ability bar / debug text, level texts; BossAwakening's boss bar keeps its own design either way); with `InventoryExtras` the achievements panel, the variant dialog and the drag icon; with `Radial` the radial menus. Epic Loot's rarity slot art and the cinematics-button / font-fallback features stay. Without RuneSkin (or with an older RuneSkin) nothing changes.
+
 ### 2.2.21 - Yields the compendium active effects page to RuneSkin
 
 * When RuneSkin 0.9.1 or newer owns `Compendium`, it draws the compendium's active effects page itself (same rows: foods, status effects incl. MorgottTweaks' `MtActiveEffectRowsV1` providers, guardian power), so AugaSkin no longer builds its own list there. With an older RuneSkin owning `Compendium` AugaSkin keeps its page; without RuneSkin nothing changes.

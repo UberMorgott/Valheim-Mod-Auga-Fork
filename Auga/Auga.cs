@@ -88,7 +88,7 @@ namespace Auga
     public class Auga : BaseUnityPlugin
     {
         public const string PluginID = "morgott.valheim.augaskin";
-        public const string Version = "2.2.21";
+        public const string Version = "2.2.22";
         // Embedded resources are named by the project's RootNamespace (Auga), not by the assembly name.
         private const string ResourcePrefix = "Auga.";
 
@@ -171,10 +171,13 @@ namespace Auga
             foreach (var type in AccessTools.GetTypesFromAssembly(Assembly.GetExecutingAssembly()))
                 if (!Compat.RuneSkinOwnership.Skips(type))
                     _harmony.CreateClassProcessor(type).Patch();
-            JotunnGui.Init(_harmony);
+            // RuneSkin's ModUi family (fallback restyler) takes Jotunn-built windows and IMGUI fonts.
+            if (!Compat.RuneSkinOwnership.ModUi)
+                JotunnGui.Init(_harmony);
             EpicLootEnchanting.Init(_harmony);
             Compat.Almanac.Init(_harmony);
-            Imgui.Init(_harmony);
+            if (!Compat.RuneSkinOwnership.ModUi)
+                Imgui.Init(_harmony);
 
             if (HasChatter)
             {

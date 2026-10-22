@@ -28,7 +28,8 @@ namespace Auga
             // RuneSkin M6 dialogs (compendium, split dialog; Compat.RuneSkinOwnership.OwnsInventoryPart) are left out the
             // same way.
             var runeInventory = Compat.RuneSkinOwnership.Inventory;
-            if (runeInventory || Owned(__instance.m_textsDialog, __instance) || Owned(__instance.m_splitDialog, __instance))
+            if (runeInventory || Owned(__instance.m_textsDialog, __instance) || Owned(__instance.m_splitDialog, __instance) ||
+                Owned(__instance.m_achievementsPanel, __instance) || Owned(__instance.m_variantDialog, __instance))
                 RestyleExcept(__instance.transform, __instance);
             else
                 AugaStyle.Restyle(__instance.transform);
@@ -39,7 +40,9 @@ namespace Auga
                          runeInventory ? null : __instance.m_playerGrid.m_elementPrefab, runeInventory ? null : __instance.m_containerGrid.m_elementPrefab,
                          Compat.RuneSkinOwnership.Crafting ? null : __instance.m_recipeElementPrefab,
                          Compat.RuneSkinOwnership.Trophies ? null : __instance.m_trophieElementPrefab,
-                         __instance.m_achievementsElementPrefab, __instance.m_dragItemPrefab,
+                         // RuneSkin's InventoryExtras family (0.11.0+) styles the achievement rows and the drag icon.
+                         Compat.RuneSkinOwnership.InventoryExtras ? null : __instance.m_achievementsElementPrefab,
+                         Compat.RuneSkinOwnership.InventoryExtras ? null : __instance.m_dragItemPrefab,
                          // skill rows, instantiated by SkillsDialog.Setup (SkillsDialog.cs:119)
                          __instance.m_skillsDialog && !Compat.RuneSkinOwnership.Skills ? __instance.m_skillsDialog.m_elementPrefab : null,
                      })
@@ -70,7 +73,8 @@ namespace Auga
                     Compat.RuneSkinOwnership.Skills && gui.m_skillsDialog && child == gui.m_skillsDialog.transform ||
                     Compat.RuneSkinOwnership.Trophies && gui.m_trophiesPanel && child == gui.m_trophiesPanel.transform)
                     continue;
-                if ((inventory && (gui.m_player.IsChildOf(child) || gui.m_info.IsChildOf(child))) || Holds(child, gui.m_textsDialog, gui) || Holds(child, gui.m_splitDialog, gui))
+                if ((inventory && (gui.m_player.IsChildOf(child) || gui.m_info.IsChildOf(child))) || Holds(child, gui.m_textsDialog, gui) || Holds(child, gui.m_splitDialog, gui) ||
+                    Holds(child, gui.m_achievementsPanel, gui) || Holds(child, gui.m_variantDialog, gui))
                     RestyleExcept(child, gui);
                 else
                     AugaStyle.Restyle(child);

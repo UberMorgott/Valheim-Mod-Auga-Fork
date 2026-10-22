@@ -53,7 +53,9 @@ public static class EpicLootEnchanting
                 Debug.LogWarning("[Auga] Epic Loot loaded without EnchantingTableUI.Start, its enchanting table keeps the vanilla look");
                 return;
             }
-            _harmony.Patch(start, postfix: new HarmonyMethod(typeof(EpicLootEnchanting), nameof(Start_Postfix)) { priority = Priority.Last });
+            // RuneSkin 0.11.0+ (EpicLootEnchanting) styles the table window, its dialogs and their scroll views.
+            if (!Compat.RuneSkinOwnership.EpicLootEnchanting)
+                _harmony.Patch(start, postfix: new HarmonyMethod(typeof(EpicLootEnchanting), nameof(Start_Postfix)) { priority = Priority.Last });
 
             // Epic Loot's modal dialogs (AugmentChoiceDialog via AugmentHelper.CreateAugmentChoiceDialog, the crafting /
             // gamble result CraftSuccessDialog.Create) are clones of the vanilla variant dialog, which InventoryGui's
@@ -62,7 +64,9 @@ public static class EpicLootEnchanting
             // CraftSuccessDialog.cs:87) clones InventoryGui.m_recipeListScroll, whose vanilla scrollbar art no restyle
             // pass maps: it gets Auga's scrollbar there.
             var convert = assembly.GetType("EpicLoot.Crafting.CraftSuccessDialog")?.GetMethod("ConvertToScrollingDescription", BindingFlags.Public | BindingFlags.Static);
-            if (convert != null)
+            if (Compat.RuneSkinOwnership.EpicLootEnchanting)
+                Debug.Log("[Auga] Epic Loot enchanting table left to RuneSkin (EpicLootEnchanting)");
+            else if (convert != null)
                 _harmony.Patch(convert, postfix: new HarmonyMethod(typeof(EpicLootEnchanting), nameof(ScrollingDescription_Postfix)));
             else
                 Debug.LogWarning("[Auga] Epic Loot without CraftSuccessDialog.ConvertToScrollingDescription, its dialog scrollbars keep the vanilla look");
@@ -128,6 +132,9 @@ public static class EpicLootEnchanting
             foreach (var typeName in new[] { "EpicLoot.MessagePanelBase", "EpicLoot.WelcomeMessage" })
             {
                 var awake = assembly.GetType(typeName)?.GetMethod("Awake", BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.DeclaredOnly);
+                // RuneSkin's ModUi family (fallback restyler) takes Epic Loot's popups.
+                if (Compat.RuneSkinOwnership.ModUi)
+                    continue;
                 if (awake != null)
                     _harmony.Patch(awake, postfix: new HarmonyMethod(typeof(EpicLootEnchanting), nameof(Panel_Postfix)) { priority = Priority.Last });
                 else

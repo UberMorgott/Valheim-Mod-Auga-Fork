@@ -168,8 +168,11 @@ namespace Auga
         {
             if (!__instance)
                 return;
-            RestyleOnce(__instance.transform.Find("TemperPanel"), "Frame/AugaCorner");
-            RestyleOnce(__instance.transform.Find("MerchantPanel"), "AugaCorner");
+            // RuneSkin 0.11.0+ styles each panel it owns (EpicLootTemper / EpicLootBoard).
+            if (!Compat.RuneSkinOwnership.EpicLootTemper)
+                RestyleOnce(__instance.transform.Find("TemperPanel"), "Frame/AugaCorner");
+            if (!Compat.RuneSkinOwnership.EpicLootBoard)
+                RestyleOnce(__instance.transform.Find("MerchantPanel"), "AugaCorner");
         }
 
         private static void RestyleOnce(Transform panel, string styledMarker)
