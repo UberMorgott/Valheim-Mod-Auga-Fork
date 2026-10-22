@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection.Emit;
@@ -130,6 +130,30 @@ namespace Auga
             }
         }
 
+        [HarmonyPatch(typeof(StoreGui), nameof(StoreGui.FillList))]
+        [HarmonyPostfix]
+        public static void FillList_Postfix(StoreGui __instance)
+        {
+            if (Auga.HasBetterTrader)
+            {
+                return;
+            }
+
+            var items = __instance.m_trader.GetAvailableItems();
+            for (var index = 0; index < __instance.m_itemList.Count; index++)
+            {
+                var item = items[index];
+                var itemElement = __instance.m_itemList[index];
+                itemElement.GetComponent<ItemTooltip>().Item = item.m_prefab.m_itemData;
+            }
+        }
+    }
+
+    // Separate patch class: kept when RuneSkin owns the store (Compat.RuneSkinOwnership.Store skips Store_Setup, the
+    // Auga store swap); Epic Loot's trader panels are M7 and stay AugaSkin's.
+    [HarmonyPatch]
+    public static class Store_EpicLootPanels
+    {
         // Epic Loot builds its trader panels in its own StoreGui.Show finalizer (StoreGui_Patch.OpenPanelFor):
         // TemperPanel at Hildir, MerchantPanel (secret stash, gamble, treasure maps, bounties) at Haldor, both
         // instantiated from its bundle under the StoreGui. Priority.Last runs this one after it. Both take Epic
@@ -161,24 +185,6 @@ namespace Auga
             catch (Exception e)
             {
                 Debug.LogWarning($"[Auga] Epic Loot {panel.name} restyle failed: {e}");
-            }
-        }
-
-        [HarmonyPatch(typeof(StoreGui), nameof(StoreGui.FillList))]
-        [HarmonyPostfix]
-        public static void FillList_Postfix(StoreGui __instance)
-        {
-            if (Auga.HasBetterTrader)
-            {
-                return;
-            }
-
-            var items = __instance.m_trader.GetAvailableItems();
-            for (var index = 0; index < __instance.m_itemList.Count; index++)
-            {
-                var item = items[index];
-                var itemElement = __instance.m_itemList[index];
-                itemElement.GetComponent<ItemTooltip>().Item = item.m_prefab.m_itemData;
             }
         }
     }

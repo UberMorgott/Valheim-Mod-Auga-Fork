@@ -1,3 +1,7 @@
+### 2.2.20 - Yields the trader store, barber, console / connect panel and feedback dialog to RuneSkin
+
+* When RuneSkin owns `Store`, `Barber`, `DevPanels` or `Feedback`, AugaSkin leaves them alone: no Auga store swap (the vanilla StoreGui stays; Epic Loot's trader panels under it are still restyled by AugaSkin), no AugaBarber swap, no restyle of the F5 console, F2 connect panel and feedback dialog. The hovered piece author window goes with RuneSkin's `BuildHud`. Without RuneSkin (or with an older RuneSkin) nothing changes.
+
 ### 2.2.19 - Yields the M6 dialogs and black screens to RuneSkin
 
 * When RuneSkin owns `LoadScreen`, `Chat`, `Popups`, `TextDialogs`, `Compendium` or `SplitDialog`, AugaSkin leaves those screens alone: no restyle of the respawn / sleep / teleport black screen, the chat window and NPC text colours, the achievement popup / join code / session player list / closed captions, the text input, no TextViewer prefab swap (the vanilla viewer stays), no compendium restyle or topic colour (Epic Loot compendium pages included), and the split dialog is left out of the InventoryGui restyle. AugaSkin's active effects page in the compendium stays (feature). Without RuneSkin (or with an older RuneSkin) nothing changes.

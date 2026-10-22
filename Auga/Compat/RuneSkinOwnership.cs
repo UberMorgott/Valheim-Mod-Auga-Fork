@@ -62,6 +62,12 @@ namespace Auga.Compat
         public static bool TextDialogs { get; private set; }
         public static bool Compendium { get; private set; }
         public static bool SplitDialog { get; private set; }
+        // RuneSkin M6 batch 3: trader store (vanilla StoreGui, no Auga store swap; Epic Loot's trader panels stay ours),
+        // barber (no AugaBarber swap), F5 console + F2 connect panel (DevPanels), feedback dialog.
+        public static bool Store { get; private set; }
+        public static bool Barber { get; private set; }
+        public static bool DevPanels { get; private set; }
+        public static bool Feedback { get; private set; }
 
         public static void Freeze()
         {
@@ -105,7 +111,12 @@ namespace Auga.Compat
             TextDialogs = (bool)isOwned.Invoke(null, new object[] { "TextDialogs" });
             Compendium = (bool)isOwned.Invoke(null, new object[] { "Compendium" });
             SplitDialog = (bool)isOwned.Invoke(null, new object[] { "SplitDialog" });
-            Debug.Log($"[Auga] RuneSkin owns: Menu={Menu} Tooltips={Tooltips} Hud={Hud} Inventory={Inventory} Crafting={Crafting} Skills={Skills} Trophies={Trophies} Almanac={Almanac} Minimap={Minimap} EnemyHud={EnemyHud} MessageHud={MessageHud} DamageText={DamageText} MainMenu={MainMenu} Settings={Settings} Connection={Connection} BuildHud={BuildHud} Crosshair={Crosshair} ActionHud={ActionHud} ShipHud={ShipHud} KeyHints={KeyHints} LoadScreen={LoadScreen} Chat={Chat} Popups={Popups} TextDialogs={TextDialogs} Compendium={Compendium} SplitDialog={SplitDialog} (AugaSkin yields those)");
+            // RuneSkin before 0.9.0 (API 7) returns false: AugaSkin keeps them.
+            Store = (bool)isOwned.Invoke(null, new object[] { "Store" });
+            Barber = (bool)isOwned.Invoke(null, new object[] { "Barber" });
+            DevPanels = (bool)isOwned.Invoke(null, new object[] { "DevPanels" });
+            Feedback = (bool)isOwned.Invoke(null, new object[] { "Feedback" });
+            Debug.Log($"[Auga] RuneSkin owns: Menu={Menu} Tooltips={Tooltips} Hud={Hud} Inventory={Inventory} Crafting={Crafting} Skills={Skills} Trophies={Trophies} Almanac={Almanac} Minimap={Minimap} EnemyHud={EnemyHud} MessageHud={MessageHud} DamageText={DamageText} MainMenu={MainMenu} Settings={Settings} Connection={Connection} BuildHud={BuildHud} Crosshair={Crosshair} ActionHud={ActionHud} ShipHud={ShipHud} KeyHints={KeyHints} LoadScreen={LoadScreen} Chat={Chat} Popups={Popups} TextDialogs={TextDialogs} Compendium={Compendium} SplitDialog={SplitDialog} Store={Store} Barber={Barber} DevPanels={DevPanels} Feedback={Feedback} (AugaSkin yields those)");
         }
 
         // Patch classes not installed while RuneSkin owns their family.
@@ -122,7 +133,11 @@ namespace Auga.Compat
         // Chat: Chat.Awake restyle + NPC text colours. TextDialogs: TextInput restyle, TextViewer prefab swap.
         // Compendium: TextsDialog restyle + topic colour (Epic Loot compendium pages: Compat.EpicLootEnchanting).
         // Popups / LoadScreen / SplitDialog: left out inside VanillaPanels, Hud_Setup and PlayerInventory_Setup.
+        // Store: the Auga store swap + its row tooltips (Store_Setup; Store_EpicLootPanels stays). Barber: the AugaBarber
+        // swap. DevPanels / Feedback: left out inside VanillaPanels.
         public static bool Skips(Type patchClass) =>
+            (Store && patchClass == typeof(Store_Setup)) ||
+            (Barber && Within(patchClass, typeof(Barber_Setup))) ||
             (Chat && Within(patchClass, typeof(Chat_Setup))) ||
             (TextDialogs && (patchClass == typeof(TextInput_Setup) || Within(patchClass, typeof(TextViewer_Setup)))) ||
             (Compendium && (patchClass == typeof(PauseMenu_Setup.TextsDialog_Awake_Patch) || patchClass == typeof(PauseMenu_Setup.TextsDialog_ShowText_Patch))) ||
@@ -159,7 +174,7 @@ namespace Auga.Compat
             if (!hud || !child) return false;
             bool Under(Component c) => c && (c.transform == child || c.transform.IsChildOf(child));
             bool UnderGo(GameObject g) => g && (g.transform == child || g.transform.IsChildOf(child));
-            return (BuildHud && (Under(hud.m_buildUi) || UnderGo(hud.m_buildHud))) ||
+            return (BuildHud && (Under(hud.m_buildUi) || UnderGo(hud.m_buildHud) || UnderGo(hud.m_hoveredPieceAuthorWindow))) ||
                    (Crosshair && Under(hud.m_crosshair)) ||
                    (ActionHud && (UnderGo(hud.m_actionBarRoot) || Under(hud.m_staggerAnimator) || UnderGo(hud.m_eventBar) || UnderGo(hud.m_mountPanel))) ||
                    (ShipHud && UnderGo(hud.m_shipHudRoot)) ||
@@ -173,7 +188,9 @@ namespace Auga.Compat
 
         // Vanilla panels RuneSkin's Popups family styles (VanillaPanels list).
         public static bool OwnsPopup(MonoBehaviour panel) =>
-            Popups && (panel is AchievementUnlockPopup || panel is JoinCode || panel is Valheim.UI.SessionPlayerList || panel is ClosedCaptions);
+            (Popups && (panel is AchievementUnlockPopup || panel is JoinCode || panel is Valheim.UI.SessionPlayerList || panel is ClosedCaptions)) ||
+            (DevPanels && (panel is global::Console || panel is ConnectPanel)) ||
+            (Feedback && panel is global::Feedback);
 
         // RuneSkin's own objects under hudroot (RuneSkinHud, RuneSkinVanillaHidden): never restyled by AugaSkin.
         public static bool IsRuneSkinObject(UnityEngine.Transform t) => t && t.name.StartsWith("RuneSkin", StringComparison.Ordinal);
