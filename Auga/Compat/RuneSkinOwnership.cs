@@ -28,6 +28,8 @@ namespace Auga.Compat
         // Skills dialog / trophies panel (RuneSkin M3, need Inventory): their subtrees and row templates.
         public static bool Skills { get; private set; }
         public static bool Trophies { get; private set; }
+        // The Almanac mod's window (RuneSkin family "Almanac", restyle only): Compat.Almanac stays out.
+        public static bool Almanac { get; private set; }
 
         public static void Freeze()
         {
@@ -48,13 +50,16 @@ namespace Auga.Compat
             Crafting = Inventory && (bool)isOwned.Invoke(null, new object[] { "Crafting" });
             Skills = Inventory && (bool)isOwned.Invoke(null, new object[] { "Skills" });
             Trophies = Inventory && (bool)isOwned.Invoke(null, new object[] { "Trophies" });
-            Debug.Log($"[Auga] RuneSkin owns: Menu={Menu} Tooltips={Tooltips} Hud={Hud} Inventory={Inventory} Crafting={Crafting} Skills={Skills} Trophies={Trophies} (AugaSkin yields those)");
+            Almanac = (bool)isOwned.Invoke(null, new object[] { "Almanac" });
+            Debug.Log($"[Auga] RuneSkin owns: Menu={Menu} Tooltips={Tooltips} Hud={Hud} Inventory={Inventory} Crafting={Crafting} Skills={Skills} Trophies={Trophies} Almanac={Almanac} (AugaSkin yields those)");
         }
 
         // Patch classes not installed while RuneSkin owns their family.
         // Hud: the stat-bar size prefixes and lift transpilers (AugaStatBars_Size_Patch).
         // Inventory: EAQS cell layout + backgrounds (EaqsSlotPanel grid/update patches), MT trash plate icon.
+        // Almanac: the Almanac window restyle (Compat.Almanac: InventoryGui.Awake postfix + lazy AlmanacPanel.Start patch).
         public static bool Skips(Type patchClass) =>
+            (Almanac && patchClass == typeof(global::Auga.Compat.Almanac)) ||
             (Tooltips && patchClass == typeof(UITooltip_OnHoverStart_Patch)) ||
             (Hud && patchClass == typeof(AugaStatBars_Size_Patch)) ||
             (Inventory && (patchClass == typeof(EaqsSlotPanel.InventoryGrid_UpdateGui_Patch) ||
