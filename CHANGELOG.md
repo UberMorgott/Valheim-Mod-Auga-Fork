@@ -1,3 +1,7 @@
+### 2.2.25 - Yields the character stats window to RuneSkin
+
+* When RuneSkin owns `CharacterStats` (RuneSkin 0.16.0 / API 11 or newer), AugaSkin adds no 5th button to the inventory's info row and builds no stats window (nor its Escape / close hooks and food-heal feed): RuneSkin draws its own character stats window there. Without RuneSkin (or with an older RuneSkin) nothing changes.
+
 ### 2.2.24 - Yields the last-hit tracker with the message log to RuneSkin
 
 * When RuneSkin owns `MessageHud`, AugaSkin no longer adds its last-hit tracker to the player on every hit: its only reader was AugaSkin's message log death line, which is off under RuneSkin already (MorgottTweaks' death messages announce deaths). The other AugaSkin-only parts (tooltip, text casing, button sounds, filled bars, key binding display, HUD offsets, audit console, translations) only act on AugaSkin's own windows and stay until AugaSkin is removed. Without RuneSkin nothing changes.

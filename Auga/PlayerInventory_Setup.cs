@@ -54,8 +54,10 @@ namespace Auga
                 foreach (var grid in new[] { __instance.m_playerGrid, __instance.m_containerGrid })
                     AugaStyle.SlotMarks(grid.m_elementPrefab ? grid.m_elementPrefab.transform : null, augaGrid ? augaGrid.m_elementPrefab : null);
 
-            // 5th Info button + character stats window, cloned from the restyled vanilla ones.
-            CharacterStatsPanel.Create(__instance);
+            // 5th Info button + character stats window, cloned from the restyled vanilla ones (RuneSkin >= API 10 owns it:
+            // its own button and window).
+            if (!Compat.RuneSkinOwnership.CharacterStats)
+                CharacterStatsPanel.Create(__instance);
         }
 
         private static bool Owned(Component part, InventoryGui gui) => part && Compat.RuneSkinOwnership.OwnsInventoryPart(gui, part.transform);

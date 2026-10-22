@@ -87,6 +87,8 @@ namespace Auga.Compat
         public static bool SummonFrames { get; private set; }
         public static bool PlayerShields { get; private set; }
         public static bool Cursor { get; private set; }
+        // RuneSkin API 11: the character stats window (5th info button, CharacterStatsPanel + its FoodTick feed).
+        public static bool CharacterStats { get; private set; }
         public static bool ActiveEffects { get; private set; }
         public static readonly System.Version ActiveEffectsSince = new System.Version(0, 9, 1);
 
@@ -150,8 +152,10 @@ namespace Auga.Compat
             SummonFrames = (bool)isOwned.Invoke(null, new object[] { "SummonFrames" });
             PlayerShields = (bool)isOwned.Invoke(null, new object[] { "PlayerShields" });
             Cursor = (bool)isOwned.Invoke(null, new object[] { "Cursor" });
+            // RuneSkin before API 11 returns false: AugaSkin keeps its stats window.
+            CharacterStats = Inventory && (bool)isOwned.Invoke(null, new object[] { "CharacterStats" });
             ActiveEffects = Compendium && Chainloader.PluginInfos[Guid].Metadata.Version >= ActiveEffectsSince;
-            Debug.Log($"[Auga] RuneSkin owns: Menu={Menu} Tooltips={Tooltips} Hud={Hud} Inventory={Inventory} Crafting={Crafting} Skills={Skills} Trophies={Trophies} Almanac={Almanac} Minimap={Minimap} EnemyHud={EnemyHud} MessageHud={MessageHud} DamageText={DamageText} MainMenu={MainMenu} Settings={Settings} Connection={Connection} BuildHud={BuildHud} Crosshair={Crosshair} ActionHud={ActionHud} ShipHud={ShipHud} KeyHints={KeyHints} LoadScreen={LoadScreen} Chat={Chat} Popups={Popups} TextDialogs={TextDialogs} Compendium={Compendium} SplitDialog={SplitDialog} Store={Store} Barber={Barber} DevPanels={DevPanels} Feedback={Feedback} ModUi={ModUi} EpicLootEnchanting={EpicLootEnchanting} EpicLootBoard={EpicLootBoard} EpicLootTemper={EpicLootTemper} ModHud={ModHud} InventoryExtras={InventoryExtras} Radial={Radial} MenuCompendium={MenuCompendium} SummonFrames={SummonFrames} PlayerShields={PlayerShields} Cursor={Cursor} ActiveEffects={ActiveEffects} (AugaSkin yields those)");
+            Debug.Log($"[Auga] RuneSkin owns: Menu={Menu} Tooltips={Tooltips} Hud={Hud} Inventory={Inventory} Crafting={Crafting} Skills={Skills} Trophies={Trophies} Almanac={Almanac} Minimap={Minimap} EnemyHud={EnemyHud} MessageHud={MessageHud} DamageText={DamageText} MainMenu={MainMenu} Settings={Settings} Connection={Connection} BuildHud={BuildHud} Crosshair={Crosshair} ActionHud={ActionHud} ShipHud={ShipHud} KeyHints={KeyHints} LoadScreen={LoadScreen} Chat={Chat} Popups={Popups} TextDialogs={TextDialogs} Compendium={Compendium} SplitDialog={SplitDialog} Store={Store} Barber={Barber} DevPanels={DevPanels} Feedback={Feedback} ModUi={ModUi} EpicLootEnchanting={EpicLootEnchanting} EpicLootBoard={EpicLootBoard} EpicLootTemper={EpicLootTemper} ModHud={ModHud} InventoryExtras={InventoryExtras} Radial={Radial} MenuCompendium={MenuCompendium} SummonFrames={SummonFrames} PlayerShields={PlayerShields} Cursor={Cursor} CharacterStats={CharacterStats} ActiveEffects={ActiveEffects} (AugaSkin yields those)");
         }
 
         // Patch classes not installed while RuneSkin owns their family.
@@ -175,7 +179,10 @@ namespace Auga.Compat
         // (ActiveEffectsPage patches; RuneSkin draws its own).
         // MenuCompendium: the Compendium entry's gamepad splice (Menu_UpdateNavigation_Patch; Menu.Start skips the entry).
         // PlayerShields: the other players' shield strips (EnergyShieldHud).
+        // CharacterStats: the stats window's Escape / Hide patches and its FoodTick heal feed (PlayerInventory_Setup skips
+        // CharacterStatsPanel.Create: no 5th button, no window).
         public static bool Skips(Type patchClass) =>
+            (CharacterStats && (patchClass == typeof(CharacterStatsPanel_InventoryGui_Patches) || patchClass == typeof(FoodTick))) ||
             (MenuCompendium && patchClass == typeof(PauseMenu_Setup.Menu_UpdateNavigation_Patch)) ||
             (PlayerShields && patchClass == typeof(EnergyShieldHud)) ||
             (ActiveEffects && Within(patchClass, typeof(ActiveEffectsPage))) ||
