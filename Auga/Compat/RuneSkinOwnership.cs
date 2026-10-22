@@ -70,12 +70,13 @@ namespace Auga.Compat
         // Hud: the stat-bar size prefixes and lift transpilers (AugaStatBars_Size_Patch).
         // Inventory: EAQS cell layout + backgrounds (EaqsSlotPanel grid/update patches), MT trash plate icon.
         // Almanac: the Almanac window restyle (Compat.Almanac: InventoryGui.Awake postfix + lazy AlmanacPanel.Start patch).
+        // MessageHud also drops the AugaLog hooks: AugaMessageLog lives in the skipped MessageHud swap.
         // Minimap / EnemyHud / MessageHud / DamageText: the whole *_Setup class with its nested patch classes (Harmony
         // processes each nested type on its own, so the declaring chain is checked).
         public static bool Skips(Type patchClass) =>
             (Minimap && Within(patchClass, typeof(Minimap_Setup))) ||
             (EnemyHud && Within(patchClass, typeof(EnemyHud_Setup))) ||
-            (MessageHud && Within(patchClass, typeof(MessageHud_Setup))) ||
+            (MessageHud && (Within(patchClass, typeof(MessageHud_Setup)) || Array.IndexOf(AugaLog_Patches.All, patchClass) >= 0)) ||
             (DamageText && Within(patchClass, typeof(DamageText_Setup))) ||
             (Almanac && patchClass == typeof(global::Auga.Compat.Almanac)) ||
             (Tooltips && patchClass == typeof(UITooltip_OnHoverStart_Patch)) ||

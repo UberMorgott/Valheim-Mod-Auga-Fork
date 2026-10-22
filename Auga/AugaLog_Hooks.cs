@@ -5,6 +5,19 @@ using UnityEngine;
 
 namespace Auga
 {
+    // Auga's message log (AugaMessageLog) lives in the bundle MessageHud that MessageHud_Setup swaps in. While RuneSkin
+    // owns MessageHud that swap is skipped and the log never exists, so these hooks are not installed at all
+    // (Compat\RuneSkinOwnership.Skips); each call is still guarded for a log that is gone.
+    public static class AugaLog_Patches
+    {
+        public static readonly System.Type[] All =
+        {
+            typeof(AugaLog_Hooks), typeof(Player_OnDeath_Patch), typeof(TombStone_UpdateDespawn_Patch),
+            typeof(Player_AddKnownItem_Patch), typeof(Player_UpdateKnownRecipesList_Patch),
+            typeof(Player_AddKnownStation_Patch), typeof(Player_AddKnownBiome_Patch), typeof(TeleportWorld_Teleport_Patch),
+            typeof(InventoryGui_DoCrafting_Patch), typeof(Player_RaiseSkill_Patch), typeof(Character_ShowPickupMessage_Patch)
+        };
+    }
     [HarmonyPatch(typeof(Game), nameof(Game.SpawnPlayer))]
     public static class AugaLog_Hooks
     {
@@ -12,7 +25,7 @@ namespace Auga
         {
             // Postfix runs before SpawnPlayer's caller clears m_firstSpawn (Game.cs:740-747).
             if (__instance.m_firstSpawn)
-                AugaMessageLog.instance.AddArrivalLog(Player.m_localPlayer);
+                if (AugaMessageLog.instance) AugaMessageLog.instance.AddArrivalLog(Player.m_localPlayer);
         }
     }
 
@@ -23,7 +36,7 @@ namespace Auga
         {
             var hitTracker = __instance.RequireComponent<LastHitTracker>();
             var lastHit = hitTracker != null ? hitTracker.LastHit : null;
-            AugaMessageLog.instance.AddDeathLog(__instance, lastHit);
+            if (AugaMessageLog.instance) AugaMessageLog.instance.AddDeathLog(__instance, lastHit);
         }
     }
 
@@ -36,7 +49,7 @@ namespace Auga
             {
                 if (!__instance.m_container.IsInUse() && __instance.m_container.GetInventory().NrOfItems() <= 0)
                 {
-                    AugaMessageLog.instance.AddTombstoneLog(Player.m_localPlayer);
+                    if (AugaMessageLog.instance) AugaMessageLog.instance.AddTombstoneLog(Player.m_localPlayer);
                 }
             }
 
@@ -56,15 +69,15 @@ namespace Auga
 
             if (item.m_shared.m_itemType == ItemDrop.ItemData.ItemType.Material)
             {
-                AugaMessageLog.instance.AddNewMaterialLog(item);
+                if (AugaMessageLog.instance) AugaMessageLog.instance.AddNewMaterialLog(item);
             }
             else if (item.m_shared.m_itemType == ItemDrop.ItemData.ItemType.Trophy)
             {
-                AugaMessageLog.instance.AddNewTrophyLog(item);
+                if (AugaMessageLog.instance) AugaMessageLog.instance.AddNewTrophyLog(item);
             }
             else
             {
-                AugaMessageLog.instance.AddNewItemLog(item);
+                if (AugaMessageLog.instance) AugaMessageLog.instance.AddNewItemLog(item);
             }
 
             return true;
@@ -87,7 +100,7 @@ namespace Auga
 
             if (newRecipes.Count > 0)
             {
-                AugaMessageLog.instance.AddNewRecipesLog(newRecipes);
+                if (AugaMessageLog.instance) AugaMessageLog.instance.AddNewRecipesLog(newRecipes);
             }
 
             var pieceTables = new List<PieceTable>();
@@ -107,7 +120,7 @@ namespace Auga
 
             if (newPieces.Count > 0)
             {
-                AugaMessageLog.instance.AddNewPieceLog(newPieces);
+                if (AugaMessageLog.instance) AugaMessageLog.instance.AddNewPieceLog(newPieces);
             }
 
             return true;
@@ -121,7 +134,7 @@ namespace Auga
         {
             if (!__instance.m_knownStations.ContainsKey(station.m_name))
             {
-                AugaMessageLog.instance.AddNewStationLog(station);
+                if (AugaMessageLog.instance) AugaMessageLog.instance.AddNewStationLog(station);
             }
 
             return true;
@@ -135,7 +148,7 @@ namespace Auga
         {
             if (!__instance.m_knownBiome.Contains(biome.GetName()))
             {
-                AugaMessageLog.instance.AddNewBiomeLog(biome.Biome);
+                if (AugaMessageLog.instance) AugaMessageLog.instance.AddNewBiomeLog(biome.Biome);
             }
 
             return true;
@@ -153,7 +166,7 @@ namespace Auga
                 return;
             }
 
-            AugaMessageLog.instance.AddTeleportLog(__instance.GetText(), player);
+            if (AugaMessageLog.instance) AugaMessageLog.instance.AddTeleportLog(__instance.GetText(), player);
         }
     }
 
@@ -186,11 +199,11 @@ namespace Auga
 
             if (__instance.m_craftUpgradeItem != null)
             {
-                AugaMessageLog.instance.AddUpgradeItemLog(__instance.m_craftUpgradeItem, quality);
+                if (AugaMessageLog.instance) AugaMessageLog.instance.AddUpgradeItemLog(__instance.m_craftUpgradeItem, quality);
             }
             else
             {
-                AugaMessageLog.instance.AddCraftItemLog(__instance.m_craftRecipe);
+                if (AugaMessageLog.instance) AugaMessageLog.instance.AddCraftItemLog(__instance.m_craftRecipe);
             }
 
             return true;
@@ -228,7 +241,7 @@ namespace Auga
             var levelNow = Mathf.FloorToInt(__instance.m_skills.GetSkill(skill)?.m_level ?? 0);
             if (LevelBefore != levelNow)
             {
-                AugaMessageLog.instance.AddSkillUpLog(skill, levelNow);
+                if (AugaMessageLog.instance) AugaMessageLog.instance.AddSkillUpLog(skill, levelNow);
             }
         }
     }
@@ -241,7 +254,7 @@ namespace Auga
         {
             if (item != null && amount > 0)
             {
-                AugaMessageLog.instance.AddItemPickupLog(item, amount);
+                if (AugaMessageLog.instance) AugaMessageLog.instance.AddItemPickupLog(item, amount);
             }
         }
     }
