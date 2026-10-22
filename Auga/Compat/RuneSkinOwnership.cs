@@ -81,6 +81,12 @@ namespace Auga.Compat
         public static bool ModHud { get; private set; }
         public static bool InventoryExtras { get; private set; }
         public static bool Radial { get; private set; }
+        // RuneSkin 0.13.0 (API 9, batch P): features that were AugaSkin's: the pause-menu Compendium entry, summon frames,
+        // other players' shield strips (EnergyShieldHud), the mouse cursor.
+        public static bool MenuCompendium { get; private set; }
+        public static bool SummonFrames { get; private set; }
+        public static bool PlayerShields { get; private set; }
+        public static bool Cursor { get; private set; }
         public static bool ActiveEffects { get; private set; }
         public static readonly System.Version ActiveEffectsSince = new System.Version(0, 9, 1);
 
@@ -139,8 +145,13 @@ namespace Auga.Compat
             ModHud = (bool)isOwned.Invoke(null, new object[] { "ModHud" });
             InventoryExtras = (bool)isOwned.Invoke(null, new object[] { "InventoryExtras" });
             Radial = (bool)isOwned.Invoke(null, new object[] { "Radial" });
+            // RuneSkin before 0.13.0 (API 9) returns false: AugaSkin keeps them.
+            MenuCompendium = (bool)isOwned.Invoke(null, new object[] { "MenuCompendium" });
+            SummonFrames = (bool)isOwned.Invoke(null, new object[] { "SummonFrames" });
+            PlayerShields = (bool)isOwned.Invoke(null, new object[] { "PlayerShields" });
+            Cursor = (bool)isOwned.Invoke(null, new object[] { "Cursor" });
             ActiveEffects = Compendium && Chainloader.PluginInfos[Guid].Metadata.Version >= ActiveEffectsSince;
-            Debug.Log($"[Auga] RuneSkin owns: Menu={Menu} Tooltips={Tooltips} Hud={Hud} Inventory={Inventory} Crafting={Crafting} Skills={Skills} Trophies={Trophies} Almanac={Almanac} Minimap={Minimap} EnemyHud={EnemyHud} MessageHud={MessageHud} DamageText={DamageText} MainMenu={MainMenu} Settings={Settings} Connection={Connection} BuildHud={BuildHud} Crosshair={Crosshair} ActionHud={ActionHud} ShipHud={ShipHud} KeyHints={KeyHints} LoadScreen={LoadScreen} Chat={Chat} Popups={Popups} TextDialogs={TextDialogs} Compendium={Compendium} SplitDialog={SplitDialog} Store={Store} Barber={Barber} DevPanels={DevPanels} Feedback={Feedback} ModUi={ModUi} EpicLootEnchanting={EpicLootEnchanting} EpicLootBoard={EpicLootBoard} EpicLootTemper={EpicLootTemper} ModHud={ModHud} InventoryExtras={InventoryExtras} Radial={Radial} ActiveEffects={ActiveEffects} (AugaSkin yields those)");
+            Debug.Log($"[Auga] RuneSkin owns: Menu={Menu} Tooltips={Tooltips} Hud={Hud} Inventory={Inventory} Crafting={Crafting} Skills={Skills} Trophies={Trophies} Almanac={Almanac} Minimap={Minimap} EnemyHud={EnemyHud} MessageHud={MessageHud} DamageText={DamageText} MainMenu={MainMenu} Settings={Settings} Connection={Connection} BuildHud={BuildHud} Crosshair={Crosshair} ActionHud={ActionHud} ShipHud={ShipHud} KeyHints={KeyHints} LoadScreen={LoadScreen} Chat={Chat} Popups={Popups} TextDialogs={TextDialogs} Compendium={Compendium} SplitDialog={SplitDialog} Store={Store} Barber={Barber} DevPanels={DevPanels} Feedback={Feedback} ModUi={ModUi} EpicLootEnchanting={EpicLootEnchanting} EpicLootBoard={EpicLootBoard} EpicLootTemper={EpicLootTemper} ModHud={ModHud} InventoryExtras={InventoryExtras} Radial={Radial} MenuCompendium={MenuCompendium} SummonFrames={SummonFrames} PlayerShields={PlayerShields} Cursor={Cursor} ActiveEffects={ActiveEffects} (AugaSkin yields those)");
         }
 
         // Patch classes not installed while RuneSkin owns their family.
@@ -160,7 +171,11 @@ namespace Auga.Compat
         // Store: the Auga store swap + its row tooltips (Store_Setup; Store_EpicLootPanels stays). Barber: the AugaBarber
         // swap. DevPanels / Feedback: left out inside VanillaPanels. ActiveEffects: the compendium active effects page
         // (ActiveEffectsPage patches; RuneSkin draws its own).
+        // MenuCompendium: the Compendium entry's gamepad splice (Menu_UpdateNavigation_Patch; Menu.Start skips the entry).
+        // PlayerShields: the other players' shield strips (EnergyShieldHud).
         public static bool Skips(Type patchClass) =>
+            (MenuCompendium && patchClass == typeof(PauseMenu_Setup.Menu_UpdateNavigation_Patch)) ||
+            (PlayerShields && patchClass == typeof(EnergyShieldHud)) ||
             (ActiveEffects && Within(patchClass, typeof(ActiveEffectsPage))) ||
             (Store && patchClass == typeof(Store_Setup)) ||
             (EpicLootBoard && EpicLootTemper && patchClass == typeof(Store_EpicLootPanels)) ||

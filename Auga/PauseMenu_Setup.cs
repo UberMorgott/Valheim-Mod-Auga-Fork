@@ -19,7 +19,9 @@ namespace Auga
             [UsedImplicitly]
             public static void Postfix(Menu __instance)
             {
-                AddCompendium(__instance);
+                // RuneSkin 0.13.0+ (MenuCompendium) adds its own entry.
+                if (!Compat.RuneSkinOwnership.MenuCompendium)
+                    AddCompendium(__instance);
                 // RuneSkin owns the menu's look (Compat\RuneSkinOwnership); the Compendium entry stays an AugaSkin feature.
                 if (!Compat.RuneSkinOwnership.Menu)
                     AugaStyle.Restyle(__instance.transform);

@@ -88,7 +88,7 @@ namespace Auga
     public class Auga : BaseUnityPlugin
     {
         public const string PluginID = "morgott.valheim.augaskin";
-        public const string Version = "2.2.22";
+        public const string Version = "2.2.23";
         // Embedded resources are named by the project's RootNamespace (Auga), not by the assembly name.
         private const string ResourcePrefix = "Auga.";
 
@@ -159,14 +159,15 @@ namespace Auga
             LoadConfig();
             LoadAssets();
 
-            ApplyCursor();
-
             HasBetterTrader = Chainloader.PluginInfos.ContainsKey("Menthus.bepinex.plugins.BetterTrader");
             HasChatter = Chainloader.PluginInfos.TryGetValue("redseiko.valheim.chatter", out var chatterPlugin);
 
             // Families RuneSkin took are frozen before any patch goes in (Compat\RuneSkinOwnership). Same as
             // Harmony.CreateAndPatchAll (one class processor per type) minus the yielded patch classes.
             Compat.RuneSkinOwnership.Freeze();
+            // RuneSkin 0.13.0+ (Cursor) sets its own cursor.
+            if (!Compat.RuneSkinOwnership.Cursor)
+                ApplyCursor();
             _harmony = new Harmony(PluginID);
             foreach (var type in AccessTools.GetTypesFromAssembly(Assembly.GetExecutingAssembly()))
                 if (!Compat.RuneSkinOwnership.Skips(type))
