@@ -37,6 +37,12 @@ namespace Auga.Compat
         public static bool EnemyHud { get; private set; }
         public static bool MessageHud { get; private set; }
         public static bool DamageText { get; private set; }
+        // RuneSkin M5 pre-world screens: FejdStartup's screens + the scene UnifiedPopup + the server / world row
+        // templates and the save / credits panels inside FejdStartup (MainMenu), the Settings window (Settings), ZNet's
+        // password / connecting dialogs (Connection, restyled in place: no Auga prefab swap).
+        public static bool MainMenu { get; private set; }
+        public static bool Settings { get; private set; }
+        public static bool Connection { get; private set; }
 
         public static void Freeze()
         {
@@ -63,7 +69,11 @@ namespace Auga.Compat
             EnemyHud = (bool)isOwned.Invoke(null, new object[] { "EnemyHud" });
             MessageHud = (bool)isOwned.Invoke(null, new object[] { "MessageHud" });
             DamageText = (bool)isOwned.Invoke(null, new object[] { "DamageText" });
-            Debug.Log($"[Auga] RuneSkin owns: Menu={Menu} Tooltips={Tooltips} Hud={Hud} Inventory={Inventory} Crafting={Crafting} Skills={Skills} Trophies={Trophies} Almanac={Almanac} Minimap={Minimap} EnemyHud={EnemyHud} MessageHud={MessageHud} DamageText={DamageText} (AugaSkin yields those)");
+            // RuneSkin before M5 returns false: AugaSkin keeps the pre-world screens.
+            MainMenu = (bool)isOwned.Invoke(null, new object[] { "MainMenu" });
+            Settings = (bool)isOwned.Invoke(null, new object[] { "Settings" });
+            Connection = (bool)isOwned.Invoke(null, new object[] { "Connection" });
+            Debug.Log($"[Auga] RuneSkin owns: Menu={Menu} Tooltips={Tooltips} Hud={Hud} Inventory={Inventory} Crafting={Crafting} Skills={Skills} Trophies={Trophies} Almanac={Almanac} Minimap={Minimap} EnemyHud={EnemyHud} MessageHud={MessageHud} DamageText={DamageText} MainMenu={MainMenu} Settings={Settings} Connection={Connection} (AugaSkin yields those)");
         }
 
         // Patch classes not installed while RuneSkin owns their family.
@@ -73,7 +83,15 @@ namespace Auga.Compat
         // MessageHud also drops the AugaLog hooks: AugaMessageLog lives in the skipped MessageHud swap.
         // Minimap / EnemyHud / MessageHud / DamageText: the whole *_Setup class with its nested patch classes (Harmony
         // processes each nested type on its own, so the declaring chain is checked).
+        // MainMenu: the FejdStartup Start / ServerListGui / UnifiedPopup restyles (FejdStartup.Awake keeps its features:
+        // the cinematics button stays hidden, game font fallbacks stay linked; only its restyle is skipped there).
+        // Settings: Settings.Awake restyle. Connection: the ZNet dialog prefab swap.
         public static bool Skips(Type patchClass) =>
+            (MainMenu && (patchClass == typeof(FejdStartup_Awake_Patch.FejdStartup_Start_Patch) ||
+                          patchClass == typeof(FejdStartup_Awake_Patch.ServerListGui_Awake_Patch) ||
+                          patchClass == typeof(FejdStartup_Awake_Patch.UnifiedPopup_Awake_Patch))) ||
+            (Settings && patchClass == typeof(Settings_Awake_Patch)) ||
+            (Connection && patchClass == typeof(ZNet_Awake_Patch)) ||
             (Minimap && Within(patchClass, typeof(Minimap_Setup))) ||
             (EnemyHud && Within(patchClass, typeof(EnemyHud_Setup))) ||
             (MessageHud && (Within(patchClass, typeof(MessageHud_Setup)) || Array.IndexOf(AugaLog_Patches.All, patchClass) >= 0)) ||

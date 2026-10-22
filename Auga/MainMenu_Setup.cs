@@ -13,6 +13,8 @@ namespace Auga
         {
             HideCinematicsButton(__instance);
             AugaStyle.LinkGameFontFallbacks();
+            if (Compat.RuneSkinOwnership.MainMenu)
+                return; // RuneSkin styles the pre-world screens; the features above stay
             AugaStyle.Restyle(__instance.transform);
             // World rows are instantiated from this template (FejdStartup.cs:1319); restyle the template once.
             AugaStyle.Restyle(__instance.m_worldListElement.transform);
