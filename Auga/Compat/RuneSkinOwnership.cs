@@ -68,6 +68,10 @@ namespace Auga.Compat
         public static bool Barber { get; private set; }
         public static bool DevPanels { get; private set; }
         public static bool Feedback { get; private set; }
+        // Compendium active effects page: RuneSkin >= 0.9.1 draws its own list there (RuneSkin ActiveEffectsPage, same
+        // MtActiveEffectRowsV1 contract); with an older RuneSkin owning Compendium AugaSkin keeps its page.
+        public static bool ActiveEffects { get; private set; }
+        public static readonly System.Version ActiveEffectsSince = new System.Version(0, 9, 1);
 
         public static void Freeze()
         {
@@ -116,7 +120,8 @@ namespace Auga.Compat
             Barber = (bool)isOwned.Invoke(null, new object[] { "Barber" });
             DevPanels = (bool)isOwned.Invoke(null, new object[] { "DevPanels" });
             Feedback = (bool)isOwned.Invoke(null, new object[] { "Feedback" });
-            Debug.Log($"[Auga] RuneSkin owns: Menu={Menu} Tooltips={Tooltips} Hud={Hud} Inventory={Inventory} Crafting={Crafting} Skills={Skills} Trophies={Trophies} Almanac={Almanac} Minimap={Minimap} EnemyHud={EnemyHud} MessageHud={MessageHud} DamageText={DamageText} MainMenu={MainMenu} Settings={Settings} Connection={Connection} BuildHud={BuildHud} Crosshair={Crosshair} ActionHud={ActionHud} ShipHud={ShipHud} KeyHints={KeyHints} LoadScreen={LoadScreen} Chat={Chat} Popups={Popups} TextDialogs={TextDialogs} Compendium={Compendium} SplitDialog={SplitDialog} Store={Store} Barber={Barber} DevPanels={DevPanels} Feedback={Feedback} (AugaSkin yields those)");
+            ActiveEffects = Compendium && Chainloader.PluginInfos[Guid].Metadata.Version >= ActiveEffectsSince;
+            Debug.Log($"[Auga] RuneSkin owns: Menu={Menu} Tooltips={Tooltips} Hud={Hud} Inventory={Inventory} Crafting={Crafting} Skills={Skills} Trophies={Trophies} Almanac={Almanac} Minimap={Minimap} EnemyHud={EnemyHud} MessageHud={MessageHud} DamageText={DamageText} MainMenu={MainMenu} Settings={Settings} Connection={Connection} BuildHud={BuildHud} Crosshair={Crosshair} ActionHud={ActionHud} ShipHud={ShipHud} KeyHints={KeyHints} LoadScreen={LoadScreen} Chat={Chat} Popups={Popups} TextDialogs={TextDialogs} Compendium={Compendium} SplitDialog={SplitDialog} Store={Store} Barber={Barber} DevPanels={DevPanels} Feedback={Feedback} ActiveEffects={ActiveEffects} (AugaSkin yields those)");
         }
 
         // Patch classes not installed while RuneSkin owns their family.
@@ -134,8 +139,10 @@ namespace Auga.Compat
         // Compendium: TextsDialog restyle + topic colour (Epic Loot compendium pages: Compat.EpicLootEnchanting).
         // Popups / LoadScreen / SplitDialog: left out inside VanillaPanels, Hud_Setup and PlayerInventory_Setup.
         // Store: the Auga store swap + its row tooltips (Store_Setup; Store_EpicLootPanels stays). Barber: the AugaBarber
-        // swap. DevPanels / Feedback: left out inside VanillaPanels.
+        // swap. DevPanels / Feedback: left out inside VanillaPanels. ActiveEffects: the compendium active effects page
+        // (ActiveEffectsPage patches; RuneSkin draws its own).
         public static bool Skips(Type patchClass) =>
+            (ActiveEffects && Within(patchClass, typeof(ActiveEffectsPage))) ||
             (Store && patchClass == typeof(Store_Setup)) ||
             (Barber && Within(patchClass, typeof(Barber_Setup))) ||
             (Chat && Within(patchClass, typeof(Chat_Setup))) ||

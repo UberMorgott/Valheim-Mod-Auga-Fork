@@ -1,3 +1,7 @@
+### 2.2.21 - Yields the compendium active effects page to RuneSkin
+
+* When RuneSkin 0.9.1 or newer owns `Compendium`, it draws the compendium's active effects page itself (same rows: foods, status effects incl. MorgottTweaks' `MtActiveEffectRowsV1` providers, guardian power), so AugaSkin no longer builds its own list there. With an older RuneSkin owning `Compendium` AugaSkin keeps its page; without RuneSkin nothing changes.
+
 ### 2.2.20 - Yields the trader store, barber, console / connect panel and feedback dialog to RuneSkin
 
 * When RuneSkin owns `Store`, `Barber`, `DevPanels` or `Feedback`, AugaSkin leaves them alone: no Auga store swap (the vanilla StoreGui stays; Epic Loot's trader panels under it are still restyled by AugaSkin), no AugaBarber swap, no restyle of the F5 console, F2 connect panel and feedback dialog. The hovered piece author window goes with RuneSkin's `BuildHud`. Without RuneSkin (or with an older RuneSkin) nothing changes.
