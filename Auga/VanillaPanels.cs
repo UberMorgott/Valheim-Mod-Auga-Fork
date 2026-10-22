@@ -53,6 +53,9 @@ namespace Auga
             // Panels inside FejdStartup belong to RuneSkin's MainMenu family when it owns it.
             if (Compat.RuneSkinOwnership.MainMenu && (__instance is ManageSavesMenu || __instance is EndCredits))
                 return;
+            // Achievement popup, join code, session player list, closed captions: RuneSkin's Popups family.
+            if (Compat.RuneSkinOwnership.OwnsPopup(__instance))
+                return;
             switch (__instance)
             {
                 case ConnectPanel panel:

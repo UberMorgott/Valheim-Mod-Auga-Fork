@@ -1,3 +1,7 @@
+### 2.2.19 - Yields the M6 dialogs and black screens to RuneSkin
+
+* When RuneSkin owns `LoadScreen`, `Chat`, `Popups`, `TextDialogs`, `Compendium` or `SplitDialog`, AugaSkin leaves those screens alone: no restyle of the respawn / sleep / teleport black screen, the chat window and NPC text colours, the achievement popup / join code / session player list / closed captions, the text input, no TextViewer prefab swap (the vanilla viewer stays), no compendium restyle or topic colour (Epic Loot compendium pages included), and the split dialog is left out of the InventoryGui restyle. AugaSkin's active effects page in the compendium stays (feature). Without RuneSkin (or with an older RuneSkin) nothing changes.
+
 ### 2.2.18 - Yields the M6 in-game HUD parts to RuneSkin
 
 * When RuneSkin owns `BuildHud`, `Crosshair`, `ActionHud`, `ShipHud` or `KeyHints`, AugaSkin leaves those hudroot parts alone: no restyle of the build menu (BuildUi templates, gold build-hint anchor), crosshair / hover text (hover colour patch), action progress / stagger / event line / mount panel bars, ship HUD icons, key hints, and no movable offsets for them. Without RuneSkin (or with an older RuneSkin) nothing changes.

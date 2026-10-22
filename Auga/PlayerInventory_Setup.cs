@@ -25,8 +25,10 @@ namespace Auga
             // container under it), the info header and the grid slot templates are RuneSkin's; AugaSkin keeps
             // styling the rest of the screen (skills, texts, trophies, achievements, split/variant dialogs; crafting too
             // unless RuneSkin also owns Crafting, M3).
+            // RuneSkin M6 dialogs (compendium, split dialog; Compat.RuneSkinOwnership.OwnsInventoryPart) are left out the
+            // same way.
             var runeInventory = Compat.RuneSkinOwnership.Inventory;
-            if (runeInventory)
+            if (runeInventory || Owned(__instance.m_textsDialog, __instance) || Owned(__instance.m_splitDialog, __instance))
                 RestyleExcept(__instance.transform, __instance);
             else
                 AugaStyle.Restyle(__instance.transform);
@@ -53,23 +55,30 @@ namespace Auga
             CharacterStatsPanel.Create(__instance);
         }
 
+        private static bool Owned(Component part, InventoryGui gui) => part && Compat.RuneSkinOwnership.OwnsInventoryPart(gui, part.transform);
+
         // Restyle of the InventoryGui hierarchy minus RuneSkin's subtrees: walks down only along ancestors of an owned
         // panel and restyles every other subtree whole.
         private static void RestyleExcept(Transform t, InventoryGui gui)
         {
+            var inventory = Compat.RuneSkinOwnership.Inventory;
             foreach (Transform child in t)
             {
-                if (child == gui.m_player || child == gui.m_info || Compat.RuneSkinOwnership.IsRuneSkinObject(child) ||
+                if ((inventory && (child == gui.m_player || child == gui.m_info)) || Compat.RuneSkinOwnership.IsRuneSkinObject(child) ||
+                    Compat.RuneSkinOwnership.OwnsInventoryPart(gui, child) ||
                     Compat.RuneSkinOwnership.Crafting && child == gui.m_crafting ||
                     Compat.RuneSkinOwnership.Skills && gui.m_skillsDialog && child == gui.m_skillsDialog.transform ||
                     Compat.RuneSkinOwnership.Trophies && gui.m_trophiesPanel && child == gui.m_trophiesPanel.transform)
                     continue;
-                if (gui.m_player.IsChildOf(child) || gui.m_info.IsChildOf(child))
+                if ((inventory && (gui.m_player.IsChildOf(child) || gui.m_info.IsChildOf(child))) || Holds(child, gui.m_textsDialog, gui) || Holds(child, gui.m_splitDialog, gui))
                     RestyleExcept(child, gui);
                 else
                     AugaStyle.Restyle(child);
             }
         }
+
+        // child is an ancestor of an owned M6 dialog (walk down to leave the dialog out).
+        private static bool Holds(Transform child, Component part, InventoryGui gui) => Owned(part, gui) && part.transform.IsChildOf(child) && part.transform != child;
 
         private static void AddItemIconMaterialFrom(InventoryGui gui)
         {

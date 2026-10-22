@@ -83,7 +83,10 @@ public static class EpicLootEnchanting
                            ?? pages?.GetField("Search", BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
             var pagesAwake = pages?.GetMethod("Awake", BindingFlags.Public | BindingFlags.Instance);
             var selectText = pages?.GetMethod("OnSelectText", BindingFlags.Public | BindingFlags.Instance);
-            if (pagesAwake != null && selectText != null && _magicSearch != null)
+            // RuneSkin's Compendium family restyles the whole TextsDialog (Epic Loot pages included).
+            if (Compat.RuneSkinOwnership.Compendium)
+                Debug.Log("[Auga] Epic Loot compendium pages left to RuneSkin (Compendium)");
+            else if (pagesAwake != null && selectText != null && _magicSearch != null)
             {
                 _harmony.Patch(pagesAwake, postfix: new HarmonyMethod(typeof(EpicLootEnchanting), nameof(MagicPagesAwake_Postfix)));
                 _harmony.Patch(selectText, postfix: new HarmonyMethod(typeof(EpicLootEnchanting), nameof(MagicPagesSelect_Postfix)));

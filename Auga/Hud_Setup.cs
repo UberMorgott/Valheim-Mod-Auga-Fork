@@ -61,7 +61,8 @@ namespace Auga
             SummonFrames.Setup(__instance);
             // Loading / sleeping / teleporting screen: m_loadingScreen (LoadingBlack) sits beside hudroot, outside the
             // pass above (Hud.cs:219-231): Averia texts -> Auga fonts, the braid separator -> Auga divider colour.
-            if (__instance.m_loadingScreen)
+            // RuneSkin's LoadScreen family styles it itself.
+            if (__instance.m_loadingScreen && !Compat.RuneSkinOwnership.LoadScreen)
                 AugaStyle.Restyle(__instance.m_loadingScreen.transform);
 
             if (!runeHud)

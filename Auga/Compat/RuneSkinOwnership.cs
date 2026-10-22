@@ -52,6 +52,16 @@ namespace Auga.Compat
         public static bool ActionHud { get; private set; }
         public static bool ShipHud { get; private set; }
         public static bool KeyHints { get; private set; }
+        // RuneSkin M6 batch 2 (restyled in place): black screens (Hud.m_loadingScreen: respawn / sleep / teleport),
+        // chat (window + world / NPC text templates), small popups (achievement, join code, session player list,
+        // closed captions), text dialogs (TextInput, TextViewer: AugaSkin swaps no prefab for it then), compendium
+        // (TextsDialog, Epic Loot compendium pages), split dialog (InventoryGui.m_splitDialog).
+        public static bool LoadScreen { get; private set; }
+        public static bool Chat { get; private set; }
+        public static bool Popups { get; private set; }
+        public static bool TextDialogs { get; private set; }
+        public static bool Compendium { get; private set; }
+        public static bool SplitDialog { get; private set; }
 
         public static void Freeze()
         {
@@ -88,7 +98,14 @@ namespace Auga.Compat
             ActionHud = (bool)isOwned.Invoke(null, new object[] { "ActionHud" });
             ShipHud = (bool)isOwned.Invoke(null, new object[] { "ShipHud" });
             KeyHints = (bool)isOwned.Invoke(null, new object[] { "KeyHints" });
-            Debug.Log($"[Auga] RuneSkin owns: Menu={Menu} Tooltips={Tooltips} Hud={Hud} Inventory={Inventory} Crafting={Crafting} Skills={Skills} Trophies={Trophies} Almanac={Almanac} Minimap={Minimap} EnemyHud={EnemyHud} MessageHud={MessageHud} DamageText={DamageText} MainMenu={MainMenu} Settings={Settings} Connection={Connection} BuildHud={BuildHud} Crosshair={Crosshair} ActionHud={ActionHud} ShipHud={ShipHud} KeyHints={KeyHints} (AugaSkin yields those)");
+            // RuneSkin before 0.8.0 (API 6) returns false: AugaSkin keeps them.
+            LoadScreen = (bool)isOwned.Invoke(null, new object[] { "LoadScreen" });
+            Chat = (bool)isOwned.Invoke(null, new object[] { "Chat" });
+            Popups = (bool)isOwned.Invoke(null, new object[] { "Popups" });
+            TextDialogs = (bool)isOwned.Invoke(null, new object[] { "TextDialogs" });
+            Compendium = (bool)isOwned.Invoke(null, new object[] { "Compendium" });
+            SplitDialog = (bool)isOwned.Invoke(null, new object[] { "SplitDialog" });
+            Debug.Log($"[Auga] RuneSkin owns: Menu={Menu} Tooltips={Tooltips} Hud={Hud} Inventory={Inventory} Crafting={Crafting} Skills={Skills} Trophies={Trophies} Almanac={Almanac} Minimap={Minimap} EnemyHud={EnemyHud} MessageHud={MessageHud} DamageText={DamageText} MainMenu={MainMenu} Settings={Settings} Connection={Connection} BuildHud={BuildHud} Crosshair={Crosshair} ActionHud={ActionHud} ShipHud={ShipHud} KeyHints={KeyHints} LoadScreen={LoadScreen} Chat={Chat} Popups={Popups} TextDialogs={TextDialogs} Compendium={Compendium} SplitDialog={SplitDialog} (AugaSkin yields those)");
         }
 
         // Patch classes not installed while RuneSkin owns their family.
@@ -102,7 +119,13 @@ namespace Auga.Compat
         // the cinematics button stays hidden, game font fallbacks stay linked; only its restyle is skipped there).
         // Settings: Settings.Awake restyle. Connection: the ZNet dialog prefab swap.
         // BuildHud: the BuildUi template restyle and the gold build-hint anchor. Crosshair: the hover colour patch.
+        // Chat: Chat.Awake restyle + NPC text colours. TextDialogs: TextInput restyle, TextViewer prefab swap.
+        // Compendium: TextsDialog restyle + topic colour (Epic Loot compendium pages: Compat.EpicLootEnchanting).
+        // Popups / LoadScreen / SplitDialog: left out inside VanillaPanels, Hud_Setup and PlayerInventory_Setup.
         public static bool Skips(Type patchClass) =>
+            (Chat && Within(patchClass, typeof(Chat_Setup))) ||
+            (TextDialogs && (patchClass == typeof(TextInput_Setup) || Within(patchClass, typeof(TextViewer_Setup)))) ||
+            (Compendium && (patchClass == typeof(PauseMenu_Setup.TextsDialog_Awake_Patch) || patchClass == typeof(PauseMenu_Setup.TextsDialog_ShowText_Patch))) ||
             (BuildHud && (patchClass == typeof(BuildUi_Awake_Patch) || patchClass == typeof(Hud_UpdateBuild_Patch))) ||
             (Crosshair && patchClass == typeof(Hud_UpdateCrosshair_Patch)) ||
             (MainMenu && (patchClass == typeof(FejdStartup_Awake_Patch.FejdStartup_Start_Patch) ||
@@ -142,6 +165,15 @@ namespace Auga.Compat
                    (ShipHud && UnderGo(hud.m_shipHudRoot)) ||
                    (KeyHints && Under(hud.GetComponentInChildren<KeyHints>(true)));
         }
+
+        // InventoryGui subtrees RuneSkin owns outside the inventory layout (M6 batch 2 dialogs): AugaSkin leaves them.
+        public static bool OwnsInventoryPart(InventoryGui gui, Transform t) =>
+            gui && t && ((Compendium && gui.m_textsDialog && t == gui.m_textsDialog.transform) ||
+                         (SplitDialog && gui.m_splitDialog && t == gui.m_splitDialog.transform));
+
+        // Vanilla panels RuneSkin's Popups family styles (VanillaPanels list).
+        public static bool OwnsPopup(MonoBehaviour panel) =>
+            Popups && (panel is AchievementUnlockPopup || panel is JoinCode || panel is Valheim.UI.SessionPlayerList || panel is ClosedCaptions);
 
         // RuneSkin's own objects under hudroot (RuneSkinHud, RuneSkinVanillaHidden): never restyled by AugaSkin.
         public static bool IsRuneSkinObject(UnityEngine.Transform t) => t && t.name.StartsWith("RuneSkin", StringComparison.Ordinal);
