@@ -13,5 +13,6 @@ using System.Runtime.InteropServices;
 [assembly: AssemblyCulture("")]
 [assembly: ComVisible(false)]
 [assembly: Guid("bcc7dd31-d943-4684-800e-176a97dddb8f")]
-[assembly: AssemblyVersion("2.2.16.0")]
-[assembly: AssemblyFileVersion("2.2.16.0")]
+// Single source: the plugin version constant (Auga.Version); manifest.json version_number must match it.
+[assembly: AssemblyVersion(global::Auga.Auga.Version + ".0")]
+[assembly: AssemblyFileVersion(global::Auga.Auga.Version + ".0")]
