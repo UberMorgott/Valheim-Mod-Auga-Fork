@@ -16,7 +16,19 @@ namespace Auga
         {
             AugaStyle.LinkGameFontFallbacks(); // no-op once linked from the main menu
             // hudroot holds the bars, food, status effects, hotkey bar, ship HUD, minimap and the build HUD.
-            AugaStyle.Restyle(__instance.m_rootObject.transform);
+            // RuneSkin owns the minimap (Compat\RuneSkinOwnership): hudroot is restyled child by child without the
+            // MiniMap subtree (Minimap.m_smallRoot / m_largeRoot live there); it still goes into Seen below, so the
+            // mod-parts pass skips it too.
+            var hudRoot = __instance.m_rootObject.transform;
+            var runeMap = Compat.RuneSkinOwnership.Minimap ? hudRoot.Find("MiniMap") : null;
+            if (runeMap)
+            {
+                foreach (Transform child in hudRoot)
+                    if (child != runeMap)
+                        AugaStyle.Restyle(child);
+            }
+            else
+                AugaStyle.Restyle(hudRoot);
             Hud_Awake_ModParts.Seen.Clear();
             foreach (Transform child in __instance.m_rootObject.transform)
                 Hud_Awake_ModParts.Seen.Add(child.GetInstanceID());

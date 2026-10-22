@@ -94,7 +94,8 @@ public static class JotunnGui
         var minimap = jotunn.GetType("Jotunn.Managers.MinimapManager");
         var setupGui = minimap?.GetMethod("SetupGUI", BindingFlags.NonPublic | BindingFlags.Instance);
         _overlayPanel = minimap?.GetField("OverlayPanel", BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance);
-        if (setupGui != null && _overlayPanel != null)
+        // RuneSkin owns the minimap (Compat\RuneSkinOwnership): its large-map overlay panel stays RuneSkin's.
+        if (setupGui != null && _overlayPanel != null && !Compat.RuneSkinOwnership.Minimap)
         {
             _harmony.Patch(setupGui, prefix: enter, finalizer: new HarmonyMethod(typeof(JotunnGui), nameof(OverlayExit)) { priority = Priority.Last });
             count++;

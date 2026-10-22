@@ -30,6 +30,13 @@ namespace Auga.Compat
         public static bool Trophies { get; private set; }
         // The Almanac mod's window (RuneSkin family "Almanac", restyle only): Compat.Almanac stays out.
         public static bool Almanac { get; private set; }
+        // RuneSkin M4 live vanilla screens: the minimap (hudroot/MiniMap subtree, its movable offset and Jotunn's
+        // map-overlay panel), the enemy / player / boss overhead HUDs, the centre + top-left messages, and the
+        // in-world damage numbers. AugaSkin then swaps no prefab and restyles nothing there.
+        public static bool Minimap { get; private set; }
+        public static bool EnemyHud { get; private set; }
+        public static bool MessageHud { get; private set; }
+        public static bool DamageText { get; private set; }
 
         public static void Freeze()
         {
@@ -51,20 +58,39 @@ namespace Auga.Compat
             Skills = Inventory && (bool)isOwned.Invoke(null, new object[] { "Skills" });
             Trophies = Inventory && (bool)isOwned.Invoke(null, new object[] { "Trophies" });
             Almanac = (bool)isOwned.Invoke(null, new object[] { "Almanac" });
-            Debug.Log($"[Auga] RuneSkin owns: Menu={Menu} Tooltips={Tooltips} Hud={Hud} Inventory={Inventory} Crafting={Crafting} Skills={Skills} Trophies={Trophies} Almanac={Almanac} (AugaSkin yields those)");
+            // RuneSkin before M4 returns false for these: AugaSkin keeps them.
+            Minimap = (bool)isOwned.Invoke(null, new object[] { "Minimap" });
+            EnemyHud = (bool)isOwned.Invoke(null, new object[] { "EnemyHud" });
+            MessageHud = (bool)isOwned.Invoke(null, new object[] { "MessageHud" });
+            DamageText = (bool)isOwned.Invoke(null, new object[] { "DamageText" });
+            Debug.Log($"[Auga] RuneSkin owns: Menu={Menu} Tooltips={Tooltips} Hud={Hud} Inventory={Inventory} Crafting={Crafting} Skills={Skills} Trophies={Trophies} Almanac={Almanac} Minimap={Minimap} EnemyHud={EnemyHud} MessageHud={MessageHud} DamageText={DamageText} (AugaSkin yields those)");
         }
 
         // Patch classes not installed while RuneSkin owns their family.
         // Hud: the stat-bar size prefixes and lift transpilers (AugaStatBars_Size_Patch).
         // Inventory: EAQS cell layout + backgrounds (EaqsSlotPanel grid/update patches), MT trash plate icon.
         // Almanac: the Almanac window restyle (Compat.Almanac: InventoryGui.Awake postfix + lazy AlmanacPanel.Start patch).
+        // Minimap / EnemyHud / MessageHud / DamageText: the whole *_Setup class with its nested patch classes (Harmony
+        // processes each nested type on its own, so the declaring chain is checked).
         public static bool Skips(Type patchClass) =>
+            (Minimap && Within(patchClass, typeof(Minimap_Setup))) ||
+            (EnemyHud && Within(patchClass, typeof(EnemyHud_Setup))) ||
+            (MessageHud && Within(patchClass, typeof(MessageHud_Setup))) ||
+            (DamageText && Within(patchClass, typeof(DamageText_Setup))) ||
             (Almanac && patchClass == typeof(global::Auga.Compat.Almanac)) ||
             (Tooltips && patchClass == typeof(UITooltip_OnHoverStart_Patch)) ||
             (Hud && patchClass == typeof(AugaStatBars_Size_Patch)) ||
             (Inventory && (patchClass == typeof(EaqsSlotPanel.InventoryGrid_UpdateGui_Patch) ||
                            patchClass == typeof(EaqsSlotPanel.InventoryGui_Update_Patch) ||
                            patchClass == typeof(TrashPlate_Skin)));
+
+        private static bool Within(Type type, Type outer)
+        {
+            for (var t = type; t != null; t = t.DeclaringType)
+                if (t == outer)
+                    return true;
+            return false;
+        }
 
         // RuneSkin's own objects under hudroot (RuneSkinHud, RuneSkinVanillaHidden): never restyled by AugaSkin.
         public static bool IsRuneSkinObject(UnityEngine.Transform t) => t && t.name.StartsWith("RuneSkin", StringComparison.Ordinal);
