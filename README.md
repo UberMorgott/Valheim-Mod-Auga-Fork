@@ -43,9 +43,10 @@ Auga/
 │   └── APIManager.dll     — (нужно добавить вручную, см. ниже)
 │
 ├── build/
-│   └── FindValheim.ps1    — скрипт автопоиска Valheim через Steam
+│   ├── Valheim.Build.props — общие настройки сборки (копия valbuild, не редактировать)
+│   └── Polyfills.cs.txt    — атрибуты компилятора для net472 (копия valbuild)
 │
-├── Valheim.props          — центральный конфиг путей (пути к игре / BepInEx)
+├── global.json            — пин SDK (копия valbuild)
 ├── Auga.sln               — Visual Studio solution
 └── packages/              — NuGet-пакеты (ILRepack, AssemblyPublicizer)
 ```
@@ -71,23 +72,11 @@ cd Auga
 2. **Restore NuGet Packages** (правая кнопка на Solution → Restore NuGet Packages)
 3. Нажми **Build Solution**
 
-**Valheim находится автоматически.** При сборке запускается [`build/FindValheim.ps1`](build/FindValheim.ps1), который:
-
-- читает реестр Windows → находит путь к Steam
-- парсит `steamapps/libraryfolders.vdf` → перебирает все Steam-библиотеки
-- возвращает путь к Valheim куда бы он ни был установлен
-
-После сборки `Auga.dll` автоматически копируется в `<Valheim>\BepInEx\plugins\Auga\`.
-
-### Если Valheim не найден автоматически
-
-Передай путь явно при сборке:
+Путь к игре по умолчанию `D:\Steam\steamapps\common\Valheim` (`build/Valheim.Build.props`); другой путь:
 
 ```shell
-msbuild /p:ValheimDir="D:\Games\Valheim"
+dotnet build Auga.sln -c Release /p:ValheimDir="D:\Games\Valheim"
 ```
-
-или отредактируй первую строку в [`Valheim.props`](Valheim.props).
 
 ### APIManager.dll
 
@@ -102,8 +91,7 @@ msbuild /p:ValheimDir="D:\Games\Valheim"
 | --- | --- |
 | `BepInEx.AssemblyPublicizer.MSBuild` | Автоматически делает internal-члены Valheim DLL публичными для компиляции |
 | `ILRepack` | Упаковывает зависимости (fastJSON, APIManager) в один итоговый DLL |
-| `Valheim.props` | Единый файл с путями — все `.csproj` импортируют его |
-| `build/FindValheim.ps1` | PowerShell-скрипт автопоиска игры через реестр Steam |
+| `build/Valheim.Build.props` | Общие настройки (SDK/C#, пути к игре, ссылки BepInEx/0Harmony из игры), импортируется из `Directory.Build.props` |
 
 Valheim assemblies, помеченные `<Publicize>true</Publicize>` в `.csproj`, publicize-уются **автоматически при каждой сборке** — никаких ручных шагов.
 

@@ -1,140 +1,119 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
-  <!-- Пути к Valheim и BepInEx -->
-  <Import Project="..\Valheim.props" />
+  <!-- LangVersion, determinism, PathMap, embedded PDB, SourceLink off, ValheimDir/ManagedDir/BepInExCoreDir,
+       polyfills, the game's BepInEx + 0Harmony references and the publicizer come from build\Valheim.Build.props. -->
 
   <PropertyGroup>
     <TargetFramework>net472</TargetFramework>
+    <ValheimPlugin>true</ValheimPlugin>
+    <ValheimUsePublicizer>true</ValheimUsePublicizer>
     <!-- New assembly name (spec D0a): consumers detect assembly "Auga". RootNamespace stays Auga, so the embedded
          resources keep their Auga.* names. -->
     <AssemblyName>AugaSkin</AssemblyName>
     <RootNamespace>Auga</RootNamespace>
     <OutputType>Library</OutputType>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-    <LangVersion>10</LangVersion>
-    <Deterministic>true</Deterministic>
     <Nullable>disable</Nullable>
     <!-- Отключаем авто-генерацию AssemblyInfo — Properties\AssemblyInfo.cs уже есть -->
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
     <ProjectGuid>{BCC7DD31-D943-4684-800E-176A97DDDB8F}</ProjectGuid>
-    <!-- SDK 8's in-box SourceLink embeds the git commit SHA in the PDB, which the deterministic
-         content id folds into the MVID/PE timestamp: every commit changed the DLL bytes. -->
-    <EnableSourceLink>false</EnableSourceLink>
-    <EnableSourceControlManagerQueries>false</EnableSourceControlManagerQueries>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)' == 'Debug'">
     <DebugSymbols>true</DebugSymbols>
-    <DebugType>full</DebugType>
     <Optimize>false</Optimize>
     <DefineConstants>DEBUG;TRACE</DefineConstants>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)' == 'Release'">
-    <DebugType>pdbonly</DebugType>
     <Optimize>true</Optimize>
     <DefineConstants>TRACE</DefineConstants>
   </PropertyGroup>
 
-  <!-- NuGet пакеты -->
+  <!-- ILRepack.Lib.MSBuild.Task несовместим с .NET 10 SDK и избыточен:
+       APIManager is vendored as source (APIManagerPatcher.cs), nothing to merge -->
   <ItemGroup>
-    <PackageReference Include="BepInEx.AssemblyPublicizer.MSBuild" Version="0.4.2" />
-    <!-- ILRepack.Lib.MSBuild.Task несовместим с .NET 10 SDK и избыточен:
-         APIManager is vendored as source (APIManagerPatcher.cs), nothing to merge -->
-  </ItemGroup>
-
-  <!-- Ссылки на BepInEx -->
-  <ItemGroup>
-    <Reference Include="0Harmony">
-      <HintPath>$(BepInExCoreDir)\0Harmony.dll</HintPath>
-      <Private>false</Private>
-    </Reference>
-    <Reference Include="BepInEx">
-      <HintPath>$(BepInExCoreDir)\BepInEx.dll</HintPath>
-      <Private>false</Private>
-    </Reference>
-
     <!-- Valheim assemblies — публикуются через BepInEx.AssemblyPublicizer.MSBuild -->
     <Reference Include="assembly_guiutils">
-      <HintPath>$(ValheimManagedDir)\assembly_guiutils.dll</HintPath>
+      <HintPath>$(ManagedDir)\assembly_guiutils.dll</HintPath>
       <Publicize>true</Publicize>
       <Private>false</Private>
     </Reference>
     <Reference Include="com.rlabrecque.steamworks.net">
-      <HintPath>$(ValheimManagedDir)\com.rlabrecque.steamworks.net.dll</HintPath>
+      <HintPath>$(ManagedDir)\com.rlabrecque.steamworks.net.dll</HintPath>
       <Private>false</Private>
     </Reference>
     <Reference Include="assembly_utils">
-      <HintPath>$(ValheimManagedDir)\assembly_utils.dll</HintPath>
+      <HintPath>$(ManagedDir)\assembly_utils.dll</HintPath>
       <Publicize>true</Publicize>
       <Private>false</Private>
     </Reference>
     <Reference Include="assembly_valheim">
-      <HintPath>$(ValheimManagedDir)\assembly_valheim.dll</HintPath>
+      <HintPath>$(ManagedDir)\assembly_valheim.dll</HintPath>
       <Publicize>true</Publicize>
       <Private>false</Private>
     </Reference>
     <Reference Include="Splatform">
-      <HintPath>$(ValheimManagedDir)\Splatform.dll</HintPath>
+      <HintPath>$(ManagedDir)\Splatform.dll</HintPath>
       <Private>false</Private>
     </Reference>
     <Reference Include="SoftReferenceableAssets">
-      <HintPath>$(ValheimManagedDir)\SoftReferenceableAssets.dll</HintPath>
+      <HintPath>$(ManagedDir)\SoftReferenceableAssets.dll</HintPath>
       <Private>false</Private>
     </Reference>
     <Reference Include="gui_framework">
-      <HintPath>$(ValheimManagedDir)\gui_framework.dll</HintPath>
+      <HintPath>$(ManagedDir)\gui_framework.dll</HintPath>
       <Publicize>true</Publicize>
       <Private>false</Private>
     </Reference>
 
     <!-- UnityEngine -->
     <Reference Include="UnityEngine">
-      <HintPath>$(ValheimManagedDir)\UnityEngine.dll</HintPath>
+      <HintPath>$(ManagedDir)\UnityEngine.dll</HintPath>
       <Private>false</Private>
     </Reference>
     <Reference Include="UnityEngine.AnimationModule">
-      <HintPath>$(ValheimManagedDir)\UnityEngine.AnimationModule.dll</HintPath>
+      <HintPath>$(ManagedDir)\UnityEngine.AnimationModule.dll</HintPath>
       <Private>false</Private>
     </Reference>
     <Reference Include="UnityEngine.AssetBundleModule">
-      <HintPath>$(ValheimManagedDir)\UnityEngine.AssetBundleModule.dll</HintPath>
+      <HintPath>$(ManagedDir)\UnityEngine.AssetBundleModule.dll</HintPath>
       <Private>false</Private>
     </Reference>
     <Reference Include="UnityEngine.AudioModule">
-      <HintPath>$(ValheimManagedDir)\UnityEngine.AudioModule.dll</HintPath>
+      <HintPath>$(ManagedDir)\UnityEngine.AudioModule.dll</HintPath>
       <Private>false</Private>
     </Reference>
     <Reference Include="UnityEngine.CoreModule">
-      <HintPath>$(ValheimManagedDir)\UnityEngine.CoreModule.dll</HintPath>
+      <HintPath>$(ManagedDir)\UnityEngine.CoreModule.dll</HintPath>
       <Private>false</Private>
     </Reference>
     <Reference Include="UnityEngine.JSONSerializeModule">
-      <HintPath>$(ValheimManagedDir)\UnityEngine.JSONSerializeModule.dll</HintPath>
+      <HintPath>$(ManagedDir)\UnityEngine.JSONSerializeModule.dll</HintPath>
       <Private>false</Private>
     </Reference>
     <Reference Include="UnityEngine.InputLegacyModule">
-      <HintPath>$(ValheimManagedDir)\UnityEngine.InputLegacyModule.dll</HintPath>
+      <HintPath>$(ManagedDir)\UnityEngine.InputLegacyModule.dll</HintPath>
       <Private>false</Private>
     </Reference>
     <Reference Include="UnityEngine.TextRenderingModule">
-      <HintPath>$(ValheimManagedDir)\UnityEngine.TextRenderingModule.dll</HintPath>
+      <HintPath>$(ManagedDir)\UnityEngine.TextRenderingModule.dll</HintPath>
       <Private>false</Private>
     </Reference>
     <Reference Include="UnityEngine.UI">
-      <HintPath>$(ValheimManagedDir)\UnityEngine.UI.dll</HintPath>
+      <HintPath>$(ManagedDir)\UnityEngine.UI.dll</HintPath>
       <Private>false</Private>
     </Reference>
     <Reference Include="UnityEngine.IMGUIModule">
-      <HintPath>$(ValheimManagedDir)\UnityEngine.IMGUIModule.dll</HintPath>
+      <HintPath>$(ManagedDir)\UnityEngine.IMGUIModule.dll</HintPath>
       <Private>false</Private>
     </Reference>
     <Reference Include="UnityEngine.UIModule">
-      <HintPath>$(ValheimManagedDir)\UnityEngine.UIModule.dll</HintPath>
+      <HintPath>$(ManagedDir)\UnityEngine.UIModule.dll</HintPath>
       <Private>false</Private>
     </Reference>
     <Reference Include="Unity.TextMeshPro">
-      <HintPath>$(ValheimManagedDir)\Unity.TextMeshPro.dll</HintPath>
+      <HintPath>$(ManagedDir)\Unity.TextMeshPro.dll</HintPath>
       <Private>false</Private>
     </Reference>
 

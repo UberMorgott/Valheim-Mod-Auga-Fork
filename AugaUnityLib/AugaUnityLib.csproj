@@ -1,113 +1,103 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
-  <!-- Пути к Valheim и BepInEx -->
-  <Import Project="..\Valheim.props" />
+  <!-- LangVersion, determinism, PathMap, embedded PDB, SourceLink off, ValheimDir/ManagedDir, polyfills and the
+       publicizer come from build\Valheim.Build.props. Unity.Auga uses no BepInEx/Harmony API. -->
 
   <PropertyGroup>
     <TargetFramework>net472</TargetFramework>
+    <ValheimPlugin>true</ValheimPlugin>
+    <ValheimBepInExRefs>false</ValheimBepInExRefs>
+    <ValheimUsePublicizer>true</ValheimUsePublicizer>
     <AssemblyName>Unity.Auga</AssemblyName>
     <RootNamespace>AugaUnity</RootNamespace>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-    <Deterministic>true</Deterministic>
-    <LangVersion>latest</LangVersion>
     <!-- Отключаем авто-включение файлов из поддиректорий с иным форматом -->
     <Nullable>disable</Nullable>
     <!-- SDK-style auto-generates AssemblyInfo — отключаем чтобы не конфликтовало с Properties/AssemblyInfo.cs -->
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
-    <!-- SDK 8's in-box SourceLink embeds the git commit SHA in the PDB, which the deterministic
-         content id folds into the MVID/PE timestamp: every commit changed the DLL bytes. -->
-    <EnableSourceLink>false</EnableSourceLink>
-    <EnableSourceControlManagerQueries>false</EnableSourceControlManagerQueries>
   </PropertyGroup>
 
   <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
     <DebugSymbols>true</DebugSymbols>
-    <DebugType>full</DebugType>
     <Optimize>false</Optimize>
     <DefineConstants>TRACE;DEBUG;UNITY_5_6_OR_NEWER</DefineConstants>
   </PropertyGroup>
 
   <PropertyGroup Condition=" '$(Configuration)' == 'Release' ">
-    <DebugType>pdbonly</DebugType>
     <Optimize>true</Optimize>
     <DefineConstants>TRACE</DefineConstants>
   </PropertyGroup>
-
-  <ItemGroup>
-    <!-- AssemblyPublicizer — автоматически делает internal-члены Valheim DLL публичными -->
-    <PackageReference Include="BepInEx.AssemblyPublicizer.MSBuild" Version="0.4.2" />
-  </ItemGroup>
 
 
   <ItemGroup>
     <!-- Valheim assemblies — публикуются автоматически через BepInEx.AssemblyPublicizer.MSBuild -->
     <Reference Include="assembly_guiutils">
-      <HintPath>$(ValheimManagedDir)\assembly_guiutils.dll</HintPath>
+      <HintPath>$(ManagedDir)\assembly_guiutils.dll</HintPath>
       <Publicize>true</Publicize>
       <Private>false</Private>
     </Reference>
     <Reference Include="assembly_postprocessing">
-      <HintPath>$(ValheimManagedDir)\assembly_postprocessing.dll</HintPath>
+      <HintPath>$(ManagedDir)\assembly_postprocessing.dll</HintPath>
       <Publicize>true</Publicize>
       <Private>false</Private>
     </Reference>
     <Reference Include="assembly_sunshafts">
-      <HintPath>$(ValheimManagedDir)\assembly_sunshafts.dll</HintPath>
+      <HintPath>$(ManagedDir)\assembly_sunshafts.dll</HintPath>
       <Publicize>true</Publicize>
       <Private>false</Private>
     </Reference>
     <Reference Include="assembly_utils">
-      <HintPath>$(ValheimManagedDir)\assembly_utils.dll</HintPath>
+      <HintPath>$(ManagedDir)\assembly_utils.dll</HintPath>
       <Publicize>true</Publicize>
       <Private>false</Private>
     </Reference>
     <Reference Include="assembly_valheim">
-      <HintPath>$(ValheimManagedDir)\assembly_valheim.dll</HintPath>
+      <HintPath>$(ManagedDir)\assembly_valheim.dll</HintPath>
       <Publicize>true</Publicize>
       <Private>false</Private>
     </Reference>
     <!-- ui_lib переименован в gui_framework в новых версиях Valheim -->
     <Reference Include="gui_framework">
-      <HintPath>$(ValheimManagedDir)\gui_framework.dll</HintPath>
+      <HintPath>$(ManagedDir)\gui_framework.dll</HintPath>
       <Publicize>true</Publicize>
       <Private>false</Private>
     </Reference>
 
     <!-- UnityEngine — берём из valheim_Data\Managed (полные, нестриппнутые) -->
     <Reference Include="UnityEngine">
-      <HintPath>$(ValheimManagedDir)\UnityEngine.dll</HintPath>
+      <HintPath>$(ManagedDir)\UnityEngine.dll</HintPath>
       <Private>false</Private>
     </Reference>
     <Reference Include="UnityEngine.AudioModule">
-      <HintPath>$(ValheimManagedDir)\UnityEngine.AudioModule.dll</HintPath>
+      <HintPath>$(ManagedDir)\UnityEngine.AudioModule.dll</HintPath>
       <Private>false</Private>
     </Reference>
     <Reference Include="UnityEngine.CoreModule">
-      <HintPath>$(ValheimManagedDir)\UnityEngine.CoreModule.dll</HintPath>
+      <HintPath>$(ManagedDir)\UnityEngine.CoreModule.dll</HintPath>
       <Private>false</Private>
     </Reference>
 <Reference Include="UnityEngine.IMGUIModule">
-      <HintPath>$(ValheimManagedDir)\UnityEngine.IMGUIModule.dll</HintPath>
+      <HintPath>$(ManagedDir)\UnityEngine.IMGUIModule.dll</HintPath>
       <Private>false</Private>
     </Reference>
     <Reference Include="UnityEngine.InputLegacyModule">
-      <HintPath>$(ValheimManagedDir)\UnityEngine.InputLegacyModule.dll</HintPath>
+      <HintPath>$(ManagedDir)\UnityEngine.InputLegacyModule.dll</HintPath>
       <Private>false</Private>
     </Reference>
     <Reference Include="UnityEngine.TextRenderingModule">
-      <HintPath>$(ValheimManagedDir)\UnityEngine.TextRenderingModule.dll</HintPath>
+      <HintPath>$(ManagedDir)\UnityEngine.TextRenderingModule.dll</HintPath>
       <Private>false</Private>
     </Reference>
     <Reference Include="UnityEngine.UI">
-      <HintPath>$(ValheimManagedDir)\UnityEngine.UI.dll</HintPath>
+      <HintPath>$(ManagedDir)\UnityEngine.UI.dll</HintPath>
       <Private>false</Private>
     </Reference>
     <Reference Include="UnityEngine.UIModule">
-      <HintPath>$(ValheimManagedDir)\UnityEngine.UIModule.dll</HintPath>
+      <HintPath>$(ManagedDir)\UnityEngine.UIModule.dll</HintPath>
       <Private>false</Private>
     </Reference>
     <Reference Include="Unity.TextMeshPro">
-      <HintPath>$(ValheimManagedDir)\Unity.TextMeshPro.dll</HintPath>
+      <HintPath>$(ManagedDir)\Unity.TextMeshPro.dll</HintPath>
       <Private>false</Private>
     </Reference>
   </ItemGroup>
